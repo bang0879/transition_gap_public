@@ -70,7 +70,6 @@ streamlit==1.57.0
 tenacity==9.1.4
 toml==0.10.2
 tqdm==4.67.3
--e file:///C:/Users/bang0/OneDrive/%EB%B0%94%ED%83%95%20%ED%99%94%EB%A9%B4/transition-gap
 typing-extensions==4.15.0
 typing-inspection==0.4.2
 tzdata==2026.2
