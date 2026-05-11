@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+.uv-python/
+
+# 환경변수 / 시크릿
+.env
+*.key
+
+# 데이터
+data/*.db
+data/benchmarks/*.csv
+data/clients/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
+logs/
+
+# 빌드
+build/
+dist/
+*.egg-info/
