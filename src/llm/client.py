@@ -13,13 +13,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DEFAULT_MODEL = "gemini-1.5-flash"
+DEFAULT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 
 
 def _configure() -> None:
     """Gemini API key를 환경변수에서 읽어 설정한다."""
     api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
+    if not api_key or api_key == "your_gemini_api_key_here":
         raise RuntimeError(
             "GEMINI_API_KEY가 .env에 정의되어 있지 않습니다. "
             ".env.example을 참고해 .env 파일을 생성하세요."
