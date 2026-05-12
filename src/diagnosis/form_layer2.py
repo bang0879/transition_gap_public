@@ -18,10 +18,12 @@ from src.diagnosis.variables import (
 )
 
 PERCENT_SPLIT_FIELDS = {
-    "base_salary": "기본급",
-    "performance_bonus": "성과급",
+    "base": "기본급",
+    "performance": "성과급",
     "equity": "지분보상",
 }
+
+SELECT_PLACEHOLDER = "선택해 주세요"
 
 
 def render_layer2_form() -> bool:
@@ -39,20 +41,35 @@ def render_layer2_form() -> bool:
 
     responses = st.session_state.responses
 
-    for sub_category, label in SUB_CATEGORY_LABELS.items():
-        variables = get_variables_by_sub_category(sub_category)
-        with st.expander(label, expanded=sub_category == "2-1"):
-            for var in variables:
-                if not _should_render_variable(var, responses):
-                    continue
-                _render_variable(var, responses)
-                st.markdown("")
+    completed_count = 0
+    for sub_category in SUB_CATEGORY_LABELS:
+        if _render_sub_category(sub_category, responses):
+            completed_count += 1
 
-    is_complete = _validate_layer2(responses)
+    st.markdown("---")
+    st.markdown(f"**진행 상황**: {completed_count} / {len(SUB_CATEGORY_LABELS)} sub-category 완료")
+
+    is_complete = completed_count == len(SUB_CATEGORY_LABELS)
     if not is_complete:
-        st.info("현재 표시된 모든 필수 항목을 입력하면 다음 단계로 진행할 수 있습니다.")
+        st.info("모든 sub-category를 완료하면 진단 결과를 확인할 수 있습니다.")
 
     return is_complete
+
+
+def _render_sub_category(sub_category: str, responses: dict[str, Any]) -> bool:
+    """단일 sub-category를 렌더링하고 완료 여부를 반환한다."""
+    label = SUB_CATEGORY_LABELS[sub_category]
+    variables = get_variables_by_sub_category(sub_category)
+
+    with st.expander(f"{sub_category}. {label}", expanded=True):
+        for var in variables:
+            if not _should_render_variable(var, responses):
+                responses.pop(var.id, None)
+                continue
+            _render_variable(var, responses)
+            st.markdown("")
+
+    return _is_sub_category_complete(sub_category, responses)
 
 
 def _render_variable(var: Variable, responses: dict[str, Any]) -> None:
@@ -81,14 +98,16 @@ def _render_variable(var: Variable, responses: dict[str, Any]) -> None:
 
 def _render_single_select(var: Variable, responses: dict[str, Any], input_key: str) -> None:
     current = responses.get(var.id)
-    if input_key not in st.session_state:
-        st.session_state[input_key] = current if current in var.options else var.options[0]
-    responses[var.id] = st.radio(
+    display_options = [SELECT_PLACEHOLDER] + var.options
+    selected = current if current in var.options else SELECT_PLACEHOLDER
+    value = st.radio(
         label=var.label,
-        options=var.options,
+        options=display_options,
+        index=display_options.index(selected),
         key=input_key,
         label_visibility="collapsed",
     )
+    responses[var.id] = None if value == SELECT_PLACEHOLDER else value
 
 
 def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: str) -> None:
@@ -188,7 +207,16 @@ def _should_render_variable(var: Variable, responses: dict[str, Any]) -> bool:
 
 def _validate_layer2(responses: dict[str, Any]) -> bool:
     """현재 표시되는 Layer 2 필수 변수가 입력됐는지 검증한다."""
+    return all(_is_sub_category_complete(sub_category, responses) for sub_category in SUB_CATEGORY_LABELS)
+
+
+def _is_sub_category_complete(sub_category: str, responses: dict[str, Any]) -> bool:
+    """sub-category 완료 여부를 검증한다."""
+    variables = get_variables_by_sub_category(sub_category)
+
     for var in LAYER_2_VARIABLES:
+        if var not in variables:
+            continue
         if not _should_render_variable(var, responses):
             continue
         if var.input_type == InputType.PERCENT_SPLIT:

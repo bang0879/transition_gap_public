@@ -8,6 +8,7 @@ import streamlit as st
 
 from src.diagnosis.form_layer1 import render_layer1_form
 from src.diagnosis.form_layer2 import render_layer2_form
+from src.diagnosis.result_page import render_diagnosis_result
 from src.database import init_db, save_session
 
 st.set_page_config(
@@ -45,6 +46,8 @@ def render_sidebar() -> str:
 
         if "current_step" not in st.session_state:
             st.session_state.current_step = "layer1"
+        if "session_id" not in st.session_state:
+            st.session_state.session_id = None
 
         st.markdown("#### 진단 단계")
         steps = [
@@ -95,6 +98,7 @@ def main() -> None:
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
             if st.button("← Layer 1로 돌아가기", use_container_width=True):
+                save_current_session("layer1")
                 st.session_state.current_step = "layer1"
                 st.rerun()
         with col3:
@@ -109,10 +113,10 @@ def main() -> None:
                 st.rerun()
 
     elif current_step == "result":
-        st.markdown("## 진단 결과")
-        st.info("진단 결과 화면은 다음 작업 단계에서 구현됩니다.")
+        render_diagnosis_result()
 
         if st.button("← Layer 2로 돌아가기"):
+            save_current_session("layer2")
             st.session_state.current_step = "layer2"
             st.rerun()
 
