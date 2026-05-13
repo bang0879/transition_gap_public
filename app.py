@@ -5,11 +5,19 @@ Streamlit 진입점
 from __future__ import annotations
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 from src.diagnosis.form_layer1 import render_layer1_form
 from src.diagnosis.form_layer2 import render_layer2_form
 from src.diagnosis.result_page import render_diagnosis_result
 from src.database import init_db, save_session
+
+if "current_step" not in st.session_state:
+    st.session_state.current_step = "layer1"
+if "responses" not in st.session_state:
+    st.session_state.responses = {}
+if "session_id" not in st.session_state:
+    st.session_state.session_id = None
 
 st.set_page_config(
     page_title="Transition Gap",
@@ -33,6 +41,13 @@ def save_current_session(next_step: str) -> None:
     )
 
 
+def save_and_advance(next_step: str) -> None:
+    """현재 응답을 저장하고 다음 단계로 이동한다."""
+    st.session_state.current_step = next_step
+    save_current_session(next_step)
+    st.rerun()
+
+
 # ============================================================
 # 사이드바 — 진행 단계 표시
 # ============================================================
@@ -41,13 +56,8 @@ def render_sidebar() -> str:
     """사이드바 진행 단계 표시. 현재 단계 반환."""
     with st.sidebar:
         st.markdown("### Transition Gap")
-        st.caption("AI 시대 한국 스타트업 인사제도 진단/설계 도구")
+        st.caption("스타트업 인사제도 진단 도구")
         st.markdown("---")
-
-        if "current_step" not in st.session_state:
-            st.session_state.current_step = "layer1"
-        if "session_id" not in st.session_state:
-            st.session_state.session_id = None
 
         st.markdown("#### 진단 단계")
         steps = [
@@ -71,6 +81,17 @@ def render_sidebar() -> str:
 # ============================================================
 
 def main() -> None:
+    components.html(
+        """
+        <script>
+            const main = window.parent.document.querySelector('.main');
+            if (main) {
+                main.scrollTo(0, 0);
+            }
+        </script>
+        """,
+        height=0,
+    )
     current_step = render_sidebar()
 
     st.title("Transition Gap")
@@ -88,9 +109,7 @@ def main() -> None:
                 use_container_width=True,
                 type="primary",
             ):
-                save_current_session("layer2")
-                st.session_state.current_step = "layer2"
-                st.rerun()
+                save_and_advance("layer2")
 
     elif current_step == "layer2":
         is_complete = render_layer2_form()
@@ -98,9 +117,7 @@ def main() -> None:
         col1, col2, col3 = st.columns([1, 1, 1])
         with col1:
             if st.button("← Layer 1로 돌아가기", use_container_width=True):
-                save_current_session("layer1")
-                st.session_state.current_step = "layer1"
-                st.rerun()
+                save_and_advance("layer1")
         with col3:
             if st.button(
                 "진단 결과 보기",
@@ -108,17 +125,13 @@ def main() -> None:
                 use_container_width=True,
                 type="primary",
             ):
-                save_current_session("result")
-                st.session_state.current_step = "result"
-                st.rerun()
+                save_and_advance("result")
 
     elif current_step == "result":
         render_diagnosis_result()
 
         if st.button("← Layer 2로 돌아가기"):
-            save_current_session("layer2")
-            st.session_state.current_step = "layer2"
-            st.rerun()
+            save_and_advance("layer2")
 
     else:
         st.info(f"단계 '{current_step}' 는 아직 구현되지 않았습니다.")

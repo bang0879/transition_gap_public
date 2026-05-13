@@ -25,6 +25,32 @@ PERCENT_SPLIT_FIELDS = {
 
 SELECT_PLACEHOLDER = "선택해 주세요"
 
+SELECT_SLIDER_OPTIONS = {
+    "2-3-1": [
+        "비금전적 가치 최우선 (비전, 자율성, 성장)",
+        "비금전 위주",
+        "균형",
+        "금전 위주",
+        "금전적 보상 최우선 (파격 연봉, 성과급)",
+    ],
+    "2-4-2": [
+        "완전 분리",
+        "약한 연동",
+        "중간 연동",
+        "강한 연동",
+        "보상이 평가와 완전 동일",
+    ],
+    "2-4-3-ceo": ["1점", "2점", "3점", "4점", "5점"],
+    "2-4-3-employee": ["1점", "2점", "3점", "4점", "5점"],
+    "2-4-4": [
+        "거의 공감 못 함",
+        "일부만 공감",
+        "보통",
+        "대체로 공감",
+        "강하게 공감",
+    ],
+}
+
 
 def render_layer2_form() -> bool:
     """
@@ -35,6 +61,11 @@ def render_layer2_form() -> bool:
     """
     st.markdown("## Layer 2. 전환 갭 진단")
     st.caption("5개 영역의 전환 갭을 확인합니다 — 약 30~40분 소요")
+    st.info(
+        "본격적인 진단입니다. 대표님이 생각하는 '이상적인 방향'과 조직의 "
+        "'실제 운영 상태' 사이의 간극(Gap)을 찾습니다. 이 데이터는 향후 제도 도입 시 "
+        "발생할 수 있는 마찰 비용과 부작용을 예측하는 데 사용됩니다."
+    )
 
     if "responses" not in st.session_state:
         st.session_state.responses = {}
@@ -125,16 +156,25 @@ def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: st
 
 def _render_slider_5(var: Variable, responses: dict[str, Any], input_key: str) -> None:
     current = responses.get(var.id, 3)
-    if input_key not in st.session_state:
-        st.session_state[input_key] = int(current) if isinstance(current, int) else 3
-    responses[var.id] = st.slider(
+    options = SELECT_SLIDER_OPTIONS[var.id]
+    current_index = int(current) - 1 if isinstance(current, int) and 1 <= current <= 5 else 2
+    selected_value = options[current_index]
+
+    select_slider_kwargs: dict[str, Any] = {}
+    if input_key in st.session_state:
+        if st.session_state[input_key] not in options:
+            st.session_state[input_key] = selected_value
+    else:
+        select_slider_kwargs["value"] = selected_value
+
+    selected = st.select_slider(
         label=var.label,
-        min_value=1,
-        max_value=5,
-        step=1,
+        options=options,
         key=input_key,
         label_visibility="collapsed",
+        **select_slider_kwargs,
     )
+    responses[var.id] = options.index(selected) + 1
 
 
 def _render_slider_ratio(var: Variable, responses: dict[str, Any], input_key: str) -> None:
