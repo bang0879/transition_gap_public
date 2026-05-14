@@ -80,9 +80,19 @@ LAYER_1_VARIABLES: list[Variable] = [
         id="L1-3",
         layer="L1",
         sub_category=None,
-        label="조직 계층 구조는 어떻습니까?",
+        label="현재 조직의 의사결정 구조는 어떻습니까?",
         input_type=InputType.SINGLE_SELECT,
-        options=["3단계 (CEO - 리더 - 실무자)", "4단계 이상"],
+        options=[
+            "수평형 (CEO + 실무자, 별도 중간 관리자 없음)",
+            "3단계 (CEO - 리더 - 실무자)",
+            "4단계 (CEO - 임원/실장 - 팀장 - 실무자)",
+            "5단계 이상 (사업부/본부 체계 도입)",
+            "직군별 상이 (예: 개발은 수평, 사업은 위계)",
+        ],
+        helper_text=(
+            "조직의 실제 의사결정 흐름을 기준으로 선택해 주세요. "
+            "공식 직급 체계가 아닌 실제 운영 방식입니다."
+        ),
     ),
     Variable(
         id="L1-4",
@@ -90,7 +100,12 @@ LAYER_1_VARIABLES: list[Variable] = [
         sub_category=None,
         label="향후 12개월 채용 기조는?",
         input_type=InputType.SINGLE_SELECT,
-        options=["공격적 확장 (30%+ 인원 증가)", "결원 보충 및 유지", "채용 동결 및 감축"],
+        options=[
+            "공격적 확장 (30%+ 인원 증가)",
+            "안정적 성장 (10~30% 증가)",
+            "결원 보충 및 유지 (10% 미만)",
+            "채용 동결 및 감축",
+        ],
     ),
     Variable(
         id="L1-5",
@@ -98,8 +113,21 @@ LAYER_1_VARIABLES: list[Variable] = [
         sub_category=None,
         label="주력 산업 도메인은?",
         input_type=InputType.SINGLE_SELECT,
-        options=["B2B SaaS", "B2C 플랫폼"],
-        helper_text="MVP는 이 두 산업에 한정됩니다.",
+        options=[
+            "B2B SaaS",
+            "B2C 플랫폼",
+            "핀테크 / 금융",
+            "커머스 / 리테일",
+            "콘텐츠 / 미디어",
+            "AI / 데이터",
+            "바이오 / 헬스케어",
+            "하드웨어 / 제조",
+            "기타",
+        ],
+        helper_text=(
+            "MVP 단계에서는 B2B SaaS와 B2C 플랫폼에 최적화되어 있으나, "
+            "다른 산업도 참고용으로 활용 가능합니다."
+        ),
     ),
 ]
 
@@ -163,7 +191,7 @@ LAYER_2_VARIABLES: list[Variable] = [
         id="2-2-2",
         layer="L2",
         sub_category="2-2",
-        label="주력 채용 채널 다양성은?",
+        label="현재 활용 중인 주요 채용 채널은 몇 가지입니까? (예: 사람인, 원티드, 리퍼럴, 헤드헌터 등)",
         input_type=InputType.SINGLE_SELECT,
         options=["1개", "2~3개", "4개 이상"],
     ),
@@ -171,7 +199,7 @@ LAYER_2_VARIABLES: list[Variable] = [
         id="2-2-3",
         layer="L2",
         sub_category="2-2",
-        label="오퍼 후 거절 경험 빈도는?",
+        label="최종 면접 통과 후 합격 통보를 받은 지원자가 입사를 거절한 경험이 있습니까?",
         input_type=InputType.SINGLE_SELECT,
         options=["거의 없음", "가끔", "자주"],
     ),
@@ -241,7 +269,7 @@ LAYER_2_VARIABLES: list[Variable] = [
         id="2-3-6",
         layer="L2",
         sub_category="2-3",
-        label="복리후생 / 타이틀 업계 대비 수준은?",
+        label="복리후생(휴가·간식·교육비 등) 및 직급/호칭 체계의 수준은 동종업계 대비 어떻습니까?",
         input_type=InputType.SINGLE_SELECT,
         options=["상", "중", "하"],
     ),
@@ -405,6 +433,21 @@ def get_variables_by_sub_category(sub_category: str) -> list[Variable]:
     return [v for v in LAYER_2_VARIABLES if v.sub_category == sub_category]
 
 
+def get_question_number(variable_id: str) -> int:
+    """변수의 전체 순서 번호."""
+    for i, var in enumerate(QUESTION_VARIABLES, start=1):
+        if var.id == variable_id:
+            return i
+    return 0
+
+
+QUESTION_VARIABLES: list[Variable] = [
+    v for v in ALL_VARIABLES if v.input_type != InputType.PERCENT_SPLIT
+]
+
+TOTAL_QUESTIONS = len(QUESTION_VARIABLES)
+
+
 # ============================================================
 # 페인포인트 → 매트릭스 A Y축 점수 매핑 (As-Is 계산용)
 # ============================================================
@@ -472,5 +515,24 @@ def _validate() -> None:
         if pp not in PAIN_POINT_Y_VALUES:
             raise ValueError(f"PAIN_POINT_Y_VALUES에 '{pp}' 누락")
 
+def _validate_widget_keys() -> None:
+    """Validate Streamlit widget keys at module load."""
+    keys = []
+    for variable in ALL_VARIABLES:
+        keys.append(f"input_{variable.id}")
+        if variable.input_type == InputType.PERCENT_SPLIT:
+            keys.extend(
+                [
+                    f"input_{variable.id}_base",
+                    f"input_{variable.id}_performance",
+                    f"input_{variable.id}_equity",
+                ]
+            )
+
+    duplicates = [key for key in keys if keys.count(key) > 1]
+    if duplicates:
+        raise ValueError(f"Duplicate widget keys: {set(duplicates)}")
+
 
 _validate()
+_validate_widget_keys()

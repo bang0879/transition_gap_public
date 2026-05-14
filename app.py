@@ -11,13 +11,17 @@ from src.diagnosis.form_layer1 import render_layer1_form
 from src.diagnosis.form_layer2 import render_layer2_form
 from src.diagnosis.result_page import render_diagnosis_result
 from src.database import init_db, save_session
+from src.intro_page import render_intro_page
+from src.simulation.simulation_page import render_simulation_page
 
 if "current_step" not in st.session_state:
-    st.session_state.current_step = "layer1"
+    st.session_state.current_step = "intro"
 if "responses" not in st.session_state:
     st.session_state.responses = {}
 if "session_id" not in st.session_state:
     st.session_state.session_id = None
+if "_needs_scroll" not in st.session_state:
+    st.session_state["_needs_scroll"] = False
 
 st.set_page_config(
     page_title="Transition Gap",
@@ -30,10 +34,35 @@ st.set_page_config(
 init_db()
 
 
+def scroll_to_top() -> None:
+    """Force the Streamlit page to the top via components.html."""
+    components.html(
+        """
+        <script>
+            const doc = window.parent.document;
+            const candidates = [
+                doc.querySelector('section.main'),
+                doc.querySelector('.main'),
+                doc.querySelector('[data-testid="stAppViewContainer"]'),
+                doc.querySelector('.stApp'),
+            ];
+            for (const el of candidates) {
+                if (el) {
+                    el.scrollTo({ top: 0, behavior: 'instant' });
+                }
+            }
+            window.parent.scrollTo({ top: 0, behavior: 'instant' });
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
+
+
 def save_current_session(next_step: str) -> None:
     """현재 응답과 진행 단계를 SQLite에 저장한다."""
-    responses = st.session_state.get("responses", {})
-    session_id = st.session_state.get("session_id")
+    responses = st.session_state.responses
+    session_id = st.session_state.session_id
     st.session_state.session_id = save_session(
         responses=responses,
         current_step=next_step,
@@ -43,8 +72,13 @@ def save_current_session(next_step: str) -> None:
 
 def save_and_advance(next_step: str) -> None:
     """현재 응답을 저장하고 다음 단계로 이동한다."""
+    st.session_state.session_id = save_session(
+        responses=st.session_state.responses,
+        current_step=next_step,
+        session_id=st.session_state.session_id,
+    )
     st.session_state.current_step = next_step
-    save_current_session(next_step)
+    st.session_state["_needs_scroll"] = True
     st.rerun()
 
 
@@ -61,10 +95,11 @@ def render_sidebar() -> str:
 
         st.markdown("#### 진단 단계")
         steps = [
+            ("intro", "0. 시작 안내"),
             ("layer1", "1. 조직 컨텍스트"),
-            ("layer2", "2. 전환 갭 진단"),
+            ("layer2", "2. 인사제도 현황 진단"),
             ("result", "3. 진단 결과"),
-            ("simulation", "4. 시뮬레이션"),
+            ("simulation", "4. 트레이드오프 진단"),
             ("report", "5. 리포트"),
         ]
         for step_id, step_label in steps:
@@ -81,30 +116,37 @@ def render_sidebar() -> str:
 # ============================================================
 
 def main() -> None:
-    components.html(
-        """
-        <script>
-            const main = window.parent.document.querySelector('.main');
-            if (main) {
-                main.scrollTo(0, 0);
-            }
-        </script>
-        """,
-        height=0,
-    )
     current_step = render_sidebar()
 
     st.title("Transition Gap")
     st.caption("AI 시대 한국 스타트업 인사제도 진단/설계 도구")
     st.markdown("---")
 
-    if current_step == "layer1":
+    if st.session_state.get("_needs_scroll", False):
+        scroll_to_top()
+        st.session_state["_needs_scroll"] = False
+
+    if current_step == "intro":
+        render_intro_page()
+
+        st.markdown("---")
+        col1, col2 = st.columns([1, 5])
+        with col1:
+            if st.button(
+                "진단 시작 →",
+                use_container_width=True,
+                type="primary",
+            ):
+                save_and_advance("layer1")
+
+    elif current_step == "layer1":
         is_complete = render_layer1_form()
 
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col3:
+        st.markdown("---")
+        col1, col2 = st.columns([1, 5])
+        with col1:
             if st.button(
-                "다음 단계 (Layer 2)",
+                "다음: Layer 2 →",
                 disabled=not is_complete,
                 use_container_width=True,
                 type="primary",
@@ -114,13 +156,13 @@ def main() -> None:
     elif current_step == "layer2":
         is_complete = render_layer2_form()
 
-        col1, col2, col3 = st.columns([1, 1, 1])
+        st.markdown("---")
+        col1, col2 = st.columns([1, 5])
         with col1:
             if st.button("← Layer 1로 돌아가기", use_container_width=True):
                 save_and_advance("layer1")
-        with col3:
             if st.button(
-                "진단 결과 보기",
+                "진단 결과 보기 →",
                 disabled=not is_complete,
                 use_container_width=True,
                 type="primary",
@@ -130,8 +172,27 @@ def main() -> None:
     elif current_step == "result":
         render_diagnosis_result()
 
-        if st.button("← Layer 2로 돌아가기"):
-            save_and_advance("layer2")
+        st.markdown("---")
+        col1, col2 = st.columns([1, 5])
+        with col1:
+            if st.button("← Layer 2로 돌아가기", use_container_width=True):
+                save_and_advance("layer2")
+            if st.button(
+                "트레이드오프 진단 보기 →",
+                use_container_width=True,
+                type="primary",
+            ):
+                save_and_advance("simulation")
+
+    elif current_step == "simulation":
+        render_simulation_page()
+
+        st.markdown("---")
+        col1, col2 = st.columns([1, 5])
+        with col1:
+            if st.button("← 진단 결과로 돌아가기", use_container_width=True):
+                save_and_advance("result")
+            st.button("시나리오 보기", disabled=True, use_container_width=True)
 
     else:
         st.info(f"단계 '{current_step}' 는 아직 구현되지 않았습니다.")

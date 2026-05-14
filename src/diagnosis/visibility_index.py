@@ -112,15 +112,20 @@ def _score_item(item_id: str, responses: dict[str, Any]) -> float:
         return 0.0
 
     if item_id == "2-3-2":
+        archetype = responses.get("2-3-2")
+        if archetype is None:
+            return 0.0
+
         detail = responses.get("2-3-2-detail")
         if detail and isinstance(detail, dict):
-            quantitative_values = [
-                value
-                for key, value in detail.items()
-                if key != "total" and isinstance(value, int | float)
-            ]
-            has_quantitative = any(value > 0 for value in quantitative_values)
-            return 1.0 if has_quantitative else 0.5
+            try:
+                has_quantitative = any(
+                    key != "total" and isinstance(value, int | float) and value > 0
+                    for key, value in detail.items()
+                )
+                return 1.0 if has_quantitative else 0.5
+            except (AttributeError, TypeError):
+                return 0.5
         return 0.5
 
     return 0.0 if is_unknown_response(item_id, response) else 1.0

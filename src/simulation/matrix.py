@@ -1,0 +1,180 @@
+"""
+매트릭스 A·B Plotly 시각화.
+
+As-Is를 흐린 원으로 표시하고, 가시성 지수와 페인포인트 분산도를
+마커 크기·투명도·색상에 반영한다.
+"""
+from __future__ import annotations
+
+from typing import Any
+
+import plotly.graph_objects as go
+
+from src.simulation.trade_off import MatrixCoordinates
+from src.theme import COLORS
+
+MATRIX_A_QUADRANTS = {
+    "Q1": {"x": 0.75, "y": 0.75, "label": "Q1<br>단기 성과형<br>용병조직"},
+    "Q2": {"x": 0.25, "y": 0.25, "label": "Q2<br>장기 비전형<br>공동체 조직"},
+    "Q3": {"x": 0.75, "y": 0.25, "label": "Q3<br>평균의 함정형"},
+    "Q4": {"x": 0.25, "y": 0.75, "label": "Q4<br>소수정예 중심형"},
+}
+
+MATRIX_B_QUADRANTS = {
+    "Q1": {"x": 0.25, "y": 0.25, "label": "Q1<br>개인플레이어<br>중심형"},
+    "Q2": {"x": 0.25, "y": 0.75, "label": "Q2<br>가족형 자율 조직"},
+    "Q3": {"x": 0.75, "y": 0.25, "label": "Q3<br>에이전시형<br>분업/기능 조직"},
+    "Q4": {"x": 0.75, "y": 0.75, "label": "Q4<br>대기업 공채<br>시스템형"},
+}
+
+
+def render_matrix_a(coords: MatrixCoordinates, visibility_score: float) -> go.Figure:
+    """매트릭스 A를 시각화한다."""
+    fig = _create_base_matrix(
+        x_axis_left="지분 / 비전 중심",
+        x_axis_right="현금 / 인센티브 중심",
+        y_axis_bottom="팀 시너지 중심",
+        y_axis_top="개인 압도적 성과 중심",
+        quadrants=MATRIX_A_QUADRANTS,
+        title="매트릭스 A: 보상과 동기부여 (Motivation Mix)",
+    )
+    _add_as_is_marker(
+        fig,
+        x=coords.matrix_a_x,
+        y=coords.matrix_a_y,
+        visibility_score=visibility_score,
+        dispersion=coords.pain_point_dispersion,
+    )
+    return fig
+
+
+def render_matrix_b(coords: MatrixCoordinates, visibility_score: float) -> go.Figure:
+    """매트릭스 B를 시각화한다."""
+    fig = _create_base_matrix(
+        x_axis_left="자율과 속도",
+        x_axis_right="통제와 절차",
+        y_axis_bottom="즉시 전력 (스킬)",
+        y_axis_top="조직 적합성 (컬처핏)",
+        quadrants=MATRIX_B_QUADRANTS,
+        title="매트릭스 B: 조직 운영과 채용 (Operating System)",
+    )
+    _add_as_is_marker(
+        fig,
+        x=coords.matrix_b_x,
+        y=coords.matrix_b_y,
+        visibility_score=visibility_score,
+        dispersion=0.0,
+    )
+    return fig
+
+
+def _create_base_matrix(
+    x_axis_left: str,
+    x_axis_right: str,
+    y_axis_bottom: str,
+    y_axis_top: str,
+    quadrants: dict[str, dict[str, Any]],
+    title: str,
+) -> go.Figure:
+    """2x2 매트릭스 기본 골격을 생성한다."""
+    fig = go.Figure()
+
+    for quadrant in quadrants.values():
+        fig.add_annotation(
+            x=quadrant["x"],
+            y=quadrant["y"],
+            text=quadrant["label"],
+            showarrow=False,
+            font=dict(size=12, color=COLORS["text_secondary"]),
+            align="center",
+        )
+
+    fig.add_shape(
+        type="line",
+        x0=0.5,
+        x1=0.5,
+        y0=0,
+        y1=1,
+        line=dict(color=COLORS["border"], width=2, dash="dot"),
+    )
+    fig.add_shape(
+        type="line",
+        x0=0,
+        x1=1,
+        y0=0.5,
+        y1=0.5,
+        line=dict(color=COLORS["border"], width=2, dash="dot"),
+    )
+
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=16)),
+        xaxis=dict(
+            range=[-0.05, 1.05],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+            title=dict(
+                text=f"<- {x_axis_left}    |    {x_axis_right} ->",
+                font=dict(size=11, color=COLORS["text_secondary"]),
+            ),
+        ),
+        yaxis=dict(
+            range=[-0.05, 1.05],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+            title=dict(
+                text=f"<- {y_axis_bottom}    |    {y_axis_top} ->",
+                font=dict(size=11, color=COLORS["text_secondary"]),
+            ),
+            scaleanchor="x",
+            scaleratio=1,
+        ),
+        height=500,
+        showlegend=False,
+        plot_bgcolor=COLORS["surface"],
+        paper_bgcolor=COLORS["background"],
+        margin=dict(l=70, r=40, t=70, b=70),
+    )
+
+    return fig
+
+
+def _add_as_is_marker(
+    fig: go.Figure,
+    x: float,
+    y: float,
+    visibility_score: float,
+    dispersion: float,
+) -> None:
+    """As-Is 위치를 흐린 원으로 추가한다."""
+    marker_size = max(40.0, 80.0 - (visibility_score * 0.6))
+    marker_opacity = 0.3 + (_clamp(visibility_score, 0.0, 100.0) / 100.0) * 0.5
+    marker_color = COLORS["accent"] if dispersion >= 0.3 else COLORS["primary"]
+
+    fig.add_trace(
+        go.Scatter(
+            x=[_clamp(x)],
+            y=[_clamp(y)],
+            mode="markers",
+            marker=dict(
+                size=marker_size,
+                color=marker_color,
+                opacity=marker_opacity,
+                line=dict(width=2, color=COLORS["text_primary"]),
+            ),
+            hovertemplate=(
+                "<b>현재 위치 (As-Is)</b><br>"
+                f"X: {_clamp(x):.2f}<br>"
+                f"Y: {_clamp(y):.2f}<br>"
+                f"가시성 지수: {visibility_score:.1f}%<br>"
+                "<extra></extra>"
+            ),
+            name="현재 위치",
+        )
+    )
+
+
+def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:
+    """값을 [lo, hi] 범위로 제한한다."""
+    return max(lo, min(hi, value))

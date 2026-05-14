@@ -7,7 +7,12 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.diagnosis.variables import LAYER_1_VARIABLES, InputType
+from src.diagnosis.variables import (
+    LAYER_1_VARIABLES,
+    TOTAL_QUESTIONS,
+    InputType,
+    get_question_number,
+)
 
 
 def render_layer1_form() -> bool:
@@ -23,17 +28,13 @@ def render_layer1_form() -> bool:
         "수집된 정보는 대기업식 제도가 아닌, 귀사의 규모와 상황에 맞는 현실적인 "
         "제도를 추천하는 기준점이 됩니다."
     )
-    st.caption("조직의 기본 정보 — 약 5분 소요")
-
-    # 세션 상태 초기화
-    if "responses" not in st.session_state:
-        st.session_state.responses = {}
+    st.caption("조직의 기본 정보 — 약 3분 소요")
 
     responses = st.session_state.responses
 
     # 각 변수 렌더링
     for var in LAYER_1_VARIABLES:
-        st.markdown(f"#### {var.label}")
+        _render_question_heading(var.id, var.label)
         if var.helper_text:
             st.caption(var.helper_text)
 
@@ -53,16 +54,40 @@ def render_layer1_form() -> bool:
 
         elif var.input_type == InputType.MULTI_SELECT:
             current = responses.get(var.id, [])
+            if not isinstance(current, list):
+                current = []
+            max_select = var.max_select or len(var.options)
+            current = [item for item in current if item in var.options][:max_select]
+            trimmed_extra_selection = False
+            stored_value = st.session_state.get(input_key)
+            if isinstance(stored_value, list) and len(stored_value) > max_select:
+                st.session_state[input_key] = stored_value[:max_select]
+                trimmed_extra_selection = True
+            multiselect_kwargs = {}
             if input_key not in st.session_state:
-                st.session_state[input_key] = current
+                multiselect_kwargs["default"] = current
             value = st.multiselect(
                 label=var.label,
                 options=var.options,
-                max_selections=var.max_select,
                 key=input_key,
                 label_visibility="collapsed",
+                help="가장 시급한 항목을 최대 2개까지 선택하세요.",
+                **multiselect_kwargs,
             )
+            if len(value) > max_select:
+                value = value[:max_select]
+                trimmed_extra_selection = True
+            if trimmed_extra_selection:
+                st.warning(
+                    f"최대 {max_select}개까지만 선택됩니다. 처음 선택한 {max_select}개가 유지됩니다."
+                )
             responses[var.id] = value
+            if len(value) == 0:
+                st.caption("1~2개를 선택해 주세요.")
+            elif len(value) == max_select:
+                st.caption(f"✓ {max_select}개 선택 완료")
+            else:
+                st.caption(f"✓ {len(value)}개 선택됨 (최대 {max_select}개)")
 
         st.markdown("")  # 여백
 
@@ -75,22 +100,28 @@ def render_layer1_form() -> bool:
     return is_complete
 
 
+def _render_question_heading(variable_id: str, label: str) -> None:
+    """질문 번호와 질문 텍스트를 함께 표시한다."""
+    question_number = get_question_number(variable_id)
+    if question_number:
+        st.markdown(f"#### Q{question_number} / {TOTAL_QUESTIONS}. {label}")
+    else:
+        st.markdown(f"#### {label}")
+
+
 def _validate_layer1(responses: dict) -> bool:
     """Layer 1 모든 변수가 입력됐는지 검증."""
     for var in LAYER_1_VARIABLES:
         value = responses.get(var.id)
+
         if value is None:
             return False
+
         if var.input_type == InputType.MULTI_SELECT:
-            if not value or len(value) == 0:
+            if not isinstance(value, list) or len(value) == 0:
                 return False
-        else:
+        elif var.input_type == InputType.SINGLE_SELECT:
             if value == "" or value is None:
                 return False
-
-    # L1-1 페인포인트는 정확히 2개 선택 권장 (최소 1개는 허용)
-    l1_1 = responses.get("L1-1", [])
-    if len(l1_1) < 1:
-        return False
 
     return True
