@@ -9,6 +9,7 @@ from streamlit_scroll_to_top import scroll_to_here
 
 from src.diagnosis.form_layer1 import get_layer1_missing, render_layer1_form
 from src.diagnosis.form_layer2 import get_layer2_missing, render_layer2_form
+from src.diagnosis.variables import get_question_number
 from src.diagnosis.result_page import render_diagnosis_result
 from src.database import init_db, save_session
 from src.intro_page import render_intro_page
@@ -98,11 +99,28 @@ def render_next_button(
     st.markdown("---")
 
     if not is_complete and missing_vars:
-        with st.container(border=True):
-            st.warning(f"⚠ 아직 입력하지 않은 항목이 **{len(missing_vars)}개** 있습니다.")
-            for variable in missing_vars:
-                display_text = variable.short_label or variable.label[:30]
-                st.markdown(f"- **{variable.id}.** {display_text}")
+        q_numbers = sorted(get_question_number(variable.id) for variable in missing_vars)
+        chips_html = " ".join(
+            f'<span style="'
+            f'display: inline-block; '
+            f'padding: 2px 10px; '
+            f'margin: 2px 4px 2px 0; '
+            f'background-color: #FAF1E0; '
+            f'border: 1px solid #F4D8A0; '
+            f'border-radius: 12px; '
+            f'font-size: 13px; '
+            f'color: #2C3E50;'
+            f'">Q{number}</span>'
+            for number in q_numbers
+        )
+        st.markdown(
+            f'<div style="margin-bottom: 12px;">'
+            f'<span style="color: #C9844A; font-weight: 500;">'
+            f'⚠ 미입력 {len(missing_vars)}개:'
+            f'</span> {chips_html}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     col1, col2 = st.columns([1, 5])
     with col1:
