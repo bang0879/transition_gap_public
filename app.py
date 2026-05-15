@@ -5,7 +5,7 @@ Streamlit 진입점
 from __future__ import annotations
 
 import streamlit as st
-import streamlit.components.v1 as components
+from streamlit_scroll_to_top import scroll_to_here
 
 from src.diagnosis.form_layer1 import render_layer1_form
 from src.diagnosis.form_layer2 import render_layer2_form
@@ -32,31 +32,6 @@ st.set_page_config(
 
 # DB 초기화 (앱 시작 시 1회)
 init_db()
-
-
-def scroll_to_top() -> None:
-    """Force the Streamlit page to the top via components.html."""
-    components.html(
-        """
-        <script>
-            const doc = window.parent.document;
-            const candidates = [
-                doc.querySelector('section.main'),
-                doc.querySelector('.main'),
-                doc.querySelector('[data-testid="stAppViewContainer"]'),
-                doc.querySelector('.stApp'),
-            ];
-            for (const el of candidates) {
-                if (el) {
-                    el.scrollTo({ top: 0, behavior: 'instant' });
-                }
-            }
-            window.parent.scrollTo({ top: 0, behavior: 'instant' });
-        </script>
-        """,
-        height=0,
-        width=0,
-    )
 
 
 def save_current_session(next_step: str) -> None:
@@ -116,15 +91,15 @@ def render_sidebar() -> str:
 # ============================================================
 
 def main() -> None:
+    if st.session_state.get("_needs_scroll", False):
+        scroll_to_here(0)
+        st.session_state["_needs_scroll"] = False
+
     current_step = render_sidebar()
 
     st.title("Transition Gap")
     st.caption("AI 시대 한국 스타트업 인사제도 진단/설계 도구")
     st.markdown("---")
-
-    if st.session_state.get("_needs_scroll", False):
-        scroll_to_top()
-        st.session_state["_needs_scroll"] = False
 
     if current_step == "intro":
         render_intro_page()
