@@ -306,7 +306,7 @@ def _as_percent_int(value: Any) -> int:
 def _should_render_variable(var: Variable, responses: dict[str, Any]) -> bool:
     """조건부 문항 표시 여부를 판정한다."""
     if var.id == "2-4-5":
-        return responses.get("2-4-1") != "없음"
+        return responses.get("2-4-1a") != "운영하지 않음"
     if var.id == "2-5-3":
         return responses.get("2-5-2") != "운영 안 함"
     return True

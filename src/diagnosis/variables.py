@@ -51,11 +51,14 @@ class Variable:
 # ============================================================
 
 PAIN_POINTS = [
-    "우수인재 채용 난항",
-    "핵심인재의 잦은 이탈",
-    "인건비 상승 부담",
-    "평가의 공정성 불만",
-    "팀 간 이기주의(Silo) 및 소통 단절",
+    "무임승차자(저성과자) 방치로 인한 핵심 인재의 의욕 저하 및 이탈",
+    "기존 멤버와 신규 합류 멤버(고연봉자) 간의 보상 역전 및 갈등",
+    "평가 철학 부재로 인한 '나눠먹기식(N빵)' 등급 부여와 공정성 시비",
+    "실무 에이스가 리더(팀장)가 된 후 발생하는 리더십 공백 및 팀 붕괴",
+    "부서 간 이기주의(Silo) 심화 및 책임 떠넘기기",
+    "창업자/C-레벨의 마이크로매니징 및 일관성 없는 인사 개입",
+    "예측 불가능한 인건비 상승 및 보상 재원 부족",
+    "체계적인 온보딩 부재로 인한 신규 입사자의 높은 조기 퇴사율",
 ]
 
 LAYER_1_VARIABLES: list[Variable] = [
@@ -75,7 +78,13 @@ LAYER_1_VARIABLES: list[Variable] = [
         sub_category=None,
         label="총 인원수는 어느 정도입니까?",
         input_type=InputType.SINGLE_SELECT,
-        options=["20인 이하", "20~50인", "50~100인", "100인 초과"],
+        options=[
+            "20인 이하",
+            "20~50인",
+            "50~100인",
+            "100~500인",
+            "500인 초과",
+        ],
     ),
     Variable(
         id="L1-3",
@@ -277,12 +286,56 @@ LAYER_2_VARIABLES: list[Variable] = [
 
     # --- 2-4. 평가 및 수용성 갭 ---
     Variable(
-        id="2-4-1",
+        id="2-4-1a",
         layer="L2",
         sub_category="2-4",
-        label="현재 평가 방식은?",
+        label="평가 주기는 어떻게 운영하십니까?",
         input_type=InputType.SINGLE_SELECT,
-        options=["없음", "비공식", "정기 운영"],
+        options=["연 1회", "반기 1회", "분기 1회 / 상시", "운영하지 않음"],
+        short_label="평가 주기",
+    ),
+    Variable(
+        id="2-4-1b",
+        layer="L2",
+        sub_category="2-4",
+        label="평가의 주체는 누구입니까? (다면평가 여부)",
+        input_type=InputType.SINGLE_SELECT,
+        options=[
+            "하향식 (팀장 → 팀원 단방향)",
+            "동료 평가 일부 포함",
+            "360도 다면평가 (상사·동료·부하 포함)",
+            "운영하지 않음",
+        ],
+        short_label="평가 주체",
+    ),
+    Variable(
+        id="2-4-1c",
+        layer="L2",
+        sub_category="2-4",
+        label="평가 지표의 성격은?",
+        input_type=InputType.SINGLE_SELECT,
+        options=[
+            "KPI / MBO 등 정량·실적 중심",
+            "OKR 등 도전 목표 중심",
+            "역량 · 컬처핏 중심",
+            "혼합형 (지표를 섞어서 운영)",
+            "운영하지 않음",
+        ],
+        short_label="평가 지표 성격",
+    ),
+    Variable(
+        id="2-4-1d",
+        layer="L2",
+        sub_category="2-4",
+        label="평가 결과의 피드백과 수용성 관리는?",
+        input_type=InputType.SINGLE_SELECT,
+        options=[
+            "일방적 결과 통보",
+            "1on1 면담을 통한 결과 공유 (이의제기 프로세스 없음)",
+            "1on1 면담 + 명확한 이의제기 프로세스 존재",
+            "운영하지 않음",
+        ],
+        short_label="피드백 및 수용성 관리",
     ),
     Variable(
         id="2-4-2",
@@ -325,7 +378,7 @@ LAYER_2_VARIABLES: list[Variable] = [
         options=["알고 있음", UNKNOWN],
         is_quantitative=True,
         unknown_option=UNKNOWN,
-        # 조건부: 2-4-1 != "없음"일 때만 표시
+        # 조건부: 2-4-1a != "운영하지 않음"일 때만 표시
     ),
 
     # --- 2-5. 리더십 및 거버넌스 갭 ---
@@ -436,7 +489,10 @@ SHORT_LABELS_BY_ID: dict[str, str] = {
     "2-3-4": "지난 12개월 인건비 증가율",
     "2-3-5": "시장 대비 보상 위치",
     "2-3-6": "복리후생/타이틀 수준",
-    "2-4-1": "현재 평가 방식",
+    "2-4-1a": "평가 주기",
+    "2-4-1b": "평가 주체",
+    "2-4-1c": "평가 지표 성격",
+    "2-4-1d": "피드백 및 수용성 관리",
     "2-4-2": "평가-보상 연동 수준",
     "2-4-3-ceo": "대표 인식 공정성",
     "2-4-3-employee": "직원 예상 공정성",
@@ -502,7 +558,7 @@ def get_missing_required_fields(responses: dict, layer: str) -> list[Variable]:
 def _should_validate(variable: Variable, responses: dict) -> bool:
     """조건부 변수가 검증 대상인지 판정한다."""
     if variable.id == "2-4-5":
-        return responses.get("2-4-1") != "없음"
+        return responses.get("2-4-1a") != "운영하지 않음"
     if variable.id == "2-5-3":
         return responses.get("2-5-2") != "운영 안 함"
     return True
@@ -541,11 +597,14 @@ TOTAL_QUESTIONS = len(QUESTION_VARIABLES)
 # ============================================================
 
 PAIN_POINT_Y_VALUES: dict[str, float] = {
-    "팀 간 이기주의(Silo) 및 소통 단절": 0.85,
-    "평가의 공정성 불만": 0.65,
-    "우수인재 채용 난항": 0.5,
-    "인건비 상승 부담": 0.5,
-    "핵심인재의 잦은 이탈": 0.15,
+    "무임승차자(저성과자) 방치로 인한 핵심 인재의 의욕 저하 및 이탈": 0.15,
+    "기존 멤버와 신규 합류 멤버(고연봉자) 간의 보상 역전 및 갈등": 0.65,
+    "평가 철학 부재로 인한 '나눠먹기식(N빵)' 등급 부여와 공정성 시비": 0.25,
+    "실무 에이스가 리더(팀장)가 된 후 발생하는 리더십 공백 및 팀 붕괴": 0.5,
+    "부서 간 이기주의(Silo) 심화 및 책임 떠넘기기": 0.85,
+    "창업자/C-레벨의 마이크로매니징 및 일관성 없는 인사 개입": 0.5,
+    "예측 불가능한 인건비 상승 및 보상 재원 부족": 0.5,
+    "체계적인 온보딩 부재로 인한 신규 입사자의 높은 조기 퇴사율": 0.5,
 }
 
 
@@ -568,8 +627,8 @@ VISIBILITY_BASE_ITEMS: list[str] = [
 # 조건부 항목 (해당 제도 운영 중일 때만 분모 포함)
 VISIBILITY_CONDITIONAL_ITEMS: dict[str, dict] = {
     "2-4-5": {
-        "depends_on": "2-4-1",
-        "excluded_value": "없음",  # 2-4-1이 "없음"이면 분모에서 제외
+        "depends_on": "2-4-1a",
+        "excluded_value": "운영하지 않음",  # 2-4-1a가 "운영하지 않음"이면 분모에서 제외
     },
     "2-5-3": {
         "depends_on": "2-5-2",

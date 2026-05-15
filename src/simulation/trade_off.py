@@ -78,8 +78,14 @@ def calculate_matrix_a_y(responses: dict[str, Any]) -> float:
     linkage = _as_int(responses.get("2-4-2"), default=3)
     linkage_score = (linkage - 1) / 4
 
-    eval_method_map = {"없음": 0.2, "비공식": 0.4, "정기 운영": 0.6}
-    eval_method_score = eval_method_map.get(responses.get("2-4-1"), 0.4)
+    eval_indicator_map = {
+        "KPI / MBO 등 정량·실적 중심": 0.8,
+        "OKR 등 도전 목표 중심": 0.6,
+        "혼합형 (지표를 섞어서 운영)": 0.5,
+        "역량 · 컬처핏 중심": 0.3,
+        "운영하지 않음": 0.4,
+    }
+    eval_indicator_score = eval_indicator_map.get(responses.get("2-4-1c"), 0.5)
 
     pain_points = responses.get("L1-1", [])
     if isinstance(pain_points, list) and pain_points:
@@ -87,7 +93,7 @@ def calculate_matrix_a_y(responses: dict[str, Any]) -> float:
     else:
         pain_point_score = 0.5
 
-    y = (linkage_score * 0.5) + (eval_method_score * 0.2) + (pain_point_score * 0.3)
+    y = (linkage_score * 0.5) + (eval_indicator_score * 0.2) + (pain_point_score * 0.3)
     return _clamp(y)
 
 
@@ -122,7 +128,8 @@ def calculate_matrix_b_x(responses: dict[str, Any]) -> float:
         "20인 이하": 0.2,
         "20~50인": 0.4,
         "50~100인": 0.6,
-        "100인 초과": 0.8,
+        "100~500인": 0.8,
+        "500인 초과": 0.9,
     }
     headcount_score = headcount_map.get(responses.get("L1-2"), 0.5)
 
@@ -197,6 +204,57 @@ def calculate_coordinates(responses: dict[str, Any]) -> MatrixCoordinates:
         matrix_b_y=calculate_matrix_b_y(responses),
         pain_point_dispersion=calculate_pain_point_dispersion(responses),
     )
+
+
+def calculate_core_talent_loss_severity(responses: dict[str, Any]) -> float:
+    """
+    핵심 인재 이탈 심각도 (0.0 ~ 1.0).
+
+    L1-2 (총 인원수) × 2-1-2 (이탈 인원) 비선형 매트릭스.
+    20인 1명 이탈 = 치명적 / 100인 1명 이탈 = 경미.
+    """
+    headcount = responses.get("L1-2")
+    loss = responses.get("2-1-2")
+
+    if loss is None or loss == "모름 / 측정 안 함":
+        return 0.5
+
+    if loss == "없음":
+        return 0.0
+
+    matrix = {
+        "20인 이하": {
+            "1명": 0.8,
+            "2~3명": 1.0,
+            "4명 이상": 1.0,
+        },
+        "20~50인": {
+            "1명": 0.5,
+            "2~3명": 0.8,
+            "4명 이상": 1.0,
+        },
+        "50~100인": {
+            "1명": 0.2,
+            "2~3명": 0.5,
+            "4명 이상": 0.8,
+        },
+        "100~500인": {
+            "1명": 0.2,
+            "2~3명": 0.5,
+            "4명 이상": 0.8,
+        },
+        "500인 초과": {
+            "1명": 0.1,
+            "2~3명": 0.3,
+            "4명 이상": 0.6,
+        },
+    }
+
+    bucket = matrix.get(headcount)
+    if bucket is None:
+        return 0.5
+
+    return bucket.get(loss, 0.5)
 
 
 def _has_quantitative_reward_detail(detail: Any) -> bool:
