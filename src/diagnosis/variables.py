@@ -11,7 +11,7 @@
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Optional
 
@@ -43,6 +43,7 @@ class Variable:
     is_quantitative: bool = False        # 가시성 지수 계산 대상
     unknown_option: Optional[str] = None # "모름 / 측정 안 함" 등 (있을 경우)
     max_select: Optional[int] = None     # multi_select 시 최대 개수
+    short_label: str = ""                # 미입력 안내용 짧은 라벨
 
 
 # ============================================================
@@ -416,6 +417,48 @@ SUB_CATEGORY_LABELS: dict[str, str] = {
 # 전체 변수 통합 + 조회 헬퍼
 # ============================================================
 
+SHORT_LABELS_BY_ID: dict[str, str] = {
+    "L1-1": "가장 시급한 HR 페인포인트",
+    "L1-2": "총 인원수",
+    "L1-3": "조직 의사결정 구조",
+    "L1-4": "향후 12개월 채용 기조",
+    "L1-5": "주력 산업 도메인",
+    "2-1-1": "직전 12개월 자발적 이직률",
+    "2-1-2": "직전 12개월 핵심 인재 이탈",
+    "2-1-3": "신규 입사자 1년 내 조기 퇴사 비율",
+    "2-2-1": "핵심 포지션 평균 채용 소요 기간",
+    "2-2-2": "주력 채용 채널 수",
+    "2-2-3": "최종 면접 후 입사 거절 경험",
+    "2-3-1": "보상 철학의 무게중심",
+    "2-3-2": "금전 보상 구조 아키타입",
+    "2-3-2-detail": "보상 비율 정량 (선택)",
+    "2-3-3": "매출 대비 인건비 비중",
+    "2-3-4": "지난 12개월 인건비 증가율",
+    "2-3-5": "시장 대비 보상 위치",
+    "2-3-6": "복리후생/타이틀 수준",
+    "2-4-1": "현재 평가 방식",
+    "2-4-2": "평가-보상 연동 수준",
+    "2-4-3-ceo": "대표 인식 공정성",
+    "2-4-3-employee": "직원 예상 공정성",
+    "2-4-4": "리더급 비전 공감도",
+    "2-4-5": "평가 운영 데이터 트래킹",
+    "2-5-1": "리더의 부정적 피드백 역량",
+    "2-5-2": "팀장급 정기 1on1 운영",
+    "2-5-3": "1on1 운영 데이터 관리",
+    "2-5-4": "실무진 채용 최종 승인자",
+    "2-5-5": "신규 기능 배포 의사결정",
+    "2-5-6": "핵심가치 작동 여부",
+}
+
+LAYER_1_VARIABLES = [
+    replace(variable, short_label=SHORT_LABELS_BY_ID.get(variable.id, variable.short_label))
+    for variable in LAYER_1_VARIABLES
+]
+LAYER_2_VARIABLES = [
+    replace(variable, short_label=SHORT_LABELS_BY_ID.get(variable.id, variable.short_label))
+    for variable in LAYER_2_VARIABLES
+]
+
 ALL_VARIABLES: list[Variable] = LAYER_1_VARIABLES + LAYER_2_VARIABLES
 
 VARIABLES_BY_ID: dict[str, Variable] = {v.id: v for v in ALL_VARIABLES}
@@ -431,6 +474,51 @@ def get_variable(variable_id: str) -> Variable:
 def get_variables_by_sub_category(sub_category: str) -> list[Variable]:
     """Sub-category에 속한 변수 목록 반환."""
     return [v for v in LAYER_2_VARIABLES if v.sub_category == sub_category]
+
+
+def get_missing_required_fields(responses: dict, layer: str) -> list[Variable]:
+    """
+    특정 layer에서 응답이 누락된 필수 변수 목록을 반환한다.
+
+    PERCENT_SPLIT은 선택 입력이므로 검증에서 제외하고, 조건부 변수는
+    표시 조건을 만족할 때만 필수 항목으로 본다.
+    """
+    target_variables = [variable for variable in ALL_VARIABLES if variable.layer == layer]
+    missing: list[Variable] = []
+
+    for variable in target_variables:
+        if variable.input_type == InputType.PERCENT_SPLIT:
+            continue
+        if not _should_validate(variable, responses):
+            continue
+
+        value = responses.get(variable.id)
+        if _is_empty(value, variable.input_type):
+            missing.append(variable)
+
+    return missing
+
+
+def _should_validate(variable: Variable, responses: dict) -> bool:
+    """조건부 변수가 검증 대상인지 판정한다."""
+    if variable.id == "2-4-5":
+        return responses.get("2-4-1") != "없음"
+    if variable.id == "2-5-3":
+        return responses.get("2-5-2") != "운영 안 함"
+    return True
+
+
+def _is_empty(value, input_type: InputType) -> bool:
+    """값이 미입력 상태인지 판정한다."""
+    if value is None:
+        return True
+    if input_type == InputType.MULTI_SELECT:
+        return not isinstance(value, list) or len(value) == 0
+    if input_type == InputType.SINGLE_SELECT:
+        return value == ""
+    if input_type in (InputType.SLIDER_5, InputType.SLIDER_RATIO, InputType.NUMBER):
+        return value is None
+    return False
 
 
 def get_question_number(variable_id: str) -> int:
@@ -514,6 +602,11 @@ def _validate() -> None:
     for pp in PAIN_POINTS:
         if pp not in PAIN_POINT_Y_VALUES:
             raise ValueError(f"PAIN_POINT_Y_VALUES에 '{pp}' 누락")
+
+    missing_short_labels = [variable.id for variable in ALL_VARIABLES if not variable.short_label]
+    if missing_short_labels:
+        raise ValueError(f"Missing short_label: {missing_short_labels}")
+
 
 def _validate_widget_keys() -> None:
     """Validate Streamlit widget keys at module load."""

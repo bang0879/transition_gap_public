@@ -11,6 +11,7 @@ from src.diagnosis.variables import (
     LAYER_1_VARIABLES,
     TOTAL_QUESTIONS,
     InputType,
+    get_missing_required_fields,
     get_question_number,
 )
 
@@ -98,6 +99,12 @@ def render_layer1_form() -> bool:
         st.info("모든 항목을 입력하면 다음 단계로 진행할 수 있습니다.")
 
     return is_complete
+
+
+def get_layer1_missing() -> list:
+    """Layer 1 미입력 항목 리스트."""
+    responses = st.session_state.get("responses", {})
+    return get_missing_required_fields(responses, "L1")
 
 
 def _render_question_heading(variable_id: str, label: str) -> None:

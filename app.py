@@ -7,8 +7,8 @@ from __future__ import annotations
 import streamlit as st
 from streamlit_scroll_to_top import scroll_to_here
 
-from src.diagnosis.form_layer1 import render_layer1_form
-from src.diagnosis.form_layer2 import render_layer2_form
+from src.diagnosis.form_layer1 import get_layer1_missing, render_layer1_form
+from src.diagnosis.form_layer2 import get_layer2_missing, render_layer2_form
 from src.diagnosis.result_page import render_diagnosis_result
 from src.database import init_db, save_session
 from src.intro_page import render_intro_page
@@ -86,6 +86,38 @@ def render_sidebar() -> str:
     return st.session_state.current_step
 
 
+def render_next_button(
+    is_complete: bool,
+    missing_vars: list,
+    next_step: str,
+    button_label: str,
+    back_step: str | None = None,
+    back_label: str | None = None,
+) -> None:
+    """다음 버튼과 미입력 항목 안내를 함께 렌더링한다."""
+    st.markdown("---")
+
+    if not is_complete and missing_vars:
+        with st.container(border=True):
+            st.warning(f"⚠ 아직 입력하지 않은 항목이 **{len(missing_vars)}개** 있습니다.")
+            for variable in missing_vars:
+                display_text = variable.short_label or variable.label[:30]
+                st.markdown(f"- **{variable.id}.** {display_text}")
+
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        if back_step and back_label:
+            if st.button(back_label, use_container_width=True):
+                save_and_advance(back_step)
+        if st.button(
+            button_label,
+            disabled=not is_complete,
+            use_container_width=True,
+            type="primary",
+        ):
+            save_and_advance(next_step)
+
+
 # ============================================================
 # 메인
 # ============================================================
@@ -116,33 +148,25 @@ def main() -> None:
 
     elif current_step == "layer1":
         is_complete = render_layer1_form()
-
-        st.markdown("---")
-        col1, col2 = st.columns([1, 5])
-        with col1:
-            if st.button(
-                "다음: Layer 2 →",
-                disabled=not is_complete,
-                use_container_width=True,
-                type="primary",
-            ):
-                save_and_advance("layer2")
+        missing = get_layer1_missing()
+        render_next_button(
+            is_complete=is_complete,
+            missing_vars=missing,
+            next_step="layer2",
+            button_label="다음: Layer 2 →",
+        )
 
     elif current_step == "layer2":
         is_complete = render_layer2_form()
-
-        st.markdown("---")
-        col1, col2 = st.columns([1, 5])
-        with col1:
-            if st.button("← Layer 1로 돌아가기", use_container_width=True):
-                save_and_advance("layer1")
-            if st.button(
-                "진단 결과 보기 →",
-                disabled=not is_complete,
-                use_container_width=True,
-                type="primary",
-            ):
-                save_and_advance("result")
+        missing = get_layer2_missing()
+        render_next_button(
+            is_complete=is_complete,
+            missing_vars=missing,
+            next_step="result",
+            button_label="진단 결과 보기 →",
+            back_step="layer1",
+            back_label="← Layer 1로 돌아가기",
+        )
 
     elif current_step == "result":
         render_diagnosis_result()

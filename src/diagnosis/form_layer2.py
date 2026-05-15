@@ -15,6 +15,7 @@ from src.diagnosis.variables import (
     TOTAL_QUESTIONS,
     InputType,
     Variable,
+    get_missing_required_fields,
     get_question_number,
     get_variables_by_sub_category,
 )
@@ -92,6 +93,12 @@ def render_layer2_form() -> bool:
         st.info("모든 sub-category를 완료하면 진단 결과를 확인할 수 있습니다.")
 
     return is_complete
+
+
+def get_layer2_missing() -> list:
+    """Layer 2 미입력 항목 리스트."""
+    responses = st.session_state.get("responses", {})
+    return get_missing_required_fields(responses, "L2")
 
 
 def _render_sub_category(sub_category: str, responses: dict[str, Any]) -> bool:
