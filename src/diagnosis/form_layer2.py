@@ -15,7 +15,6 @@ from src.diagnosis.variables import (
     TOTAL_QUESTIONS,
     InputType,
     Variable,
-    get_missing_required_fields,
     get_question_number,
     get_variables_by_sub_category,
 )
@@ -63,42 +62,85 @@ SLIDER_DESCRIPTIONS = {
 }
 
 
-def render_layer2_form() -> bool:
-    """
-    Layer 2 폼 렌더링.
-
-    Returns:
-        현재 표시된 필수 입력이 완료되었으면 True.
-    """
-    st.markdown("## 인사제도 현황 진단")
-    st.caption("귀사 인사제도의 정합성과 갭(Gap)을 진단합니다 — 약 12~15분 소요")
+def render_layer2_a_form() -> bool:
+    """Layer 2-A: 인력 안정성 + 채용 파이프라인."""
+    st.markdown("## 인사제도 현황 진단 (1/3)")
+    st.caption("인력 안정성 및 채용 파이프라인 — 약 4분 소요")
     st.info(
-        "본격적인 진단입니다. 대표님이 생각하는 '이상적인 방향'과 조직의 "
-        "'실제 운영 상태' 사이의 간극(Gap)을 찾습니다. 이 데이터는 향후 제도 도입 시 "
-        "발생할 수 있는 마찰 비용과 부작용을 예측하는 데 사용됩니다."
+        "지금부터 본격적인 진단입니다. 대표님이 생각하는 '이상적인 방향'과 "
+        "조직의 '실제 운영 상태' 사이의 간극(Gap)을 찾습니다."
     )
 
     responses = st.session_state.responses
+    sub_categories = ["2-1", "2-2"]
 
     completed_count = 0
-    for sub_category in SUB_CATEGORY_LABELS:
+    for sub_category in sub_categories:
         if _render_sub_category(sub_category, responses):
             completed_count += 1
 
-    st.markdown("---")
-    st.markdown(f"**진행 상황**: {completed_count} / {len(SUB_CATEGORY_LABELS)} sub-category 완료")
-
-    is_complete = completed_count == len(SUB_CATEGORY_LABELS)
-    if not is_complete:
-        st.info("모든 sub-category를 완료하면 진단 결과를 확인할 수 있습니다.")
-
-    return is_complete
+    return completed_count == len(sub_categories)
 
 
-def get_layer2_missing() -> list:
-    """Layer 2 미입력 항목 리스트."""
+def render_layer2_b_form() -> bool:
+    """Layer 2-B: 총보상."""
+    st.markdown("## 인사제도 현황 진단 (2/3)")
+    st.caption("총보상 (Total Rewards) 구조 — 약 4분 소요")
+
+    responses = st.session_state.responses
+    return _render_sub_category("2-3", responses)
+
+
+def render_layer2_c_form() -> bool:
+    """Layer 2-C: 평가 + 리더십."""
+    st.markdown("## 인사제도 현황 진단 (3/3)")
+    st.caption("평가 및 리더십 · 거버넌스 — 약 5분 소요")
+
+    responses = st.session_state.responses
+    sub_categories = ["2-4", "2-5"]
+
+    completed_count = 0
+    for sub_category in sub_categories:
+        if _render_sub_category(sub_category, responses):
+            completed_count += 1
+
+    return completed_count == len(sub_categories)
+
+
+def get_layer2_a_missing() -> list[Variable]:
+    """Layer 2-A 미입력 항목."""
     responses = st.session_state.get("responses", {})
-    return get_missing_required_fields(responses, "L2")
+    return _get_missing_in_sub_categories(responses, ["2-1", "2-2"])
+
+
+def get_layer2_b_missing() -> list[Variable]:
+    """Layer 2-B 미입력 항목."""
+    responses = st.session_state.get("responses", {})
+    return _get_missing_in_sub_categories(responses, ["2-3"])
+
+
+def get_layer2_c_missing() -> list[Variable]:
+    """Layer 2-C 미입력 항목."""
+    responses = st.session_state.get("responses", {})
+    return _get_missing_in_sub_categories(responses, ["2-4", "2-5"])
+
+
+def _get_missing_in_sub_categories(responses: dict[str, Any], sub_categories: list[str]) -> list[Variable]:
+    """특정 sub-category들에서 미입력 변수를 반환한다."""
+    target_vars = [var for var in LAYER_2_VARIABLES if var.sub_category in sub_categories]
+    missing: list[Variable] = []
+
+    for var in target_vars:
+        if var.input_type == InputType.PERCENT_SPLIT:
+            continue
+        if not _should_render_variable(var, responses):
+            continue
+
+        value = responses.get(var.id)
+        if _is_empty_value(value, var.input_type):
+            missing.append(var)
+
+    return missing
 
 
 def _render_sub_category(sub_category: str, responses: dict[str, Any]) -> bool:
@@ -301,6 +343,19 @@ def _as_percent_int(value: Any) -> int:
     if not isinstance(value, int | float):
         return 0
     return max(0, min(100, int(value)))
+
+
+def _is_empty_value(value: Any, input_type: InputType) -> bool:
+    """값이 미입력 상태인지 판정한다."""
+    if value is None:
+        return True
+    if input_type == InputType.MULTI_SELECT:
+        return not isinstance(value, list) or len(value) == 0
+    if input_type == InputType.SINGLE_SELECT:
+        return value == ""
+    if input_type in (InputType.SLIDER_5, InputType.SLIDER_RATIO, InputType.NUMBER):
+        return value is None
+    return False
 
 
 def _should_render_variable(var: Variable, responses: dict[str, Any]) -> bool:
