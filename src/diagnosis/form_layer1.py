@@ -9,11 +9,11 @@ import streamlit as st
 
 from src.diagnosis.variables import (
     LAYER_1_VARIABLES,
-    TOTAL_QUESTIONS,
     InputType,
     get_missing_required_fields,
     get_question_number,
 )
+from src.database import save_response_immediately
 
 
 def render_layer1_form() -> bool:
@@ -43,15 +43,22 @@ def render_layer1_form() -> bool:
 
         if var.input_type == InputType.SINGLE_SELECT:
             current = responses.get(var.id)
-            if input_key not in st.session_state:
-                st.session_state[input_key] = current if current in var.options else var.options[0]
+            if input_key in st.session_state and st.session_state[input_key] not in var.options:
+                del st.session_state[input_key]
+            if current is not None and current not in var.options:
+                responses.pop(var.id, None)
+                current = None
+            index = var.options.index(current) if current in var.options else None
             value = st.radio(
                 label=var.label,
                 options=var.options,
+                index=index,
                 key=input_key,
                 label_visibility="collapsed",
             )
-            responses[var.id] = value
+            if value is not None:
+                responses[var.id] = value
+                _save_immediately(var.id, value)
 
         elif var.input_type == InputType.MULTI_SELECT:
             current = responses.get(var.id, [])
@@ -60,6 +67,7 @@ def render_layer1_form() -> bool:
             max_select = var.max_select or len(var.options)
             current = [item for item in current if item in var.options][:max_select]
             trimmed_extra_selection = False
+            was_initialized = input_key in st.session_state
             stored_value = st.session_state.get(input_key)
             if isinstance(stored_value, list) and len(stored_value) > max_select:
                 st.session_state[input_key] = stored_value[:max_select]
@@ -83,6 +91,8 @@ def render_layer1_form() -> bool:
                     f"최대 {max_select}개까지만 선택됩니다. 처음 선택한 {max_select}개가 유지됩니다."
                 )
             responses[var.id] = value
+            if value or was_initialized:
+                _save_immediately(var.id, value)
             if len(value) == 0:
                 st.caption("1~2개를 선택해 주세요.")
             elif len(value) == max_select:
@@ -111,9 +121,25 @@ def _render_question_heading(variable_id: str, label: str) -> None:
     """질문 번호와 질문 텍스트를 함께 표시한다."""
     question_number = get_question_number(variable_id)
     if question_number:
-        st.markdown(f"#### Q{question_number} / {TOTAL_QUESTIONS}. {label}")
+        st.markdown(f"#### Q{question_number}. {label}")
     else:
         st.markdown(f"#### {label}")
+
+
+def _save_immediately(var_id: str, value) -> None:
+    """위젯 값 변경 시 SQLite에 즉시 저장한다."""
+    session_id = st.session_state.get("session_id")
+    current_step = st.session_state.get("current_step", "layer1")
+
+    new_session_id = save_response_immediately(
+        variable_id=var_id,
+        value=value,
+        session_id=session_id,
+        current_step=current_step,
+    )
+
+    if session_id is None:
+        st.session_state.session_id = new_session_id
 
 
 def _validate_layer1(responses: dict) -> bool:

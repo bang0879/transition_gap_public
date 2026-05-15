@@ -18,7 +18,7 @@ from src.diagnosis.form_layer2 import (
 )
 from src.diagnosis.variables import get_question_number
 from src.diagnosis.result_page import render_diagnosis_result
-from src.database import init_db, save_session
+from src.database import init_db, load_latest_session_snapshot, save_session
 from src.simulation.simulation_page import render_simulation_page
 
 STEP_ORDER = ["layer1", "layer2_a", "layer2_b", "layer2_c", "result", "simulation"]
@@ -47,6 +47,22 @@ st.set_page_config(
 
 # DB 초기화 (앱 시작 시 1회)
 init_db()
+
+
+def _restore_session() -> None:
+    """가장 최근 세션이 있으면 응답 데이터만 session_state에 복원한다."""
+    if st.session_state.get("responses"):
+        return
+
+    latest_session = load_latest_session_snapshot()
+    if latest_session is None:
+        return
+
+    st.session_state.session_id = latest_session["id"]
+    st.session_state.responses = latest_session["responses"]
+
+
+_restore_session()
 
 
 def save_current_session(next_step: str) -> None:
@@ -231,10 +247,14 @@ def main() -> None:
         render_diagnosis_result()
 
         st.markdown("---")
-        col1, col2 = st.columns([1, 5])
+        col1, col2 = st.columns(2)
         with col1:
-            if st.button("← Layer 2로 돌아가기", use_container_width=True):
+            if st.button(
+                "← 인사제도 현황 진단으로 돌아가기",
+                use_container_width=True,
+            ):
                 save_and_advance("layer2_c")
+        with col2:
             if st.button(
                 "트레이드오프 진단 보기 →",
                 use_container_width=True,

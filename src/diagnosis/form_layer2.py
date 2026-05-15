@@ -12,12 +12,12 @@ import streamlit as st
 from src.diagnosis.variables import (
     LAYER_2_VARIABLES,
     SUB_CATEGORY_LABELS,
-    TOTAL_QUESTIONS,
     InputType,
     Variable,
     get_question_number,
     get_variables_by_sub_category,
 )
+from src.database import save_response_immediately
 
 PERCENT_SPLIT_FIELDS = {
     "base": "기본급",
@@ -25,28 +25,26 @@ PERCENT_SPLIT_FIELDS = {
     "equity": "지분보상",
 }
 
-SELECT_PLACEHOLDER = "선택해 주세요"
-
 SLIDER_OPTIONS = {
     "2-3-1": [
-        "비금전 가치 최우선",
+        "비금전 최우선",
         "비금전 위주",
         "균형",
         "금전 위주",
-        "금전 보상 최우선",
+        "금전 최우선",
     ],
     "2-4-2": [
         "완전 분리",
         "약한 연동",
-        "중간 연동",
+        "중간",
         "강한 연동",
-        "평가와 완전 동일",
+        "완전 동일",
     ],
     "2-4-3-ceo": ["1점", "2점", "3점", "4점", "5점"],
     "2-4-3-employee": ["1점", "2점", "3점", "4점", "5점"],
     "2-4-4": [
-        "거의 공감 못 함",
-        "일부만 공감",
+        "거의 못함",
+        "일부 공감",
         "보통",
         "대체로 공감",
         "강하게 공감",
@@ -187,23 +185,30 @@ def _render_question_heading(var: Variable) -> None:
     """질문 번호와 질문 텍스트를 함께 표시한다."""
     question_number = get_question_number(var.id)
     if question_number:
-        st.markdown(f"#### Q{question_number} / {TOTAL_QUESTIONS}. {var.label}")
+        st.markdown(f"#### Q{question_number}. {var.label}")
     else:
         st.markdown(f"#### {var.label}")
 
 
 def _render_single_select(var: Variable, responses: dict[str, Any], input_key: str) -> None:
     current = responses.get(var.id)
-    display_options = [SELECT_PLACEHOLDER] + var.options
-    selected = current if current in var.options else SELECT_PLACEHOLDER
+    if input_key in st.session_state and st.session_state[input_key] not in var.options:
+        del st.session_state[input_key]
+    if current is not None and current not in var.options:
+        responses.pop(var.id, None)
+        current = None
+    index = var.options.index(current) if current in var.options else None
     value = st.radio(
         label=var.label,
-        options=display_options,
-        index=display_options.index(selected),
+        options=var.options,
+        index=index,
         key=input_key,
         label_visibility="collapsed",
+        horizontal=False,
     )
-    responses[var.id] = None if value == SELECT_PLACEHOLDER else value
+    if value is not None:
+        responses[var.id] = value
+        _save_immediately(var.id, value)
 
 
 def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: str) -> None:
@@ -213,6 +218,7 @@ def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: st
     max_select = var.max_select or len(var.options)
     current = [item for item in current if item in var.options][:max_select]
     trimmed_extra_selection = False
+    was_initialized = input_key in st.session_state
     stored_value = st.session_state.get(input_key)
     if isinstance(stored_value, list) and len(stored_value) > max_select:
         st.session_state[input_key] = stored_value[:max_select]
@@ -233,32 +239,32 @@ def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: st
     if trimmed_extra_selection:
         st.warning(f"최대 {max_select}개까지만 선택됩니다.")
     responses[var.id] = value
+    if value or was_initialized:
+        _save_immediately(var.id, value)
 
 
 def _render_slider_5(var: Variable, responses: dict[str, Any], input_key: str) -> None:
-    current = responses.get(var.id, 3)
     options = SLIDER_OPTIONS.get(var.id, ["1", "2", "3", "4", "5"])
-    current_index = int(current) - 1 if isinstance(current, int) and 1 <= current <= 5 else 2
-    selected_value = options[current_index]
+    current_int = responses.get(var.id)
+    if input_key in st.session_state and st.session_state[input_key] not in options:
+        del st.session_state[input_key]
+    index = current_int - 1 if isinstance(current_int, int) and 1 <= current_int <= 5 else None
 
-    select_slider_kwargs: dict[str, Any] = {}
-    if input_key in st.session_state:
-        if st.session_state[input_key] not in options:
-            st.session_state[input_key] = selected_value
-    else:
-        select_slider_kwargs["value"] = selected_value
-
-    selected = st.select_slider(
+    selected = st.radio(
         label=var.label,
         options=options,
+        index=index,
         key=input_key,
         label_visibility="collapsed",
-        **select_slider_kwargs,
+        horizontal=True,
     )
     description = SLIDER_DESCRIPTIONS.get(var.id)
     if description:
         st.caption(description)
-    responses[var.id] = options.index(selected) + 1
+    if selected is not None:
+        value_int = options.index(selected) + 1
+        responses[var.id] = value_int
+        _save_immediately(var.id, value_int)
 
 
 def _render_slider_ratio(var: Variable, responses: dict[str, Any], input_key: str) -> None:
@@ -273,19 +279,22 @@ def _render_slider_ratio(var: Variable, responses: dict[str, Any], input_key: st
         label_visibility="collapsed",
     )
     responses[var.id] = selected
+    _save_immediately(var.id, selected)
 
 
 def _render_number(var: Variable, responses: dict[str, Any], input_key: str) -> None:
     current = responses.get(var.id, 0)
     if input_key not in st.session_state:
         st.session_state[input_key] = float(current) if isinstance(current, int | float) else 0.0
-    responses[var.id] = st.number_input(
+    value = st.number_input(
         label=var.label,
         min_value=0.0,
         step=1.0,
         key=input_key,
         label_visibility="collapsed",
     )
+    responses[var.id] = value
+    _save_immediately(var.id, value)
 
 
 def _render_percent_split(var: Variable, responses: dict[str, Any], input_key: str) -> None:
@@ -326,6 +335,7 @@ def _render_percent_split(var: Variable, responses: dict[str, Any], input_key: s
         values = {"base": base, "performance": performance, "equity": equity}
         total = sum(values.values())
         responses[var.id] = values
+        _save_immediately(var.id, values)
 
         if total == 0:
             st.caption("선택 입력입니다. 정확한 비율을 모르면 비워두어도 됩니다.")
@@ -356,6 +366,22 @@ def _is_empty_value(value: Any, input_type: InputType) -> bool:
     if input_type in (InputType.SLIDER_5, InputType.SLIDER_RATIO, InputType.NUMBER):
         return value is None
     return False
+
+
+def _save_immediately(var_id: str, value) -> None:
+    """위젯 값 변경 시 SQLite에 즉시 저장한다."""
+    session_id = st.session_state.get("session_id")
+    current_step = st.session_state.get("current_step", "layer2_a")
+
+    new_session_id = save_response_immediately(
+        variable_id=var_id,
+        value=value,
+        session_id=session_id,
+        current_step=current_step,
+    )
+
+    if session_id is None:
+        st.session_state.session_id = new_session_id
 
 
 def _should_render_variable(var: Variable, responses: dict[str, Any]) -> bool:
