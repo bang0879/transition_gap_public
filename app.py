@@ -19,16 +19,18 @@ from src.diagnosis.form_layer2 import (
 from src.diagnosis.variables import get_question_number
 from src.diagnosis.result_page import render_diagnosis_result
 from src.database import init_db, load_latest_session_snapshot, save_session
+from src.intro_page import render_intro_page
 from src.simulation.simulation_page import render_simulation_page
 
-STEP_ORDER = ["layer1", "layer2_a", "layer2_b", "layer2_c", "result", "simulation"]
+STEP_ORDER = ["intro", "layer1", "layer2_a", "layer2_b", "layer2_c", "result", "simulation"]
+INPUT_STEPS = {"intro", "layer1", "layer2_a", "layer2_b", "layer2_c"}
+RESULT_STEPS = {"result", "simulation"}
 LEGACY_STEP_MAP = {
-    "intro": "layer1",
     "layer2": "layer2_a",
 }
 
 if "current_step" not in st.session_state:
-    st.session_state.current_step = "layer1"
+    st.session_state.current_step = "intro"
 if "responses" not in st.session_state:
     st.session_state.responses = {}
 if "session_id" not in st.session_state:
@@ -88,6 +90,19 @@ def save_and_advance(next_step: str) -> None:
     st.rerun()
 
 
+def _is_all_input_complete() -> bool:
+    """모든 입력 단계 완료 여부."""
+    if get_layer1_missing():
+        return False
+    if get_layer2_a_missing():
+        return False
+    if get_layer2_b_missing():
+        return False
+    if get_layer2_c_missing():
+        return False
+    return True
+
+
 # ============================================================
 # 사이드바 — 진행 단계 표시
 # ============================================================
@@ -96,11 +111,12 @@ def render_sidebar() -> str:
     """사이드바 진행 단계 표시. 현재 단계 반환."""
     with st.sidebar:
         st.markdown("### Transition Gap")
-        st.caption("스타트업 인사제도 진단 도구")
+        st.caption("스타트업 인사제도 정합성 진단 도구")
         st.markdown("---")
 
         st.markdown("#### 진단 단계")
         steps = [
+            ("intro", "0. 시작 안내"),
             ("layer1", "1. 조직 컨텍스트"),
             ("layer2_a", "2-A. 인력 · 채용 진단"),
             ("layer2_b", "2-B. 보상 진단"),
@@ -110,14 +126,17 @@ def render_sidebar() -> str:
         ]
 
         current_step = st.session_state.current_step
-        current_idx = STEP_ORDER.index(current_step) if current_step in STEP_ORDER else 0
+        all_complete = _is_all_input_complete()
 
         for step_id, step_label in steps:
-            step_idx = STEP_ORDER.index(step_id)
+            is_current = step_id == current_step
+            is_accessible = step_id in INPUT_STEPS or (
+                step_id in RESULT_STEPS and all_complete
+            )
 
-            if step_id == current_step:
+            if is_current:
                 st.markdown(f"**▶ {step_label}**")
-            elif step_idx < current_idx:
+            elif is_accessible:
                 if st.button(
                     f"  {step_label}",
                     key=f"nav_{step_id}",
@@ -126,22 +145,22 @@ def render_sidebar() -> str:
                     save_and_advance(step_id)
             else:
                 st.markdown(
-                    f"<span style='color: #A0AAB5;'>  {step_label}</span>",
+                    f"<span style='color: #A0AAB5;'>  {step_label}</span> "
+                    f"<span style='font-size: 11px; color: #C9844A;'>입력 필요</span>",
                     unsafe_allow_html=True,
                 )
 
     return current_step
 
 
-def render_next_button(
+def render_step_navigation(
+    prev_step: str | None,
+    next_step: str | None,
+    next_label: str,
     is_complete: bool,
-    missing_vars: list,
-    next_step: str,
-    button_label: str,
-    back_step: str | None = None,
-    back_label: str | None = None,
+    missing_vars: list | None = None,
 ) -> None:
-    """다음 버튼과 미입력 항목 안내를 함께 렌더링한다."""
+    """단계 전환 버튼 표준 렌더링."""
     st.markdown("---")
 
     if not is_complete and missing_vars:
@@ -168,18 +187,26 @@ def render_next_button(
             unsafe_allow_html=True,
         )
 
-    col1, col2 = st.columns([1, 5])
+    col1, col2 = st.columns(2)
     with col1:
-        if back_step and back_label:
-            if st.button(back_label, use_container_width=True):
-                save_and_advance(back_step)
-        if st.button(
-            button_label,
-            disabled=not is_complete,
-            use_container_width=True,
-            type="primary",
-        ):
-            save_and_advance(next_step)
+        if prev_step:
+            if st.button(
+                "← 이전",
+                key=f"prev_btn_{prev_step}",
+                use_container_width=True,
+            ):
+                save_and_advance(prev_step)
+
+    with col2:
+        if next_step:
+            if st.button(
+                next_label,
+                disabled=not is_complete,
+                key=f"next_btn_{next_step}",
+                use_container_width=True,
+                type="primary",
+            ):
+                save_and_advance(next_step)
 
 
 # ============================================================
@@ -194,83 +221,79 @@ def main() -> None:
     current_step = render_sidebar()
 
     st.title("Transition Gap")
-    st.caption("AI 시대 한국 스타트업 인사제도 진단/설계 도구")
+    st.caption("스타트업 인사제도 정합성 진단 도구")
     st.markdown("---")
 
-    if current_step == "layer1":
+    if current_step == "intro":
+        render_intro_page()
+        render_step_navigation(
+            prev_step=None,
+            next_step="layer1",
+            next_label="진단 시작 →",
+            is_complete=True,
+        )
+
+    elif current_step == "layer1":
         is_complete = render_layer1_form()
         missing = get_layer1_missing()
-        render_next_button(
+        render_step_navigation(
+            prev_step=None,
+            next_step="layer2_a",
+            next_label="다음 →",
             is_complete=is_complete,
             missing_vars=missing,
-            next_step="layer2_a",
-            button_label="다음: 인력 · 채용 진단 →",
         )
 
     elif current_step == "layer2_a":
         is_complete = render_layer2_a_form()
         missing = get_layer2_a_missing()
-        render_next_button(
+        render_step_navigation(
+            prev_step="layer1",
+            next_step="layer2_b",
+            next_label="다음 →",
             is_complete=is_complete,
             missing_vars=missing,
-            next_step="layer2_b",
-            button_label="다음: 보상 진단 →",
-            back_step="layer1",
-            back_label="← 이전",
         )
 
     elif current_step == "layer2_b":
         is_complete = render_layer2_b_form()
         missing = get_layer2_b_missing()
-        render_next_button(
+        render_step_navigation(
+            prev_step="layer2_a",
+            next_step="layer2_c",
+            next_label="다음 →",
             is_complete=is_complete,
             missing_vars=missing,
-            next_step="layer2_c",
-            button_label="다음: 평가 · 리더십 진단 →",
-            back_step="layer2_a",
-            back_label="← 이전",
         )
 
     elif current_step == "layer2_c":
         is_complete = render_layer2_c_form()
         missing = get_layer2_c_missing()
-        render_next_button(
+        render_step_navigation(
+            prev_step="layer2_b",
+            next_step="result",
+            next_label="진단 결과 →",
             is_complete=is_complete,
             missing_vars=missing,
-            next_step="result",
-            button_label="진단 결과 보기 →",
-            back_step="layer2_b",
-            back_label="← 이전",
         )
 
     elif current_step == "result":
         render_diagnosis_result()
-
-        st.markdown("---")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button(
-                "← 인사제도 현황 진단으로 돌아가기",
-                use_container_width=True,
-            ):
-                save_and_advance("layer2_c")
-        with col2:
-            if st.button(
-                "트레이드오프 진단 보기 →",
-                use_container_width=True,
-                type="primary",
-            ):
-                save_and_advance("simulation")
+        render_step_navigation(
+            prev_step="layer2_c",
+            next_step="simulation",
+            next_label="트레이드오프 진단 →",
+            is_complete=True,
+        )
 
     elif current_step == "simulation":
         render_simulation_page()
-
-        st.markdown("---")
-        col1, col2 = st.columns([1, 5])
-        with col1:
-            if st.button("← 진단 결과로 돌아가기", use_container_width=True):
-                save_and_advance("result")
-            st.button("시나리오 보기", disabled=True, use_container_width=True)
+        render_step_navigation(
+            prev_step="result",
+            next_step=None,
+            next_label="",
+            is_complete=True,
+        )
 
     else:
         st.info(f"단계 '{current_step}' 는 아직 구현되지 않았습니다.")

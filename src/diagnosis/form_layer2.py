@@ -27,36 +27,48 @@ PERCENT_SPLIT_FIELDS = {
 
 SLIDER_OPTIONS = {
     "2-3-1": [
-        "비금전 최우선",
+        "비금전적 가치 최우선",
         "비금전 위주",
         "균형",
         "금전 위주",
-        "금전 최우선",
+        "금전적 보상 최우선",
     ],
     "2-4-2": [
         "완전 분리",
         "약한 연동",
-        "중간",
+        "중간 연동",
         "강한 연동",
-        "완전 동일",
+        "보상과 완전 연동",
     ],
-    "2-4-3-ceo": ["1점", "2점", "3점", "4점", "5점"],
-    "2-4-3-employee": ["1점", "2점", "3점", "4점", "5점"],
+    "2-4-3-ceo": [
+        "1점 (전혀 공정하지 않음)",
+        "2점",
+        "3점 (보통)",
+        "4점",
+        "5점 (매우 공정)",
+    ],
+    "2-4-3-employee": [
+        "1점 (직원들 매우 부정적)",
+        "2점",
+        "3점 (보통)",
+        "4점",
+        "5점 (직원들이 공정하다고 볼 것)",
+    ],
     "2-4-4": [
         "거의 못함",
-        "일부 공감",
+        "일부만 공감",
         "보통",
         "대체로 공감",
         "강하게 공감",
     ],
 }
 
-SLIDER_DESCRIPTIONS = {
-    "2-3-1": "우수 인재를 무엇으로 설득하는지 — 비전·자율성·성장(좌) vs 파격 연봉·성과급(우)",
-    "2-4-2": "평가 결과가 실제 보상(연봉·성과급)에 얼마나 직접 반영되는지",
-    "2-4-3-ceo": "대표님이 생각하는 현재 평가 제도의 공정성 (5점 만점)",
-    "2-4-3-employee": "직원들이 매길 것으로 예상되는 공정성 점수 (5점 만점)",
-    "2-4-4": "회사 장기 비전에 대한 리더급 이상의 공감 수준",
+SLIDER_SPECTRUM = {
+    "2-3-1": ("← 비금전적 가치 최우선", "금전적 보상 최우선 →"),
+    "2-4-2": ("← 완전 분리", "보상과 완전 연동 →"),
+    "2-4-3-ceo": ("← 전혀 공정하지 않음", "매우 공정 →"),
+    "2-4-3-employee": ("← 직원들 매우 부정적", "직원들이 공정하다고 볼 것 →"),
+    "2-4-4": ("← 거의 공감 못함", "강하게 공감 →"),
 }
 
 
@@ -65,7 +77,7 @@ def render_layer2_a_form() -> bool:
     st.markdown("## 인사제도 현황 진단 (1/3)")
     st.caption("인력 안정성 및 채용 파이프라인 — 약 4분 소요")
     st.info(
-        "지금부터 본격적인 진단입니다. 대표님이 생각하는 '이상적인 방향'과 "
+        "지금부터 본격적인 진단입니다. 회사가 생각하는 '이상적인 방향'과 "
         "조직의 '실제 운영 상태' 사이의 간극(Gap)을 찾습니다."
     )
 
@@ -245,26 +257,34 @@ def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: st
 
 def _render_slider_5(var: Variable, responses: dict[str, Any], input_key: str) -> None:
     options = SLIDER_OPTIONS.get(var.id, ["1", "2", "3", "4", "5"])
+    spectrum = SLIDER_SPECTRUM.get(var.id)
+    if spectrum:
+        left, right = spectrum
+        st.markdown(
+            f'<div style="display: flex; justify-content: space-between; '
+            f'font-size: 12px; color: #6C7A89; margin-bottom: 4px;">'
+            f'<span>{left}</span><span>{right}</span></div>',
+            unsafe_allow_html=True,
+        )
+
     current_int = responses.get(var.id)
     if input_key in st.session_state and st.session_state[input_key] not in options:
         del st.session_state[input_key]
-    index = current_int - 1 if isinstance(current_int, int) and 1 <= current_int <= 5 else None
+    if isinstance(current_int, int) and 1 <= current_int <= 5:
+        current_label = options[current_int - 1]
+    else:
+        current_label = options[2]
 
-    selected = st.radio(
+    selected = st.select_slider(
         label=var.label,
         options=options,
-        index=index,
+        value=current_label,
         key=input_key,
         label_visibility="collapsed",
-        horizontal=True,
     )
-    description = SLIDER_DESCRIPTIONS.get(var.id)
-    if description:
-        st.caption(description)
-    if selected is not None:
-        value_int = options.index(selected) + 1
-        responses[var.id] = value_int
-        _save_immediately(var.id, value_int)
+    value_int = options.index(selected) + 1
+    responses[var.id] = value_int
+    _save_immediately(var.id, value_int)
 
 
 def _render_slider_ratio(var: Variable, responses: dict[str, Any], input_key: str) -> None:
