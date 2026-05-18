@@ -24,8 +24,12 @@ def render_simulation_page() -> None:
         st.warning("진단 응답이 없습니다. Layer 1부터 시작해 주세요.")
         return
 
-    st.markdown("## 트레이드오프 진단")
-    st.caption("귀사의 현재 위치를 두 가지 매트릭스에서 분석합니다.")
+    st.markdown("## 트레이드오프 시뮬레이션")
+    st.markdown(
+        "인사제도의 모든 선택에는 반대급부가 있습니다. "
+        "보상을 높이면 인건비가 올라가고, 평가를 정교하게 하면 운영 비용이 증가합니다. "
+        "아래 매트릭스는 귀사의 현재 위치와 개선 방향 간의 트레이드오프를 보여줍니다."
+    )
 
     st.info(
         "**풍선 효과(Balloon Effect)**: 한쪽 가치를 강하게 누르면 다른 쪽의 비용이 부풀어 오를 수 있습니다. "
@@ -37,6 +41,12 @@ def render_simulation_page() -> None:
 
     coords = calculate_coordinates(responses)
     visibility = calculate_visibility_index(responses)
+
+    if visibility.score < 60:
+        st.warning(
+            "HR 데이터 가시성이 낮아 아래 시뮬레이션 결과의 정확도가 제한적입니다. "
+            "시나리오별 수치는 참고용으로 활용하시고, 데이터 인프라 구축 후 재진단을 권고합니다."
+        )
 
     _render_warnings(coords.pain_point_dispersion, visibility.score)
     selected_scenario = st.session_state.get("selected_scenario", "performance")
@@ -108,7 +118,10 @@ def _render_scenario_selection(responses: dict) -> None:
     """실행 로드맵 기준이 될 시나리오를 선택한다."""
     st.markdown("---")
     st.markdown("### 실행 시나리오 선택")
-    st.caption("위 시나리오 분석을 참고하여, 실행할 전략 방향을 선택하세요.")
+    st.markdown(
+        "위 3가지 시나리오를 비교하신 후, 귀사에 가장 적합한 방향을 선택해주세요. "
+        "선택에 따라 실행 로드맵이 자동으로 생성됩니다."
+    )
 
     if st.session_state.get("selected_scenario") not in SCENARIO_IDS:
         st.session_state["selected_scenario"] = "performance"

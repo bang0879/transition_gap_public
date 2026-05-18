@@ -19,6 +19,8 @@ from src.diagnosis.variables import (
 )
 from src.database import save_response_immediately
 
+HAS_FRAGMENT = hasattr(st, "fragment")
+
 PERCENT_SPLIT_FIELDS = {
     "base": "기본급",
     "performance": "성과급",
@@ -83,6 +85,11 @@ SLIDER_SPECTRUM = {
     "2-4-3-employee": ("← 직원들 매우 부정적", "직원들이 공정하다고 볼 것 →"),
     "2-4-4": ("← 거의 공감 못함", "강하게 공감 →"),
 }
+
+
+def _maybe_fragment(func):
+    """Streamlit 버전에 따라 fragment 데코레이터를 적용한다."""
+    return st.fragment(func) if HAS_FRAGMENT else func
 
 
 def render_layer2_a_form() -> bool:
@@ -271,40 +278,34 @@ def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: st
 
 
 def _render_slider_5(var: Variable, responses: dict[str, Any], input_key: str) -> None:
-    options = SLIDER_OPTIONS.get(var.id, ["1", "2", "3", "4", "5"])
-    _render_slider_spectrum(var.id)
-
-    current_int = responses.get(var.id)
-    if input_key in st.session_state and st.session_state[input_key] not in options:
-        del st.session_state[input_key]
-    if isinstance(current_int, int) and 1 <= current_int <= 5:
-        current_label = options[current_int - 1]
-    else:
-        current_label = options[2]
-
-    selected = st.select_slider(
-        label=var.label,
-        options=options,
-        value=current_label,
-        key=input_key,
-        label_visibility="collapsed",
-    )
-    value_int = options.index(selected) + 1
-    responses[var.id] = value_int
-    _save_immediately(var.id, value_int)
+    _render_slider_fragment(var, responses, input_key)
 
 
 def _render_slider_10(var: Variable, responses: dict[str, Any], input_key: str) -> None:
-    options = SLIDER_OPTIONS_10.get(var.id, [f"{i}점" for i in range(1, 11)])
+    _render_slider_fragment(var, responses, input_key)
+
+
+@_maybe_fragment
+def _render_slider_fragment(var: Variable, responses: dict[str, Any], input_key: str) -> None:
+    """슬라이더 입력을 부분 rerun 블록으로 렌더링한다."""
+    if var.input_type == InputType.SLIDER_10:
+        options = SLIDER_OPTIONS_10.get(var.id, [f"{i}점" for i in range(1, 11)])
+        max_value = 10
+        fallback_index = 4
+    else:
+        options = SLIDER_OPTIONS.get(var.id, ["1", "2", "3", "4", "5"])
+        max_value = 5
+        fallback_index = 2
+
     _render_slider_spectrum(var.id)
 
     current_int = responses.get(var.id)
     if input_key in st.session_state and st.session_state[input_key] not in options:
         del st.session_state[input_key]
-    if isinstance(current_int, int) and 1 <= current_int <= 10:
+    if isinstance(current_int, int) and 1 <= current_int <= max_value:
         current_label = options[current_int - 1]
     else:
-        current_label = options[4]
+        current_label = options[fallback_index]
 
     selected = st.select_slider(
         label=var.label,

@@ -36,6 +36,7 @@ class AreaAnalysis:
     issues: list[Issue]
     recommendation: str
     tags: list[str] = field(default_factory=list)
+    score_breakdown: list[dict[str, Any]] = field(default_factory=list)
 
 
 def analyze_all_areas(responses: dict[str, Any]) -> list[AreaAnalysis]:
@@ -113,7 +114,7 @@ def get_cross_domain_insights(
 
 
 def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
-    score = _calc_compensation_score(responses)
+    score, score_breakdown = _calc_compensation_score(responses)
     benchmark = 70
     gap = benchmark - score
 
@@ -193,7 +194,11 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
         )
 
     if issues:
-        recommendation = f"귀사의 보상 구조에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+        reason = _get_trigger_reason(issues[0], responses)
+        recommendation = (
+            f"귀사의 보상 구조에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"현재 {reason} 상황을 고려할 때, "
+        )
         if market_position in ("하위", "중위"):
             recommendation += "1단계로 밴드형 급여와 제한적 성과급을 설계해 오퍼 경쟁력부터 회복하십시오."
         else:
@@ -213,36 +218,53 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
         issues=issues[:3],
         recommendation=recommendation,
         tags=tags,
+        score_breakdown=score_breakdown,
     )
 
 
-def _calc_compensation_score(responses: dict[str, Any]) -> int:
+def _calc_compensation_score(responses: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     score = 50
+    breakdown = [_score_item("기본 점수", "-", 50, "모든 영역 공통 시작점")]
     market = responses.get("2-3-5", "")
     if market == "상위":
         score += 20
+        breakdown.append(_score_item("시장 보상 수준", market, 20, "상위권 보상 경쟁력"))
     elif market == "중위":
         score += 5
+        breakdown.append(_score_item("시장 보상 수준", market, 5, "중위권 보상 경쟁력"))
     elif market == "하위":
         score -= 15
+        breakdown.append(_score_item("시장 보상 수준", market, -15, "시장 하위권"))
 
     eval_link = _as_int(responses.get("2-4-2"), 3)
-    score += (eval_link - 3) * 5
+    link_impact = (eval_link - 3) * 5
+    score += link_impact
+    link_text = {
+        1: "완전 분리",
+        2: "약한 연동",
+        3: "중간 연동",
+        4: "강한 연동",
+        5: "완전 연동",
+    }.get(eval_link, f"{eval_link}점")
+    breakdown.append(_score_item("평가-보상 연동", link_text, link_impact, "5점 척도 기반"))
 
     cost = responses.get("2-3-3", "")
     if cost in ("20% 미만", "20~35%"):
         score += 5
+        breakdown.append(_score_item("인건비 비중", cost, 5, "관리 가능한 범위"))
     elif _is_high_cost_ratio(cost):
         score -= 5
+        breakdown.append(_score_item("인건비 비중", cost, -5, "높은 고정비 부담"))
 
     if "단기 성과형" in str(responses.get("2-3-2", "")):
         score += 5
+        breakdown.append(_score_item("보상 구조", responses.get("2-3-2", ""), 5, "성과급 구조 존재"))
 
-    return _clamp_score(score)
+    return _finalize_score(score, breakdown)
 
 
 def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
-    score = _calc_evaluation_score(responses)
+    score, score_breakdown = _calc_evaluation_score(responses)
     benchmark = 75
     gap = benchmark - score
 
@@ -345,9 +367,19 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         )
 
     if not _is_evaluation_active(eval_cycle):
-        recommendation = "가장 시급한 과제는 '평가 체계 구축'입니다. MBO 기본 도입부터 시작해 목표 정렬을 만드십시오."
+        top_issue = issues[0] if issues else Issue("평가 체계 부재", "", "high")
+        reason = _get_trigger_reason(top_issue, responses)
+        recommendation = (
+            "가장 시급한 과제는 '평가 체계 구축'입니다. "
+            f"현재 {reason} 상황을 고려할 때, "
+            "MBO 기본 도입부터 시작해 목표 정렬을 만드십시오."
+        )
     elif issues:
-        recommendation = f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+        reason = _get_trigger_reason(issues[0], responses)
+        recommendation = (
+            f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"현재 {reason} 상황을 고려할 때, "
+        )
         if _is_small_org(responses.get("L1-2")):
             recommendation += "관대한 절대평가와 격주 1on1로 시작하고, 보상 연동은 1~2사이클 안착 후 진행하십시오."
         else:
@@ -367,30 +399,40 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         issues=issues[:3],
         recommendation=recommendation,
         tags=tags,
+        score_breakdown=score_breakdown,
     )
 
 
-def _calc_evaluation_score(responses: dict[str, Any]) -> int:
+def _calc_evaluation_score(responses: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     score = 50
+    breakdown = [_score_item("기본 점수", "-", 50, "모든 영역 공통 시작점")]
     if _is_evaluation_active(responses.get("2-4-1a")):
         score += 15
+        breakdown.append(_score_item("평가 운영 여부", responses.get("2-4-1a", ""), 15, "정기 평가 운영"))
     else:
         score -= 20
+        breakdown.append(_score_item("평가 운영 여부", responses.get("2-4-1a", ""), -20, "공식 평가 체계 부재"))
 
     eval_link = _as_int(responses.get("2-4-2"), 3)
-    score += (eval_link - 3) * 5
+    link_impact = (eval_link - 3) * 5
+    score += link_impact
+    breakdown.append(_score_item("평가-보상 연동", f"{eval_link}점/5점", link_impact, "5점 척도 기반"))
 
     ceo_fair = _as_int(responses.get("2-4-3-ceo"), 5)
     emp_fair = _as_int(responses.get("2-4-3-employee"), 5)
     avg_fair = (ceo_fair + emp_fair) / 2
-    score += int((avg_fair - 5) * 3)
-    score -= max(0, ceo_fair - emp_fair) * 4
+    fairness_impact = int((avg_fair - 5) * 3)
+    gap_impact = -(max(0, ceo_fair - emp_fair) * 4)
+    score += fairness_impact
+    score += gap_impact
+    breakdown.append(_score_item("평가 공정성 평균", f"{avg_fair:.1f}점/10점", fairness_impact, "CEO/직원 예상 평균"))
+    breakdown.append(_score_item("공정성 인식 갭", f"{ceo_fair - emp_fair}점", gap_impact, "CEO 인식이 직원 예상보다 높을 때 감점"))
 
-    return _clamp_score(score)
+    return _finalize_score(score, breakdown)
 
 
 def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
-    score = _calc_recruitment_score(responses)
+    score, score_breakdown = _calc_recruitment_score(responses)
     benchmark = 75
     gap = benchmark - score
 
@@ -463,7 +505,11 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
         )
 
     if issues:
-        recommendation = f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+        reason = _get_trigger_reason(issues[0], responses)
+        recommendation = (
+            f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"현재 {reason} 상황을 고려할 때, "
+        )
         if issues[0].title in ("오퍼 경쟁력 부족", "채용-보상 미스매치"):
             recommendation += "보상 구조 개선이 선행되어야 채용 효율이 자연 상승합니다."
         elif issues[0].title == "채용 소요 기간 과다":
@@ -485,42 +531,54 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
         issues=issues[:3],
         recommendation=recommendation,
         tags=tags,
+        score_breakdown=score_breakdown,
     )
 
 
-def _calc_recruitment_score(responses: dict[str, Any]) -> int:
+def _calc_recruitment_score(responses: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     score = 60
+    breakdown = [_score_item("기본 점수", "-", 60, "채용 영역 시작점")]
     duration = responses.get("2-2-1", "")
     if duration == "2개월 이내":
         score += 15
+        breakdown.append(_score_item("채용 소요 기간", duration, 15, "빠른 채용 속도"))
     elif duration == "2~4개월":
         score += 5
+        breakdown.append(_score_item("채용 소요 기간", duration, 5, "관리 가능한 범위"))
     elif duration in ("4~6개월", "6개월 초과"):
         score -= 15
+        breakdown.append(_score_item("채용 소요 기간", duration, -15, "핵심 포지션 채용 지연"))
     elif duration == "모름 / 채용 자체 없음":
         score -= 5
+        breakdown.append(_score_item("채용 소요 기간", duration, -5, "측정/운영 정보 부족"))
 
     channels = responses.get("2-2-2", "")
     if channels == "4개 이상":
         score += 10
+        breakdown.append(_score_item("채용 채널 수", channels, 10, "다채널 후보자 풀"))
     elif channels == "2~3개":
         score += 5
+        breakdown.append(_score_item("채용 채널 수", channels, 5, "기본 채널 확보"))
     elif channels == "1개":
         score -= 10
+        breakdown.append(_score_item("채용 채널 수", channels, -10, "채널 집중 리스크"))
 
     rejection = responses.get("2-2-3", "")
     if rejection == "거의 없음":
         score += 5
+        breakdown.append(_score_item("오퍼 거절 빈도", rejection, 5, "오퍼 수락 안정"))
     elif rejection == "가끔":
         score -= 5
+        breakdown.append(_score_item("오퍼 거절 빈도", rejection, -5, "오퍼 경쟁력 점검 필요"))
     elif rejection == "자주":
         score -= 15
+        breakdown.append(_score_item("오퍼 거절 빈도", rejection, -15, "오퍼 경쟁력 취약"))
 
-    return _clamp_score(score)
+    return _finalize_score(score, breakdown)
 
 
 def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
-    score = _calc_retention_score(responses)
+    score, score_breakdown = _calc_retention_score(responses)
     benchmark = 72
     gap = benchmark - score
 
@@ -592,7 +650,11 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
         )
 
     if issues:
-        recommendation = f"귀사의 인력 안정성에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+        reason = _get_trigger_reason(issues[0], responses)
+        recommendation = (
+            f"귀사의 인력 안정성에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"현재 {reason} 상황을 고려할 때, "
+        )
         if issues[0].title == "핵심 인재 유출 위기":
             recommendation += "즉시 리텐션 패키지와 Stay Interview를 도입하되, 보상 경쟁력과 평가 공정성도 함께 점검하십시오."
         elif issues[0].title == "이직률 사각지대":
@@ -616,39 +678,58 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
         issues=issues[:3],
         recommendation=recommendation,
         tags=tags,
+        score_breakdown=score_breakdown,
     )
 
 
-def _calc_retention_score(responses: dict[str, Any]) -> int:
+def _calc_retention_score(responses: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     score = 60
+    breakdown = [_score_item("기본 점수", "-", 60, "인력 안정성 영역 시작점")]
     turnover = responses.get("2-1-1", "")
     if turnover == "10% 미만":
         score += 15
+        breakdown.append(_score_item("자발적 이직률", turnover, 15, "안정적 이직률"))
     elif turnover == "10~20%":
         score += 3
+        breakdown.append(_score_item("자발적 이직률", turnover, 3, "주의 관찰 구간"))
     elif turnover == "20% 초과":
         score -= 18
+        breakdown.append(_score_item("자발적 이직률", turnover, -18, "높은 이탈 위험"))
     elif turnover == "모름 / 측정 안 함":
         score -= 8
+        breakdown.append(_score_item("자발적 이직률", turnover, -8, "가시성 부족"))
 
     core_loss_severity = calculate_core_talent_loss_severity(responses)
-    score -= int(core_loss_severity * 18)
+    core_loss_impact = -(int(core_loss_severity * 18))
+    score += core_loss_impact
+    breakdown.append(
+        _score_item(
+            "핵심 인재 이탈 심각도",
+            f"{core_loss_severity:.2f}",
+            core_loss_impact,
+            "인원 규모와 이탈 인원 교차 계산",
+        )
+    )
 
     early_quit = responses.get("2-1-3", "")
     if early_quit == "10% 미만":
         score += 10
+        breakdown.append(_score_item("신규 입사자 조기 퇴사율", early_quit, 10, "온보딩 안정"))
     elif early_quit == "10~30%":
         score += 0
+        breakdown.append(_score_item("신규 입사자 조기 퇴사율", early_quit, 0, "중립 구간"))
     elif early_quit == "30% 초과":
         score -= 15
+        breakdown.append(_score_item("신규 입사자 조기 퇴사율", early_quit, -15, "온보딩 실패 위험"))
     elif early_quit == "모름 / 측정 안 함":
         score -= 5
+        breakdown.append(_score_item("신규 입사자 조기 퇴사율", early_quit, -5, "가시성 부족"))
 
-    return _clamp_score(score)
+    return _finalize_score(score, breakdown)
 
 
 def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
-    score = _calc_leadership_score(responses)
+    score, score_breakdown = _calc_leadership_score(responses)
     benchmark = 75
     gap = benchmark - score
 
@@ -728,7 +809,11 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
         )
 
     if issues:
-        recommendation = f"귀사의 리더십·거버넌스에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+        reason = _get_trigger_reason(issues[0], responses)
+        recommendation = (
+            f"귀사의 리더십·거버넌스에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"현재 {reason} 상황을 고려할 때, "
+        )
         if issues[0].title == "의사결정 병목":
             recommendation += "전결권 위임 체계를 설계하고 팀장급 역할을 재정의하십시오."
         elif issues[0].title == "리더 피드백 역량 부족":
@@ -752,41 +837,138 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
         issues=issues[:3],
         recommendation=recommendation,
         tags=tags,
+        score_breakdown=score_breakdown,
     )
 
 
-def _calc_leadership_score(responses: dict[str, Any]) -> int:
+def _calc_leadership_score(responses: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     score = 60
+    breakdown = [_score_item("기본 점수", "-", 60, "리더십·거버넌스 영역 시작점")]
     feedback = responses.get("2-5-1", "")
     if feedback == "대부분 객관적으로 잘 수행함":
         score += 15
+        breakdown.append(_score_item("리더 피드백 역량", feedback, 15, "피드백 전달 역량 양호"))
     elif feedback == "갈등을 피하거나 온정주의가 있음":
         score -= 8
+        breakdown.append(_score_item("리더 피드백 역량", feedback, -8, "온정주의/회피 경향"))
     elif feedback == "대표인 내가 직접 나서야 해결됨":
         score -= 15
+        breakdown.append(_score_item("리더 피드백 역량", feedback, -15, "대표 의존도 높음"))
 
     one_on_one = responses.get("2-5-2", "")
     if one_on_one == "운영함":
         score += 10
+        breakdown.append(_score_item("1on1 운영", one_on_one, 10, "정기 소통 채널 확보"))
     elif one_on_one == "일부 운영":
         score += 2
+        breakdown.append(_score_item("1on1 운영", one_on_one, 2, "부분 운영"))
     elif one_on_one == "운영 안 함":
         score -= 10
+        breakdown.append(_score_item("1on1 운영", one_on_one, -10, "정기 소통 채널 부재"))
 
     if _has_ceo_bottleneck(responses.get("2-5-4", ""), responses.get("2-5-5", "")):
         score -= 12
+        breakdown.append(_score_item("의사결정 구조", "CEO 집중", -12, "채용/배포 승인 병목"))
 
     core_values = responses.get("2-5-6", "")
     if core_values == "명확한 기준으로 작동함":
         score += 10
+        breakdown.append(_score_item("핵심가치 작동성", core_values, 10, "채용·평가 기준으로 작동"))
     elif core_values == "문서로만 존재함":
         score -= 8
+        breakdown.append(_score_item("핵심가치 작동성", core_values, -8, "선언에 머무름"))
 
-    return _clamp_score(score)
+    return _finalize_score(score, breakdown)
 
 
 def _text(value: Any) -> str:
     return str(value) if value not in (None, "") else "미입력"
+
+
+def _score_item(factor: str, value: Any, impact: int, note: str = "") -> dict[str, Any]:
+    """점수 산출 근거 항목을 생성한다."""
+    return {
+        "factor": factor,
+        "value": _text(value),
+        "impact": impact,
+        "note": note,
+    }
+
+
+def _finalize_score(score: int, breakdown: list[dict[str, Any]]) -> tuple[int, list[dict[str, Any]]]:
+    """최종 점수를 0~100으로 제한하고 산출 근거에 합계를 추가한다."""
+    final_score = _clamp_score(score)
+    breakdown.append(_score_item("최종 점수", "-", final_score, f"= {final_score}점"))
+    return final_score, breakdown
+
+
+def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
+    """이슈의 트리거 근거를 자연어로 반환한다."""
+    reasons = {
+        "보상-성과 연동 부재": (
+            f"평가는 운영하나 보상과의 연동이 "
+            f"'{responses.get('2-4-2', '?')}점/5점'으로 약한"
+        ),
+        "시장 경쟁력 열위": f"시장 대비 보상이 '{responses.get('2-3-5', '?')}'인",
+        "인건비 효율성 저하": (
+            f"인건비 비중이 '{responses.get('2-3-3', '?')}'로 높으면서 "
+            "성과 연동이 약한"
+        ),
+        "성과급 구조 부재": f"보상 구조가 '{responses.get('2-3-2', '?')}'인",
+        "복리후생 과잉 투자": (
+            f"복리후생 수준은 '{responses.get('2-3-6', '?')}'이나 "
+            f"시장 보상이 '{responses.get('2-3-5', '?')}'인"
+        ),
+        "대표-직원 공정성 인식 갭 심각": (
+            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
+            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
+        ),
+        "대표-직원 공정성 인식 갭 위험": (
+            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
+            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식 차이가 있는"
+        ),
+        "대표-직원 공정성 인식 갭 주의": "대표와 직원 간 공정성 인식에 차이가 있는",
+        "평가-보상 디커플링": (
+            f"평가-보상 연동이 '{responses.get('2-4-2', '?')}점/5점'인"
+        ),
+        "평가 체계 부재": "공식적인 정기 평가 체계가 없는",
+        "리더 비전 공감 부족": (
+            f"리더 비전 공감도가 '{responses.get('2-4-4', '?')}점/5점'인"
+        ),
+        "평가 데이터 사각지대": "평가 운영 데이터를 측정하고 있지 않은",
+        "채용 소요 기간 과다": f"핵심 포지션 채용에 '{responses.get('2-2-1', '?')}'이 소요되는",
+        "채널 집중 리스크": f"채용 채널이 '{responses.get('2-2-2', '?')}'에 집중된",
+        "오퍼 경쟁력 부족": (
+            f"오퍼 거절 경험이 있으면서 보상이 시장 '{responses.get('2-3-5', '?')}'인"
+        ),
+        "채용-보상 미스매치": (
+            f"채용 기조가 '{responses.get('L1-4', '?')}'인데 보상이 시장 "
+            f"'{responses.get('2-3-5', '?')}'인"
+        ),
+        "채용 브랜딩 부재": (
+            f"채용 채널이 '{responses.get('2-2-2', '?')}'이고 채용 소요 기간이 "
+            f"'{responses.get('2-2-1', '?')}'인"
+        ),
+        "핵심 인재 유출 위기": f"핵심 인재 이탈이 '{responses.get('2-1-2', '?')}'인",
+        "높은 자발적 이직률": f"자발적 이직률이 '{responses.get('2-1-1', '?')}'인",
+        "온보딩 실패": f"신규 입사자 조기 퇴사율이 '{responses.get('2-1-3', '?')}'인",
+        "이직률 사각지대": "이직률이나 조기퇴사율을 측정하고 있지 않은",
+        "보상-리텐션 디커플링": (
+            f"이직률이 '{responses.get('2-1-1', '?')}'이고 보상이 시장 "
+            f"'{responses.get('2-3-5', '?')}'인"
+        ),
+        "리더 피드백 역량 부족": (
+            f"리더의 피드백 전달 역량이 '{responses.get('2-5-1', '?')}'인"
+        ),
+        "1on1 부재/형식화": f"정기 1on1이 '{responses.get('2-5-2', '?')}' 상태인",
+        "의사결정 병목": "CEO가 주요 채용/배포 의사결정을 직접 승인하는",
+        "핵심가치 형해화": "핵심가치가 문서로만 존재하는",
+        "거버넌스 미성숙": (
+            f"조직 규모가 '{responses.get('L1-2', '?')}'인데 실무진 채용 승인이 "
+            f"'{responses.get('2-5-4', '?')}'인"
+        ),
+    }
+    return reasons.get(issue.title, "현재 조직 상황의")
 
 
 def _as_int(value: Any, default: int) -> int:

@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import json
 from typing import Final
 
 import plotly.graph_objects as go
@@ -24,7 +25,12 @@ TIER_COLORS: Final[dict[str, str]] = {
 
 
 def render_diagnosis_result() -> None:
-    """진단 결과 페이지를 렌더링한다."""
+    """이전 라우팅 호환용: 진단 결과 요약 페이지를 렌더링한다."""
+    render_result_summary()
+
+
+def render_result_summary() -> None:
+    """진단 결과 요약 페이지를 렌더링한다."""
     responses = st.session_state.get("responses", {})
 
     if not responses:
@@ -32,37 +38,78 @@ def render_diagnosis_result() -> None:
         return
 
     result = calculate_visibility_index(responses)
+    areas = _get_cached_areas(responses)
+    cross_insights = get_cross_domain_insights(areas, responses)
 
-    st.markdown("## 진단 결과")
-    st.caption("입력하신 데이터를 바탕으로 1차 진단 결과를 보여드립니다.")
-    st.markdown("---")
-
-    st.markdown("### HR 데이터 가시성")
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        _render_visibility_gauge(result)
-
-    with col2:
-        _render_visibility_details(result)
-
-    st.markdown("---")
+    st.markdown("## 진단 결과 요약")
     st.markdown(
-        """
-        > **제도 정렬의 첫 단계는 사각지대를 데이터로 비추는 것입니다.**
-        >
-        > 제도를 더하는 것보다 먼저, 지금 무엇을 보고 있고 무엇을 보지 못하는지
-        > 확인해야 실행 가능한 로드맵을 만들 수 있습니다.
-        """
+        "30여 개 문항에 대한 귀사의 응답을 분석했습니다. "
+        "5개 영역(보상·평가·채용·인력·리더십)의 현황을 종합하여 "
+        "전체 정합성과 개선 우선순위를 보여드립니다."
     )
+    st.markdown("---")
 
-    st.info(
-        "**입력이 완료되었습니다.**\n\n"
-        "입력하신 데이터를 바탕으로 다음 단계에서 전환 갭의 우선순위와 "
-        "시뮬레이션 가능 범위를 검토합니다."
+    if result.score < 60:
+        st.error(
+            "데이터 가시성 경고 — 현재 귀사의 HR 데이터 가시성이 "
+            f"{result.score:.1f}%로 낮아, 본 진단 결과는 추정치에 기반하고 있습니다. "
+            "모든 제도 개선에 앞서 데이터 측정 인프라 구축이 0순위 과제입니다."
+        )
+
+    _render_summary_dashboard(result, areas)
+
+    if cross_insights:
+        st.markdown("---")
+        st.markdown("### 핵심 인사이트")
+        for insight in cross_insights:
+            st.info(insight)
+
+    st.markdown("---")
+    st.markdown("### 어디를 먼저 개선해야 하는가")
+    st.markdown(
+        "아래 점수는 귀사의 설문 응답을 기반으로 자동 산출된 것이며, "
+        "100점 만점입니다. 목표는 동종업계 스타트업 벤치마크 기준입니다."
     )
+    _render_gap_table(areas)
 
-    _render_area_analysis(responses)
+    st.markdown("---")
+    st.info("각 영역의 현황·이슈·제도 옵션·벤치마크 상세는 다음 페이지(영역별 상세 분석)에서 확인하세요.")
+
+
+def render_result_detail() -> None:
+    """영역별 상세 분석 페이지를 렌더링한다."""
+    responses = st.session_state.get("responses", {})
+
+    if not responses:
+        st.warning("진단 응답이 없습니다. Layer 1부터 시작해 주세요.")
+        return
+
+    areas = _get_cached_areas(responses)
+
+    st.markdown("## 영역별 상세 분석")
+    st.markdown(
+        "각 영역의 현황을 진단하고, 주요 이슈와 개선 옵션을 제시합니다. "
+        "점수 산출 근거도 함께 확인하실 수 있습니다."
+    )
+    st.markdown("---")
+
+    tab_labels = [f"{_get_grade_label(area.score)} {area.area_name}" for area in areas]
+    tabs = st.tabs(tab_labels)
+    for tab, area in zip(tabs, areas):
+        with tab:
+            _render_area_detail(area)
+
+
+def _get_cached_areas(responses: dict) -> list[AreaAnalysis]:
+    """응답이 바뀌지 않았으면 영역 분석 결과를 session_state 캐시에서 재사용한다."""
+    responses_hash = json.dumps(responses, sort_keys=True, ensure_ascii=False, default=str)
+    if (
+        "cached_areas" not in st.session_state
+        or st.session_state.get("_responses_hash") != responses_hash
+    ):
+        st.session_state["cached_areas"] = analyze_all_areas(responses)
+        st.session_state["_responses_hash"] = responses_hash
+    return st.session_state["cached_areas"]
 
 
 def build_visibility_gauge(result: VisibilityResult) -> go.Figure:
@@ -142,6 +189,84 @@ def _render_visibility_details(result: VisibilityResult) -> None:
             st.markdown(f"- {label}")
     else:
         st.markdown("**모든 핵심 지표가 측정되고 있습니다.**")
+
+
+def _render_summary_dashboard(result: VisibilityResult, areas: list[AreaAnalysis]) -> None:
+    """정합성 지수와 가시성 지수를 요약 카드와 차트로 표시한다."""
+    consistency_score = round(sum(area.score for area in areas) / len(areas)) if areas else 0
+
+    st.markdown("### 핵심 지수")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric(
+            label="정합성 지수",
+            value=f"{consistency_score}점",
+            delta=f"5개 영역 평균 · {_get_grade_label(consistency_score)}",
+            delta_color="off",
+        )
+        st.caption("귀사의 인사제도 구성요소들이 서로 얼마나 일관되게 작동하는지를 나타냅니다.")
+    with col2:
+        st.metric(
+            label="HR 데이터 가시성 지수",
+            value=f"{result.score:.1f}%",
+            delta=f"{_format_number(result.numerator)} / {result.denominator}개 핵심 지표 측정 중",
+            delta_color="off",
+        )
+        st.caption("인력 현황을 데이터로 파악하고 있는 정도를 나타냅니다. 측정하지 않는 것은 관리할 수 없습니다.")
+
+    st.markdown("")
+    col1, col2 = st.columns([1, 1.4])
+    with col1:
+        _render_visibility_gauge(result)
+    with col2:
+        _render_area_radar(areas)
+
+    _render_visibility_details(result)
+
+
+def _render_area_radar(areas: list[AreaAnalysis]) -> None:
+    """5개 영역 점수를 레이더 차트로 표시한다."""
+    if not areas:
+        return
+
+    labels = [area.area_name for area in areas]
+    scores = [area.score for area in areas]
+    benchmarks = [area.benchmark for area in areas]
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatterpolar(
+            r=scores + [scores[0]],
+            theta=labels + [labels[0]],
+            fill="toself",
+            name="현재",
+            line=dict(color="#94A3B8"),
+            fillcolor="rgba(148, 163, 184, 0.18)",
+        )
+    )
+    fig.add_trace(
+        go.Scatterpolar(
+            r=benchmarks + [benchmarks[0]],
+            theta=labels + [labels[0]],
+            fill="toself",
+            name="목표",
+            line=dict(color="#4F9A86", dash="dot"),
+            fillcolor="rgba(79, 154, 134, 0.08)",
+        )
+    )
+    fig.update_layout(
+        height=300,
+        margin=dict(l=40, r=40, t=30, b=20),
+        polar=dict(
+            radialaxis=dict(visible=True, range=[0, 100], tickfont=dict(size=10)),
+            bgcolor=COLORS["background"],
+        ),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        paper_bgcolor=COLORS["background"],
+        font=dict(family=FONT_FAMILY, size=12, color=COLORS["text_primary"]),
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 def _render_area_analysis(responses: dict) -> None:
@@ -277,6 +402,26 @@ def _render_gap_table(areas: list[AreaAnalysis]) -> None:
 
 def _render_area_detail(area: AreaAnalysis) -> None:
     """한 영역의 5단 상세 분석을 렌더링한다."""
+    grade = _get_grade_label(area.score)
+    grade_color = _get_grade_color(area.score)
+    st.markdown(
+        f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">'
+        f'<div style="font-size:28px;font-weight:700;color:{grade_color};">'
+        f'{area.score}<span style="font-size:14px;color:#94A3B8;">/100</span></div>'
+        f'<div>'
+        f'<span style="display:inline-block;padding:4px 12px;border-radius:999px;'
+        f'font-size:13px;font-weight:600;background:{grade_color}20;color:{grade_color};">'
+        f'{grade}</span>'
+        f'<span style="font-size:12px;color:#94A3B8;margin-left:8px;">'
+        f'목표: {area.benchmark}점 (동종업계 벤치마크)</span>'
+        f'</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("이 점수는 어떻게 산출되었나요?"):
+        _render_score_breakdown(area)
+
     st.markdown("**1. 현황 진단**")
     st.markdown(area.status_text)
     _render_tags(area.tags)
@@ -295,6 +440,45 @@ def _render_area_detail(area: AreaAnalysis) -> None:
     st.markdown("")
     st.markdown("**5. 추천 방향**")
     st.success(area.recommendation)
+
+
+def _render_score_breakdown(area: AreaAnalysis) -> None:
+    """점수 산출 근거를 항목별로 표시한다."""
+    if not area.score_breakdown:
+        st.caption("산출 근거 데이터가 없습니다.")
+        return
+
+    for item in area.score_breakdown:
+        if item["factor"] in ("기본 점수", "최종 점수"):
+            continue
+
+        impact = item["impact"]
+        if impact > 0:
+            impact_text = f"+{impact}점"
+            impact_color = "#14B8A6"
+        elif impact < 0:
+            impact_text = f"{impact}점"
+            impact_color = "#E11D48"
+        else:
+            impact_text = "±0점"
+            impact_color = "#94A3B8"
+
+        note = f'<span style="font-size:11px;color:#A0AAB5;margin-left:8px;">{item["note"]}</span>' if item.get("note") else ""
+        st.markdown(
+            f'<div style="display:flex;justify-content:space-between;align-items:center;'
+            f'gap:12px;padding:6px 0;border-bottom:1px solid #F1F5F9;">'
+            f'<div>'
+            f'<span style="font-size:13px;color:#1E293B;">{item["factor"]}</span>'
+            f'<span style="font-size:12px;color:#94A3B8;margin-left:8px;">'
+            f'({item["value"]})</span>{note}'
+            f'</div>'
+            f'<span style="font-size:13px;font-weight:600;color:{impact_color};white-space:nowrap;">'
+            f'{impact_text}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.caption(f"기본 점수에서 귀사 응답에 따라 가감하여 최종 {area.score}점이 산출되었습니다.")
 
 
 def _render_tags(tags: list[str]) -> None:
@@ -390,6 +574,28 @@ def _severity_label(gap: int) -> str:
     if gap >= 10:
         return "[주의]"
     return "[양호]"
+
+
+def _get_grade_label(score: int) -> str:
+    """점수를 정성 등급으로 변환한다."""
+    if score >= 80:
+        return "양호"
+    if score >= 60:
+        return "보통"
+    if score >= 40:
+        return "주의"
+    return "개선 필요"
+
+
+def _get_grade_color(score: int) -> str:
+    """정성 등급별 색상을 반환한다."""
+    if score >= 80:
+        return "#14B8A6"
+    if score >= 60:
+        return "#F59E0B"
+    if score >= 40:
+        return "#F97316"
+    return "#E11D48"
 
 
 def _format_gap(gap: int) -> str:

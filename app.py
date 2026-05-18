@@ -17,16 +17,26 @@ from src.diagnosis.form_layer2 import (
     render_layer2_c_form,
 )
 from src.diagnosis.variables import get_question_number
-from src.diagnosis.result_page import render_diagnosis_result
+from src.diagnosis.result_page import render_result_detail, render_result_summary
 from src.database import init_db, load_latest_session_snapshot, save_session
 from src.intro_page import render_intro_page
 from src.simulation.simulation_page import render_simulation_page
 
-STEP_ORDER = ["intro", "layer1", "layer2_a", "layer2_b", "layer2_c", "result", "simulation"]
+STEP_ORDER = [
+    "intro",
+    "layer1",
+    "layer2_a",
+    "layer2_b",
+    "layer2_c",
+    "result_summary",
+    "result_detail",
+    "simulation",
+]
 INPUT_STEPS = {"intro", "layer1", "layer2_a", "layer2_b", "layer2_c"}
-RESULT_STEPS = {"result", "simulation"}
+RESULT_STEPS = {"result_summary", "result_detail", "simulation"}
 LEGACY_STEP_MAP = {
     "layer2": "layer2_a",
+    "result": "result_summary",
 }
 
 if "current_step" not in st.session_state:
@@ -123,8 +133,9 @@ def render_sidebar() -> str:
             ("layer2_a", "2-A. 인력 · 채용 진단"),
             ("layer2_b", "2-B. 보상 진단"),
             ("layer2_c", "2-C. 평가 · 리더십 진단"),
-            ("result", "3. 진단 결과"),
-            ("simulation", "4. 트레이드오프 진단"),
+            ("result_summary", "3. 진단 결과 요약"),
+            ("result_detail", "3-2. 영역별 상세 분석"),
+            ("simulation", "4. 트레이드오프 시뮬레이션"),
         ]
 
         current_step = st.session_state.current_step
@@ -273,25 +284,34 @@ def main() -> None:
         missing = get_layer2_c_missing()
         render_step_navigation(
             prev_step="layer2_b",
-            next_step="result",
+            next_step="result_summary",
             next_label="진단 결과 →",
             is_complete=is_complete,
             missing_vars=missing,
         )
 
-    elif current_step == "result":
-        render_diagnosis_result()
+    elif current_step == "result_summary":
+        render_result_summary()
         render_step_navigation(
             prev_step="layer2_c",
+            next_step="result_detail",
+            next_label="영역별 상세 분석 →",
+            is_complete=True,
+        )
+
+    elif current_step == "result_detail":
+        render_result_detail()
+        render_step_navigation(
+            prev_step="result_summary",
             next_step="simulation",
-            next_label="트레이드오프 진단 →",
+            next_label="트레이드오프 시뮬레이션 →",
             is_complete=True,
         )
 
     elif current_step == "simulation":
         render_simulation_page()
         render_step_navigation(
-            prev_step="result",
+            prev_step="result_detail",
             next_step=None,
             next_label="",
             is_complete=True,
