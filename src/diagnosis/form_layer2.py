@@ -40,26 +40,39 @@ SLIDER_OPTIONS = {
         "강한 연동",
         "보상과 완전 연동",
     ],
-    "2-4-3-ceo": [
-        "1점 (전혀 공정하지 않음)",
-        "2점",
-        "3점 (보통)",
-        "4점",
-        "5점 (매우 공정)",
-    ],
-    "2-4-3-employee": [
-        "1점 (직원들 매우 부정적)",
-        "2점",
-        "3점 (보통)",
-        "4점",
-        "5점 (직원들이 공정하다고 볼 것)",
-    ],
     "2-4-4": [
         "거의 못함",
         "일부만 공감",
         "보통",
         "대체로 공감",
         "강하게 공감",
+    ],
+}
+
+SLIDER_OPTIONS_10 = {
+    "2-4-3-ceo": [
+        "1점 (전혀 공정하지 않음)",
+        "2점",
+        "3점",
+        "4점",
+        "5점 (보통)",
+        "6점",
+        "7점",
+        "8점",
+        "9점",
+        "10점 (매우 공정)",
+    ],
+    "2-4-3-employee": [
+        "1점 (직원이 매우 부정적)",
+        "2점",
+        "3점",
+        "4점",
+        "5점 (보통)",
+        "6점",
+        "7점",
+        "8점",
+        "9점",
+        "10점 (직원도 공정하다고 볼 것)",
     ],
 }
 
@@ -183,6 +196,8 @@ def _render_variable(var: Variable, responses: dict[str, Any]) -> None:
         _render_multi_select(var, responses, input_key)
     elif var.input_type == InputType.SLIDER_5:
         _render_slider_5(var, responses, input_key)
+    elif var.input_type == InputType.SLIDER_10:
+        _render_slider_10(var, responses, input_key)
     elif var.input_type == InputType.SLIDER_RATIO:
         _render_slider_ratio(var, responses, input_key)
     elif var.input_type == InputType.NUMBER:
@@ -257,15 +272,7 @@ def _render_multi_select(var: Variable, responses: dict[str, Any], input_key: st
 
 def _render_slider_5(var: Variable, responses: dict[str, Any], input_key: str) -> None:
     options = SLIDER_OPTIONS.get(var.id, ["1", "2", "3", "4", "5"])
-    spectrum = SLIDER_SPECTRUM.get(var.id)
-    if spectrum:
-        left, right = spectrum
-        st.markdown(
-            f'<div style="display: flex; justify-content: space-between; '
-            f'font-size: 12px; color: #6C7A89; margin-bottom: 4px;">'
-            f'<span>{left}</span><span>{right}</span></div>',
-            unsafe_allow_html=True,
-        )
+    _render_slider_spectrum(var.id)
 
     current_int = responses.get(var.id)
     if input_key in st.session_state and st.session_state[input_key] not in options:
@@ -285,6 +292,44 @@ def _render_slider_5(var: Variable, responses: dict[str, Any], input_key: str) -
     value_int = options.index(selected) + 1
     responses[var.id] = value_int
     _save_immediately(var.id, value_int)
+
+
+def _render_slider_10(var: Variable, responses: dict[str, Any], input_key: str) -> None:
+    options = SLIDER_OPTIONS_10.get(var.id, [f"{i}점" for i in range(1, 11)])
+    _render_slider_spectrum(var.id)
+
+    current_int = responses.get(var.id)
+    if input_key in st.session_state and st.session_state[input_key] not in options:
+        del st.session_state[input_key]
+    if isinstance(current_int, int) and 1 <= current_int <= 10:
+        current_label = options[current_int - 1]
+    else:
+        current_label = options[4]
+
+    selected = st.select_slider(
+        label=var.label,
+        options=options,
+        value=current_label,
+        key=input_key,
+        label_visibility="collapsed",
+    )
+    value_int = options.index(selected) + 1
+    responses[var.id] = value_int
+    _save_immediately(var.id, value_int)
+
+
+def _render_slider_spectrum(var_id: str) -> None:
+    spectrum = SLIDER_SPECTRUM.get(var_id)
+    if not spectrum:
+        return
+
+    left, right = spectrum
+    st.markdown(
+        f'<div style="display: flex; justify-content: space-between; '
+        f'font-size: 12px; color: #6C7A89; margin-bottom: 4px;">'
+        f'<span>{left}</span><span>{right}</span></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_slider_ratio(var: Variable, responses: dict[str, Any], input_key: str) -> None:
@@ -383,7 +428,12 @@ def _is_empty_value(value: Any, input_type: InputType) -> bool:
         return not isinstance(value, list) or len(value) == 0
     if input_type == InputType.SINGLE_SELECT:
         return value == ""
-    if input_type in (InputType.SLIDER_5, InputType.SLIDER_RATIO, InputType.NUMBER):
+    if input_type in (
+        InputType.SLIDER_5,
+        InputType.SLIDER_10,
+        InputType.SLIDER_RATIO,
+        InputType.NUMBER,
+    ):
         return value is None
     return False
 

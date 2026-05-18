@@ -25,6 +25,7 @@ class InputType(str, Enum):
     SINGLE_SELECT = "single_select"      # 단일 선택 (radio/selectbox)
     MULTI_SELECT = "multi_select"        # 다중 선택 (multiselect)
     SLIDER_5 = "slider_5"                # 1~5 슬라이더
+    SLIDER_10 = "slider_10"              # 1~10 슬라이더
     SLIDER_RATIO = "slider_ratio"        # 0~1 비율 슬라이더
     NUMBER = "number"                    # 숫자 입력
     PERCENT_SPLIT = "percent_split"      # 비율 분배 (보상 구조 2단계)
@@ -348,15 +349,15 @@ LAYER_2_VARIABLES: list[Variable] = [
         id="2-4-3-ceo",
         layer="L2",
         sub_category="2-4",
-        label="우리 평가 제도의 공정성은?",
-        input_type=InputType.SLIDER_5,
+        label="우리 회사의 평가 제도가 공정하게 운영되고 있다고 생각하십니까?",
+        input_type=InputType.SLIDER_10,
     ),
     Variable(
         id="2-4-3-employee",
         layer="L2",
         sub_category="2-4",
-        label="블라인드/잡플래닛에서 직원들은 몇 점을 줄 것이라 예상하십니까?",
-        input_type=InputType.SLIDER_5,
+        label="직원들도 현재 평가 제도를 공정하다고 느낄 것이라 생각하십니까?",
+        input_type=InputType.SLIDER_10,
         helper_text="이 차이가 회사 인식과 현장 인식의 갭을 보여줍니다.",
     ),
     Variable(
@@ -494,7 +495,7 @@ SHORT_LABELS_BY_ID: dict[str, str] = {
     "2-4-1c": "평가 지표 성격",
     "2-4-1d": "피드백 및 수용성 관리",
     "2-4-2": "평가-보상 연동 수준",
-    "2-4-3-ceo": "회사 인식 공정성",
+    "2-4-3-ceo": "대표 인식 공정성",
     "2-4-3-employee": "직원 예상 공정성",
     "2-4-4": "리더급 비전 공감도",
     "2-4-5": "평가 운영 데이터 트래킹",
@@ -572,7 +573,12 @@ def _is_empty(value, input_type: InputType) -> bool:
         return not isinstance(value, list) or len(value) == 0
     if input_type == InputType.SINGLE_SELECT:
         return value == ""
-    if input_type in (InputType.SLIDER_5, InputType.SLIDER_RATIO, InputType.NUMBER):
+    if input_type in (
+        InputType.SLIDER_5,
+        InputType.SLIDER_10,
+        InputType.SLIDER_RATIO,
+        InputType.NUMBER,
+    ):
         return value is None
     return False
 

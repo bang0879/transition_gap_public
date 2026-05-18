@@ -63,7 +63,7 @@ def calculate_matrix_a_x(responses: dict[str, Any]) -> float:
         quantitative_score = max(0.0, 1.0 - (equity_pct / 30.0))
 
     philosophy = _as_int(responses.get("2-3-1"), default=3)
-    philosophy_score = (philosophy - 1) / 4
+    philosophy_score = _normalize_slider("2-3-1", philosophy)
 
     if quantitative_score is not None:
         x = (archetype_score * 0.5) + (quantitative_score * 0.3) + (philosophy_score * 0.2)
@@ -76,7 +76,7 @@ def calculate_matrix_a_x(responses: dict[str, Any]) -> float:
 def calculate_matrix_a_y(responses: dict[str, Any]) -> float:
     """매트릭스 A Y축: 팀 시너지 (0.0) ↔ 개인 압도적 성과 (1.0)."""
     linkage = _as_int(responses.get("2-4-2"), default=3)
-    linkage_score = (linkage - 1) / 4
+    linkage_score = _normalize_slider("2-4-2", linkage)
 
     eval_indicator_map = {
         "KPI / MBO 등 정량·실적 중심": 0.8,
@@ -288,6 +288,12 @@ def _as_float(value: Any) -> float:
     if isinstance(value, int | float):
         return float(value)
     return 0.0
+
+
+def _normalize_slider(var_id: str, value: int) -> float:
+    """슬라이더 값을 0~1 범위로 정규화한다."""
+    denominator = 10 if var_id in ("2-4-3-ceo", "2-4-3-employee") else 5
+    return _clamp(value / denominator)
 
 
 def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:

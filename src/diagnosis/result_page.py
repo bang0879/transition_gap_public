@@ -10,6 +10,8 @@ from typing import Final
 import plotly.graph_objects as go
 import streamlit as st
 
+from src.data.hr_options import BENCHMARKS, OPTIONS_MAP
+from src.diagnosis.analysis_engine import AreaAnalysis, analyze_all_areas, get_cross_domain_insights
 from src.diagnosis.visibility_index import VisibilityResult, calculate_visibility_index
 from src.theme import COLORS, FONT_FAMILY
 
@@ -59,6 +61,8 @@ def render_diagnosis_result() -> None:
         "입력하신 데이터를 바탕으로 다음 단계에서 전환 갭의 우선순위와 "
         "시뮬레이션 가능 범위를 검토합니다."
     )
+
+    _render_area_analysis(responses)
 
 
 def build_visibility_gauge(result: VisibilityResult) -> go.Figure:
@@ -138,6 +142,175 @@ def _render_visibility_details(result: VisibilityResult) -> None:
             st.markdown(f"- {label}")
     else:
         st.markdown("**모든 핵심 지표가 측정되고 있습니다.**")
+
+
+def _render_area_analysis(responses: dict) -> None:
+    """5개 영역 상세 분석을 렌더링한다."""
+    areas = analyze_all_areas(responses)
+    cross_insights = get_cross_domain_insights(areas, responses)
+
+    st.markdown("---")
+
+    if cross_insights:
+        st.markdown("### Expert Insight")
+        for insight in cross_insights:
+            st.info(insight)
+        st.markdown("---")
+
+    st.markdown("### 어디를 먼저 개선해야 하는가")
+    st.caption("5개 영역의 현재 수준과 목표 수준의 갭을 비교합니다.")
+    _render_gap_table(areas)
+
+    st.markdown("---")
+    st.markdown("### 영역별 상세 분석")
+
+    for area in areas:
+        severity_label = _severity_label(area.gap)
+        with st.expander(
+            f"{severity_label} {area.area_name} — {area.score}점 ({_format_gap(area.gap)})",
+            expanded=area.priority in (1, 2),
+        ):
+            _render_area_detail(area)
+
+
+def _render_gap_table(areas: list[AreaAnalysis]) -> None:
+    """영역별 갭 비교 테이블을 렌더링한다."""
+    import pandas as pd
+
+    rows = [
+        {
+            "영역": area.area_name,
+            "As-Is": area.score,
+            "To-Be": area.benchmark,
+            "갭": _format_gap(area.gap),
+            "난이도": area.difficulty,
+            "우선순위": f"#{area.priority}" if area.priority > 0 else "—",
+        }
+        for area in areas
+    ]
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def _render_area_detail(area: AreaAnalysis) -> None:
+    """한 영역의 5단 상세 분석을 렌더링한다."""
+    st.markdown("**1. 현황 진단**")
+    st.markdown(area.status_text)
+    _render_tags(area.tags)
+
+    st.markdown("")
+    st.markdown("**2. 주요 이슈**")
+    if area.issues:
+        for issue in area.issues:
+            _render_issue_card(issue.title, issue.description, issue.severity)
+    else:
+        st.caption("현재 응답 기준으로 즉시 대응이 필요한 주요 이슈는 감지되지 않았습니다.")
+
+    _render_option_table(area)
+    _render_benchmark(area)
+
+    st.markdown("")
+    st.markdown("**5. 추천 방향**")
+    st.success(area.recommendation)
+
+
+def _render_tags(tags: list[str]) -> None:
+    """현황 태그를 pill 형태로 렌더링한다."""
+    if not tags:
+        return
+
+    tag_html = " ".join(
+        f'<span style="display:inline-block;padding:3px 10px;border-radius:999px;'
+        f'font-size:12px;background:#F1F5F9;color:#475569;margin:2px 4px 2px 0;">'
+        f'{tag}</span>'
+        for tag in tags
+    )
+    st.markdown(tag_html, unsafe_allow_html=True)
+
+
+def _render_issue_card(title: str, description: str, severity: str) -> None:
+    """주요 이슈 카드를 렌더링한다."""
+    color = {
+        "high": "#C8465A",
+        "medium": "#C9844A",
+        "low": "#4F9A86",
+    }.get(severity, COLORS["text_secondary"])
+    st.markdown(
+        f'<div style="padding:12px;border-radius:8px;background:#F8F9FB;'
+        f'border:1px solid #E5E8EC;margin-bottom:8px;">'
+        f'<p style="font-size:14px;font-weight:600;color:#2C3E50;margin:0 0 4px 0;">'
+        f'<span style="color:{color};">●</span> {title}</p>'
+        f'<p style="font-size:13px;color:#6C7A89;line-height:1.6;margin:0;">'
+        f'{description}</p>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_option_table(area: AreaAnalysis) -> None:
+    """제도 옵션 비교 테이블을 렌더링한다."""
+    options = OPTIONS_MAP.get(area.area_id, [])
+    if not options:
+        return
+
+    st.markdown("**3. 제도 옵션 비교**")
+    import pandas as pd
+
+    include_cycle = any("cycle" in option for option in options)
+    rows = []
+    for option in options:
+        name = option["name"]
+        if option.get("recommended"):
+            name = f"추천: {name}"
+        row = {
+            "옵션": name,
+            "특징": option["feature"],
+            "적합 조건": option["fit"],
+            "장점": option["pro"],
+            "단점": option["con"],
+        }
+        if include_cycle:
+            row = {
+                "옵션": name,
+                "주기": option.get("cycle", "—"),
+                **{key: value for key, value in row.items() if key != "옵션"},
+            }
+        rows.append(row)
+
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.caption("추천 표시는 현재 응답 조건에서 우선 검토할 수 있는 옵션입니다.")
+
+
+def _render_benchmark(area: AreaAnalysis) -> None:
+    """벤치마크 데이터를 렌더링한다."""
+    benchmark = BENCHMARKS.get(area.area_id)
+    if not benchmark:
+        return
+
+    st.markdown("**4. 벤치마크**")
+    st.caption(benchmark["title"])
+    for item in benchmark["items"]:
+        col1, col2 = st.columns([1, 1.4])
+        with col1:
+            st.markdown(f"**{item['label']}**")
+        with col2:
+            st.markdown(item["value"])
+            st.caption(item["note"])
+    if benchmark.get("disclaimer"):
+        st.markdown(f"*{benchmark['disclaimer']}*")
+
+
+def _severity_label(gap: int) -> str:
+    """갭 크기별 상태 라벨."""
+    if gap >= 20:
+        return "[위험]"
+    if gap >= 10:
+        return "[주의]"
+    return "[양호]"
+
+
+def _format_gap(gap: int) -> str:
+    """갭을 부호 있는 문자열로 표시한다."""
+    return f"+{gap}" if gap >= 0 else str(gap)
 
 
 def _format_number(value: float) -> str:
