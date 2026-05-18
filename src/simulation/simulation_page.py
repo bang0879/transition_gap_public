@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.diagnosis.scenario_renderer import render_scenario_detail
 from src.diagnosis.visibility_index import calculate_visibility_index
 from src.simulation.matrix import render_matrix_a, render_matrix_b
 from src.simulation.trade_off import MatrixCoordinates, calculate_coordinates
@@ -39,6 +40,7 @@ def render_simulation_page() -> None:
     _render_matrix_a(coords, visibility.score)
     _render_matrix_b(coords, visibility.score)
     _render_summary(coords.matrix_a_quadrant, coords.matrix_b_quadrant)
+    render_scenario_detail(responses)
 
 
 def _render_warnings(pain_point_dispersion: float, visibility_score: float) -> None:

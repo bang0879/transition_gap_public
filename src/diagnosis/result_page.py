@@ -174,21 +174,105 @@ def _render_area_analysis(responses: dict) -> None:
 
 
 def _render_gap_table(areas: list[AreaAnalysis]) -> None:
-    """영역별 갭 비교 테이블을 렌더링한다."""
-    import pandas as pd
+    """영역별 갭 비교를 Plotly 수평 바 차트로 렌더링한다."""
+    y_positions = list(range(len(areas)))
+    area_names = [area.area_name for area in areas]
+    as_is_scores = [area.score for area in areas]
+    gap_values = [max(area.gap, 0) for area in areas]
 
-    rows = [
-        {
-            "영역": area.area_name,
-            "As-Is": area.score,
-            "To-Be": area.benchmark,
-            "갭": _format_gap(area.gap),
-            "난이도": area.difficulty,
-            "우선순위": f"#{area.priority}" if area.priority > 0 else "—",
-        }
-        for area in areas
-    ]
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            y=y_positions,
+            x=as_is_scores,
+            orientation="h",
+            name="현재 (As-Is)",
+            marker_color="#94A3B8",
+            text=[f"{score}점" for score in as_is_scores],
+            textposition="inside",
+            textfont=dict(color="white", size=12),
+            customdata=area_names,
+            hovertemplate="%{customdata}<br>현재 %{x}점<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            y=y_positions,
+            x=gap_values,
+            orientation="h",
+            name="갭 (Gap)",
+            marker_color="#F87171",
+            text=[_format_gap(area.gap) for area in areas],
+            textposition="inside",
+            textfont=dict(color="white", size=12),
+            customdata=area_names,
+            hovertemplate="%{customdata}<br>개선 갭 %{text}<extra></extra>",
+        )
+    )
+
+    for position, area in zip(y_positions, areas):
+        fig.add_trace(
+            go.Scatter(
+                x=[area.benchmark, area.benchmark],
+                y=[position - 0.32, position + 0.32],
+                mode="lines",
+                line=dict(color="#4F9A86", width=2, dash="dot"),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
+        fig.add_annotation(
+            x=area.benchmark,
+            y=position,
+            text=f"목표 {area.benchmark}",
+            showarrow=False,
+            xanchor="left",
+            xshift=6,
+            font=dict(size=10, color="#4F9A86"),
+        )
+
+    fig.update_layout(
+        barmode="stack",
+        height=300,
+        margin=dict(l=10, r=70, t=10, b=20),
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        xaxis=dict(range=[0, 100], title="점수", showgrid=True, gridcolor="#F1F5F9"),
+        yaxis=dict(
+            tickmode="array",
+            tickvals=y_positions,
+            ticktext=area_names,
+            autorange="reversed",
+        ),
+        plot_bgcolor=COLORS["background"],
+        paper_bgcolor=COLORS["background"],
+        font=dict(family=FONT_FAMILY, size=12, color=COLORS["text_primary"]),
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    cols = st.columns(len(areas))
+    for col, area in zip(cols, areas):
+        with col:
+            st.markdown(f"**{area.area_name}**")
+            if area.priority > 0:
+                priority_color = "#C8465A" if area.priority <= 2 else "#C9844A"
+                st.markdown(
+                    f'<span style="display:inline-block;padding:2px 8px;border-radius:999px;'
+                    f'font-size:11px;background:{priority_color};color:white;margin-right:4px;">'
+                    f'P{area.priority}</span>',
+                    unsafe_allow_html=True,
+                )
+            difficulty_color = {
+                "높음": "#C8465A",
+                "중간": "#C9844A",
+                "낮음": "#4F9A86",
+            }.get(area.difficulty, COLORS["text_secondary"])
+            st.markdown(
+                f'<span style="display:inline-block;padding:2px 8px;border-radius:999px;'
+                f'font-size:11px;background:#F8F9FB;color:{difficulty_color};'
+                f'border:1px solid {difficulty_color};">난이도: {area.difficulty}</span>',
+                unsafe_allow_html=True,
+            )
 
 
 def _render_area_detail(area: AreaAnalysis) -> None:
