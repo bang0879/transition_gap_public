@@ -27,10 +27,30 @@ SCENARIOS = {
             {"metric": "평가 수용성", "before": "현재 수준", "after": "도입 초기 -20%, 6개월 후 +30%", "direction": "neutral"},
         ],
         "financial_impact": [
-            {"item": "인건비 증가", "amount": "+15~25%", "note": "성과급 확대 + 시장 보상 조정"},
-            {"item": "채용 비용 절감", "amount": "-20~30%", "note": "오퍼 수락률 상승으로 채용 사이클 단축"},
-            {"item": "교육/코칭 투자", "amount": "+500~1,000만/년", "note": "리더십 코칭 프로그램"},
-            {"item": "순 ROI (12개월)", "amount": "인건비 대비 +8~15%", "note": "이탈 방지 + 생산성 향상 효과"},
+            {
+                "item": "인건비 증가",
+                "amount": "+15~25%",
+                "note": "성과급 확대 + 시장 보상 조정",
+                "color_intent": "negative",
+            },
+            {
+                "item": "채용 비용 절감",
+                "amount": "-20~30%",
+                "note": "오퍼 수락률 상승으로 채용 사이클 단축",
+                "color_intent": "positive",
+            },
+            {
+                "item": "교육/코칭 투자",
+                "amount": "+500~1,000만/년",
+                "note": "리더십 코칭 프로그램",
+                "color_intent": "negative",
+            },
+            {
+                "item": "순 ROI (12개월)",
+                "amount": "인건비 대비 +8~15%",
+                "note": "이탈 방지 + 생산성 향상 효과",
+                "color_intent": "positive",
+            },
         ],
         "warnings": [
             "평가 수용성이 낮은 조직에서 보상 차등을 먼저 도입하면 조직 갈등이 커질 수 있습니다.",
@@ -65,10 +85,30 @@ SCENARIOS = {
             {"metric": "고성과자 동기 부여", "before": "현재 수준", "after": "+5~10% (제한적)", "direction": "neutral"},
         ],
         "financial_impact": [
-            {"item": "인건비 증가", "amount": "+5~10%", "note": "팀 인센티브 도입"},
-            {"item": "채용 비용 절감", "amount": "-30~40%", "note": "리퍼럴 + 이직률 감소"},
-            {"item": "온보딩/교육 투자", "amount": "+300~500만/년", "note": "온보딩 프로그램 설계 운영"},
-            {"item": "순 ROI (12개월)", "amount": "인건비 대비 +5~10%", "note": "이탈 방지 중심 효과"},
+            {
+                "item": "인건비 증가",
+                "amount": "+5~10%",
+                "note": "팀 인센티브 도입",
+                "color_intent": "negative",
+            },
+            {
+                "item": "채용 비용 절감",
+                "amount": "-30~40%",
+                "note": "리퍼럴 + 이직률 감소",
+                "color_intent": "positive",
+            },
+            {
+                "item": "온보딩/교육 투자",
+                "amount": "+300~500만/년",
+                "note": "온보딩 프로그램 설계 운영",
+                "color_intent": "negative",
+            },
+            {
+                "item": "순 ROI (12개월)",
+                "amount": "인건비 대비 +5~10%",
+                "note": "이탈 방지 중심 효과",
+                "color_intent": "positive",
+            },
         ],
         "warnings": [
             "고성과자의 동기 부여가 제한적입니다. 시장 보상이 하위권이면 핵심인재는 결국 이탈합니다.",
@@ -103,10 +143,30 @@ SCENARIOS = {
             {"metric": "조직 내부 형평성", "before": "현재 수준", "after": "-30~40% (하락)", "direction": "down"},
         ],
         "financial_impact": [
-            {"item": "핵심인재 보상 증가", "amount": "+30~50% (대상 인원분)", "note": "Top 15% 시장 90%ile 보상"},
-            {"item": "채용 비용 증가", "amount": "+20~30%", "note": "헤드헌터 + 시니어 프리미엄"},
-            {"item": "비핵심 인력 관리 절감", "amount": "-10~15%", "note": "자연 감소 허용"},
-            {"item": "순 ROI (12개월)", "amount": "인건비 대비 +10~20%", "note": "소수 고성과 집중 효과"},
+            {
+                "item": "핵심인재 보상 증가",
+                "amount": "+30~50% (대상 인원분)",
+                "note": "Top 15% 시장 90%ile 보상",
+                "color_intent": "negative",
+            },
+            {
+                "item": "채용 비용 증가",
+                "amount": "+20~30%",
+                "note": "헤드헌터 + 시니어 프리미엄",
+                "color_intent": "negative",
+            },
+            {
+                "item": "비핵심 인력 관리 절감",
+                "amount": "-10~15%",
+                "note": "자연 감소 허용",
+                "color_intent": "positive",
+            },
+            {
+                "item": "순 ROI (12개월)",
+                "amount": "인건비 대비 +10~20%",
+                "note": "소수 고성과 집중 효과",
+                "color_intent": "positive",
+            },
         ],
         "warnings": [
             "핵심/비핵심 구분이 조직 내 계층 갈등을 유발할 수 있습니다.",

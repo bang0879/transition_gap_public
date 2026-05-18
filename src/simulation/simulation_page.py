@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.data.scenarios import SCENARIOS, SCENARIO_IDS
+from src.diagnosis.roadmap_renderer import render_roadmap
 from src.diagnosis.scenario_renderer import render_scenario_detail
 from src.diagnosis.visibility_index import calculate_visibility_index
 from src.simulation.matrix import render_matrix_a, render_matrix_b
@@ -37,10 +39,12 @@ def render_simulation_page() -> None:
     visibility = calculate_visibility_index(responses)
 
     _render_warnings(coords.pain_point_dispersion, visibility.score)
-    _render_matrix_a(coords, visibility.score)
-    _render_matrix_b(coords, visibility.score)
+    selected_scenario = st.session_state.get("selected_scenario", "performance")
+    _render_matrix_a(coords, visibility.score, selected_scenario)
+    _render_matrix_b(coords, visibility.score, selected_scenario)
     _render_summary(coords.matrix_a_quadrant, coords.matrix_b_quadrant)
     render_scenario_detail(responses)
+    _render_scenario_selection(responses)
 
 
 def _render_warnings(pain_point_dispersion: float, visibility_score: float) -> None:
@@ -58,24 +62,32 @@ def _render_warnings(pain_point_dispersion: float, visibility_score: float) -> N
         )
 
 
-def _render_matrix_a(coords: MatrixCoordinates, visibility_score: float) -> None:
+def _render_matrix_a(
+    coords: MatrixCoordinates,
+    visibility_score: float,
+    selected_scenario: str,
+) -> None:
     """매트릭스 A를 표시한다."""
     st.markdown("### 매트릭스 A: 누구를 위한 조직인가")
     st.caption("보상 구조와 동기부여 방식이 조직의 성격을 결정합니다.")
 
-    fig_a = render_matrix_a(coords, visibility_score)
+    fig_a = render_matrix_a(coords, visibility_score, selected_scenario)
     st.plotly_chart(fig_a, use_container_width=True, config={"displayModeBar": False})
 
     st.markdown(f"**현재 사분면**: {coords.matrix_a_quadrant}")
     st.markdown("---")
 
 
-def _render_matrix_b(coords: MatrixCoordinates, visibility_score: float) -> None:
+def _render_matrix_b(
+    coords: MatrixCoordinates,
+    visibility_score: float,
+    selected_scenario: str,
+) -> None:
     """매트릭스 B를 표시한다."""
     st.markdown("### 매트릭스 B: 어떻게 일하는 조직인가")
     st.caption("의사결정 방식과 채용 기준이 일하는 방식을 결정합니다.")
 
-    fig_b = render_matrix_b(coords, visibility_score)
+    fig_b = render_matrix_b(coords, visibility_score, selected_scenario)
     st.plotly_chart(fig_b, use_container_width=True, config={"displayModeBar": False})
 
     st.markdown(f"**현재 사분면**: {coords.matrix_b_quadrant}")
@@ -90,3 +102,26 @@ def _render_summary(matrix_a_quadrant: str, matrix_b_quadrant: str) -> None:
         f"- 매트릭스 B: **{matrix_b_quadrant}**\n\n"
         "다음 단계에서는 이 현재 위치를 기준으로 선택 가능한 시나리오와 전환 비용을 비교합니다."
     )
+
+
+def _render_scenario_selection(responses: dict) -> None:
+    """실행 로드맵 기준이 될 시나리오를 선택한다."""
+    st.markdown("---")
+    st.markdown("### 실행 시나리오 선택")
+    st.caption("위 시나리오 분석을 참고하여, 실행할 전략 방향을 선택하세요.")
+
+    if st.session_state.get("selected_scenario") not in SCENARIO_IDS:
+        st.session_state["selected_scenario"] = "performance"
+
+    selected = st.radio(
+        "실행할 시나리오를 선택하세요.",
+        options=SCENARIO_IDS,
+        format_func=lambda scenario_id: (
+            f"{SCENARIOS[scenario_id]['icon']} {SCENARIOS[scenario_id]['name']}"
+        ),
+        horizontal=True,
+        key="selected_scenario",
+        label_visibility="collapsed",
+    )
+
+    render_roadmap(selected, responses)

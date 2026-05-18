@@ -7,6 +7,12 @@ import streamlit as st
 
 from src.data.scenarios import SCENARIOS, SCENARIO_IDS
 
+INTENT_COLORS = {
+    "negative": "#E11D48",
+    "positive": "#14B8A6",
+    "neutral": "#2C3E50",
+}
+
 
 def render_scenario_detail(responses: dict[str, Any]) -> None:
     """시나리오 3개를 탭으로 렌더링한다."""
@@ -73,7 +79,7 @@ def _render_single_scenario(scenario: dict[str, Any], is_recommended: bool) -> N
     st.markdown("")
     st.markdown("**재무 임팩트**")
     for item in scenario["financial_impact"]:
-        amount_color = _amount_color(item["amount"])
+        amount_color = _amount_color(item.get("color_intent"))
         st.markdown(
             f'<div style="display:flex;justify-content:space-between;align-items:center;'
             f'gap:12px;padding:8px 0;border-bottom:1px solid #E5E8EC;">'
@@ -130,12 +136,8 @@ def _impact_style(direction: str) -> tuple[str, str]:
     return "→", "#C9844A"
 
 
-def _amount_color(amount: str) -> str:
-    if amount.startswith("+"):
-        return "#C8465A"
-    if amount.startswith("-"):
-        return "#4F9A86"
-    return "#2C3E50"
+def _amount_color(color_intent: str | None) -> str:
+    return INTENT_COLORS.get(color_intent or "neutral", INTENT_COLORS["neutral"])
 
 
 def _as_int(value: Any, default: int) -> int:

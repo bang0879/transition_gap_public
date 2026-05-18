@@ -27,8 +27,31 @@ MATRIX_B_QUADRANTS = {
     "Q4": {"x": 0.75, "y": 0.75, "label": "Q4<br>대기업 공채<br>시스템형"},
 }
 
+MATRIX_A_TO_BE_TARGETS = {
+    "performance": {"x": 0.78, "y": 0.78, "label": "성과주의 가속형"},
+    "community": {"x": 0.28, "y": 0.28, "label": "공동체 안정형"},
+    "elite": {"x": 0.28, "y": 0.78, "label": "소수정예 집중형"},
+}
 
-def render_matrix_a(coords: MatrixCoordinates, visibility_score: float) -> go.Figure:
+MATRIX_B_TO_BE_TARGETS = {
+    "performance": {"x": 0.62, "y": 0.45, "label": "성과주의 가속형"},
+    "community": {"x": 0.28, "y": 0.78, "label": "공동체 안정형"},
+    "elite": {"x": 0.38, "y": 0.32, "label": "소수정예 집중형"},
+}
+
+QUADRANT_BACKGROUNDS = (
+    {"x0": 0.5, "x1": 1.0, "y0": 0.5, "y1": 1.0, "color": "rgba(20, 184, 166, 0.06)"},
+    {"x0": 0.0, "x1": 0.5, "y0": 0.5, "y1": 1.0, "color": "rgba(249, 115, 22, 0.06)"},
+    {"x0": 0.5, "x1": 1.0, "y0": 0.0, "y1": 0.5, "color": "rgba(249, 115, 22, 0.06)"},
+    {"x0": 0.0, "x1": 0.5, "y0": 0.0, "y1": 0.5, "color": "rgba(239, 68, 68, 0.05)"},
+)
+
+
+def render_matrix_a(
+    coords: MatrixCoordinates,
+    visibility_score: float,
+    selected_scenario_id: str = "performance",
+) -> go.Figure:
     """매트릭스 A를 시각화한다."""
     fig = _create_base_matrix(
         x_axis_left="지분 / 비전 중심",
@@ -45,10 +68,20 @@ def render_matrix_a(coords: MatrixCoordinates, visibility_score: float) -> go.Fi
         visibility_score=visibility_score,
         dispersion=coords.pain_point_dispersion,
     )
+    _add_to_be_vector(
+        fig,
+        as_is_x=coords.matrix_a_x,
+        as_is_y=coords.matrix_a_y,
+        target=_target_for_scenario(selected_scenario_id, MATRIX_A_TO_BE_TARGETS),
+    )
     return fig
 
 
-def render_matrix_b(coords: MatrixCoordinates, visibility_score: float) -> go.Figure:
+def render_matrix_b(
+    coords: MatrixCoordinates,
+    visibility_score: float,
+    selected_scenario_id: str = "performance",
+) -> go.Figure:
     """매트릭스 B를 시각화한다."""
     fig = _create_base_matrix(
         x_axis_left="자율과 속도",
@@ -65,6 +98,12 @@ def render_matrix_b(coords: MatrixCoordinates, visibility_score: float) -> go.Fi
         visibility_score=visibility_score,
         dispersion=0.0,
     )
+    _add_to_be_vector(
+        fig,
+        as_is_x=coords.matrix_b_x,
+        as_is_y=coords.matrix_b_y,
+        target=_target_for_scenario(selected_scenario_id, MATRIX_B_TO_BE_TARGETS),
+    )
     return fig
 
 
@@ -79,6 +118,8 @@ def _create_base_matrix(
     """2x2 매트릭스 기본 골격을 생성한다."""
     fig = go.Figure()
 
+    _add_quadrant_backgrounds(fig)
+
     for quadrant in quadrants.values():
         fig.add_annotation(
             x=quadrant["x"],
@@ -87,6 +128,7 @@ def _create_base_matrix(
             showarrow=False,
             font=dict(size=12, color=COLORS["text_secondary"]),
             align="center",
+            opacity=0.78,
         )
 
     fig.add_shape(
@@ -96,6 +138,7 @@ def _create_base_matrix(
         y0=0,
         y1=1,
         line=dict(color=COLORS["border"], width=2, dash="dot"),
+        layer="above",
     )
     fig.add_shape(
         type="line",
@@ -104,7 +147,9 @@ def _create_base_matrix(
         y0=0.5,
         y1=0.5,
         line=dict(color=COLORS["border"], width=2, dash="dot"),
+        layer="above",
     )
+    _add_axis_arrows(fig)
 
     fig.update_layout(
         title=dict(text=title, font=dict(size=16)),
@@ -114,8 +159,8 @@ def _create_base_matrix(
             showticklabels=False,
             zeroline=False,
             title=dict(
-                text=f"<- {x_axis_left}    |    {x_axis_right} ->",
-                font=dict(size=11, color=COLORS["text_secondary"]),
+                text=f"<b>{x_axis_left}</b>  ←    |    →  <b>{x_axis_right}</b>",
+                font=dict(size=14, color=COLORS["text_primary"]),
             ),
         ),
         yaxis=dict(
@@ -124,8 +169,8 @@ def _create_base_matrix(
             showticklabels=False,
             zeroline=False,
             title=dict(
-                text=f"<- {y_axis_bottom}    |    {y_axis_top} ->",
-                font=dict(size=11, color=COLORS["text_secondary"]),
+                text=f"<b>{y_axis_bottom}</b>  ↓    |    ↑  <b>{y_axis_top}</b>",
+                font=dict(size=14, color=COLORS["text_primary"]),
             ),
             scaleanchor="x",
             scaleratio=1,
@@ -138,6 +183,47 @@ def _create_base_matrix(
     )
 
     return fig
+
+
+def _add_quadrant_backgrounds(fig: go.Figure) -> None:
+    """사분면별 배경색을 추가한다."""
+    for background in QUADRANT_BACKGROUNDS:
+        fig.add_shape(
+            type="rect",
+            x0=background["x0"],
+            x1=background["x1"],
+            y0=background["y0"],
+            y1=background["y1"],
+            fillcolor=background["color"],
+            line_width=0,
+            layer="below",
+        )
+
+
+def _add_axis_arrows(fig: go.Figure) -> None:
+    """축 끝점 방향성을 표시한다."""
+    fig.add_annotation(
+        x=1.03,
+        y=-0.035,
+        text="→",
+        xref="x",
+        yref="y",
+        showarrow=False,
+        font=dict(size=18, color="#94A3B8"),
+        xanchor="center",
+        yanchor="middle",
+    )
+    fig.add_annotation(
+        x=-0.035,
+        y=1.03,
+        text="↑",
+        xref="x",
+        yref="y",
+        showarrow=False,
+        font=dict(size=18, color="#94A3B8"),
+        xanchor="center",
+        yanchor="middle",
+    )
 
 
 def _add_as_is_marker(
@@ -173,6 +259,67 @@ def _add_as_is_marker(
             name="현재 위치",
         )
     )
+
+
+def _add_to_be_vector(
+    fig: go.Figure,
+    as_is_x: float,
+    as_is_y: float,
+    target: dict[str, Any],
+) -> None:
+    """As-Is에서 선택 시나리오의 To-Be 기준점으로 향하는 벡터를 추가한다."""
+    target_x = _clamp(float(target["x"]))
+    target_y = _clamp(float(target["y"]))
+    current_x = _clamp(as_is_x)
+    current_y = _clamp(as_is_y)
+
+    fig.add_annotation(
+        x=target_x,
+        y=target_y,
+        ax=current_x,
+        ay=current_y,
+        xref="x",
+        yref="y",
+        axref="x",
+        ayref="y",
+        showarrow=True,
+        arrowhead=3,
+        arrowsize=1.4,
+        arrowwidth=2,
+        arrowcolor="#14B8A6",
+        text="",
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=[target_x],
+            y=[target_y],
+            mode="markers+text",
+            marker=dict(
+                size=16,
+                color="#14B8A6",
+                symbol="diamond",
+                line=dict(width=2, color=COLORS["background"]),
+            ),
+            text=["To-Be"],
+            textposition="top center",
+            textfont=dict(size=11, color="#14B8A6"),
+            hovertemplate=(
+                f"<b>To-Be 기준점</b><br>{target['label']}<br>"
+                f"X: {target_x:.2f}<br>"
+                f"Y: {target_y:.2f}<br>"
+                "<extra></extra>"
+            ),
+            name="To-Be 기준점",
+        )
+    )
+
+
+def _target_for_scenario(
+    selected_scenario_id: str,
+    targets: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """선택 시나리오에 맞는 To-Be 기준점을 반환한다."""
+    return targets.get(selected_scenario_id, targets["performance"])
 
 
 def _clamp(value: float, lo: float = 0.0, hi: float = 1.0) -> float:

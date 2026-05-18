@@ -35,6 +35,8 @@ if "responses" not in st.session_state:
     st.session_state.responses = {}
 if "session_id" not in st.session_state:
     st.session_state.session_id = None
+if "selected_scenario" not in st.session_state:
+    st.session_state.selected_scenario = "performance"
 if "_needs_scroll" not in st.session_state:
     st.session_state["_needs_scroll"] = False
 if st.session_state.current_step in LEGACY_STEP_MAP:
