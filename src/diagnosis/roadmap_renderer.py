@@ -62,54 +62,26 @@ def render_roadmap(selected_scenario_id: str, responses: dict[str, Any]) -> None
 
 def _render_roadmap_cta() -> None:
     """로드맵 하단 CTA를 시각 UI로 렌더링한다."""
-    # TODO: CTA 클릭 시 st.session_state["selected_scenario"]를 함께 전달하여,
-    # 컨설턴트가 고객이 어떤 시나리오에 관심을 보였는지 사전 파악할 수 있도록 할 것.
-    # 예: Calendly URL에 query param으로 scenario=performance 추가,
-    # 또는 Typeform hidden field로 전달.
     st.markdown("---")
-    st.markdown(
-        '<div style="text-align:center;padding:32px 20px;border-radius:12px;'
-        'background:linear-gradient(135deg, #F0FDFA, #F8FAFC);border:1px solid #E2E8F0;">'
-        '<p style="font-size:18px;font-weight:700;color:#0F172A;margin:0 0 8px 0;">'
-        '다음 단계로 나아가세요</p>'
-        '<p style="font-size:13px;color:#64748B;margin:0;">'
-        '이 진단 결과를 바탕으로 귀사에 맞는 인사제도를 설계하고 실행할 수 있습니다.</p>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
     st.markdown("")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(
             '<div style="text-align:center;padding:16px;border-radius:10px;'
-            'background:#14B8A6;cursor:pointer;">'
-            '<p style="font-size:14px;font-weight:600;color:white;margin:0;">'
-            '심층 컨설팅 상담 예약</p>'
-            '<p style="font-size:11px;color:rgba(255,255,255,0.82);margin:4px 0 0 0;">'
-            '전문 컨설턴트와 1:1 로드맵 설계</p>'
+            'background:white;border:1px solid #E2E8F0;">'
+            '<p style="font-size:14px;font-weight:600;color:#1E293B;margin:0;">'
+            '↓ 진단 결과 PDF 저장</p>'
+            '<p style="font-size:11px;color:#94A3B8;margin:4px 0 0 0;">'
+            'PDF 다운로드 기능은 준비 중입니다</p>'
             '</div>',
             unsafe_allow_html=True,
         )
     with col2:
-        st.markdown(
-            '<div style="text-align:center;padding:16px;border-radius:10px;'
-            'background:white;border:1px solid #E2E8F0;cursor:pointer;">'
-            '<p style="font-size:14px;font-weight:600;color:#1E293B;margin:0;">'
-            '진단 결과 공유하기</p>'
-            '<p style="font-size:11px;color:#94A3B8;margin:4px 0 0 0;">'
-            '경영진에게 결과 요약 전달</p>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-
-    st.caption("*심층 컨설팅 예약 시 이번 진단 결과가 자동으로 공유됩니다. 진단 결과 PDF 다운로드는 추후 지원 예정입니다.*")
-    st.markdown(
-        '<p style="text-align:center;font-size:12px;color:#94A3B8;">'
-        '진단이 완료되었습니다. 새 기업 진단을 시작하려면 사이드바의 "새 진단 시작"을 눌러주세요.'
-        '</p>',
-        unsafe_allow_html=True,
-    )
+        if st.button("진단 종료 및 저장", use_container_width=True, type="primary"):
+            st.success(
+                "진단이 저장되었습니다. "
+                "새 기업 진단을 시작하려면 사이드바의 '새 진단 시작'을 눌러주세요."
+            )
 
 
 def _render_timeline_step(

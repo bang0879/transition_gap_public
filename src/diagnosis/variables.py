@@ -35,7 +35,7 @@ class InputType(str, Enum):
 class Variable:
     """진단 변수 정의."""
     id: str                              # "L1-1", "2-3-2" 등
-    layer: str                           # "L1" 또는 "L2"
+    layer: str                           # "L0", "L1" 또는 "L2"
     sub_category: Optional[str]          # "2-1", "2-2" 등 (Layer 2만)
     label: str                           # 한국어 질문 텍스트
     input_type: InputType
@@ -45,6 +45,52 @@ class Variable:
     unknown_option: Optional[str] = None # "모름 / 측정 안 함" 등 (있을 경우)
     max_select: Optional[int] = None     # multi_select 시 최대 개수
     short_label: str = ""                # 미입력 안내용 짧은 라벨
+
+
+# ============================================================
+# Layer 0: CEO 철학 앵커링 (3개 변수)
+# ============================================================
+
+PHILOSOPHY_TO_INT = {"A": 1, "B": 5}
+
+LAYER_0_VARIABLES: list[Variable] = [
+    Variable(
+        id="L0-1",
+        layer="L0",
+        sub_category="philosophy",
+        label="회사가 크게 성장했을 때, 대표님이 꿈꾸는 이상적인 보상 분배 방식은?",
+        input_type=InputType.SINGLE_SELECT,
+        options=[
+            "소수의 압도적 퍼포머 10%에게 업계 최고 수준의 파격적 보상을 몰아준다",
+            "묵묵히 기여한 다수의 팀원들이 박탈감을 느끼지 않도록, 조직 전체가 고르게 과실을 나눈다",
+        ],
+        short_label="보상 철학",
+    ),
+    Variable(
+        id="L0-2",
+        layer="L0",
+        sub_category="philosophy",
+        label="리더십 자원이 한정되어 있을 때, 대표님이 팀장들에게 먼저 요구하는 것은?",
+        input_type=InputType.SINGLE_SELECT,
+        options=[
+            "명확한 목표 대비 성과 추적과 저성과 영역에 대한 솔직한 피드백",
+            "구성원과의 정기 1on1을 통한 고충 청취와 심리적 안전감 확보",
+        ],
+        short_label="리더십 철학",
+    ),
+    Variable(
+        id="L0-3",
+        layer="L0",
+        sub_category="philosophy",
+        label="앞으로 우리 조직을 이끌어갈 핵심 인재 그룹은 어떻게 구성되기를 원하십니까?",
+        input_type=InputType.SINGLE_SELECT,
+        options=[
+            "외부에서 검증된 최고의 S급 인재를 높은 비용을 치르더라도 영입하여 즉시 전력으로 활용한다",
+            "우리 회사의 비전에 깊이 공감하고 문화를 잘 아는 내부 주니어를 오랜 시간 공들여 핵심 인재로 육성한다",
+        ],
+        short_label="인재 전략",
+    ),
+]
 
 
 # ============================================================
@@ -472,6 +518,9 @@ SUB_CATEGORY_LABELS: dict[str, str] = {
 # ============================================================
 
 SHORT_LABELS_BY_ID: dict[str, str] = {
+    "L0-1": "보상 철학",
+    "L0-2": "리더십 철학",
+    "L0-3": "인재 전략",
     "L1-1": "가장 시급한 HR 페인포인트",
     "L1-2": "총 인원수",
     "L1-3": "조직 의사결정 구조",
@@ -507,6 +556,10 @@ SHORT_LABELS_BY_ID: dict[str, str] = {
     "2-5-6": "핵심가치 작동 여부",
 }
 
+LAYER_0_VARIABLES = [
+    replace(variable, short_label=SHORT_LABELS_BY_ID.get(variable.id, variable.short_label))
+    for variable in LAYER_0_VARIABLES
+]
 LAYER_1_VARIABLES = [
     replace(variable, short_label=SHORT_LABELS_BY_ID.get(variable.id, variable.short_label))
     for variable in LAYER_1_VARIABLES
@@ -516,7 +569,7 @@ LAYER_2_VARIABLES = [
     for variable in LAYER_2_VARIABLES
 ]
 
-ALL_VARIABLES: list[Variable] = LAYER_1_VARIABLES + LAYER_2_VARIABLES
+ALL_VARIABLES: list[Variable] = LAYER_0_VARIABLES + LAYER_1_VARIABLES + LAYER_2_VARIABLES
 
 VARIABLES_BY_ID: dict[str, Variable] = {v.id: v for v in ALL_VARIABLES}
 
@@ -526,6 +579,11 @@ def get_variable(variable_id: str) -> Variable:
     if variable_id not in VARIABLES_BY_ID:
         raise KeyError(f"Unknown variable ID: {variable_id}")
     return VARIABLES_BY_ID[variable_id]
+
+
+def get_variables_by_layer(layer: str) -> list[Variable]:
+    """Layer ID로 변수 목록 반환."""
+    return [v for v in ALL_VARIABLES if v.layer == layer]
 
 
 def get_variables_by_sub_category(sub_category: str) -> list[Variable]:

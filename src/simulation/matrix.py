@@ -51,6 +51,7 @@ def render_matrix_a(
     coords: MatrixCoordinates,
     visibility_score: float,
     selected_scenario_id: str = "performance",
+    to_be_target: dict[str, Any] | None = None,
 ) -> go.Figure:
     """매트릭스 A를 시각화한다."""
     fig = _create_base_matrix(
@@ -72,7 +73,7 @@ def render_matrix_a(
         fig,
         as_is_x=coords.matrix_a_x,
         as_is_y=coords.matrix_a_y,
-        target=_target_for_scenario(selected_scenario_id, MATRIX_A_TO_BE_TARGETS),
+        target=to_be_target or _target_for_scenario(selected_scenario_id, MATRIX_A_TO_BE_TARGETS),
     )
     return fig
 
@@ -81,6 +82,7 @@ def render_matrix_b(
     coords: MatrixCoordinates,
     visibility_score: float,
     selected_scenario_id: str = "performance",
+    to_be_target: dict[str, Any] | None = None,
 ) -> go.Figure:
     """매트릭스 B를 시각화한다."""
     fig = _create_base_matrix(
@@ -102,7 +104,7 @@ def render_matrix_b(
         fig,
         as_is_x=coords.matrix_b_x,
         as_is_y=coords.matrix_b_y,
-        target=_target_for_scenario(selected_scenario_id, MATRIX_B_TO_BE_TARGETS),
+        target=to_be_target or _target_for_scenario(selected_scenario_id, MATRIX_B_TO_BE_TARGETS),
     )
     return fig
 

@@ -11,6 +11,8 @@ from typing import Any
 
 from src.diagnosis.variables import PAIN_POINT_Y_VALUES
 
+PHILOSOPHY_TO_INT = {"A": 1, "B": 5}
+
 
 @dataclass(frozen=True)
 class MatrixCoordinates:
@@ -206,6 +208,38 @@ def calculate_coordinates(responses: dict[str, Any]) -> MatrixCoordinates:
     )
 
 
+def calc_to_be_coordinates(responses: dict[str, Any]) -> dict[str, dict[str, float]]:
+    """
+    CEO 철학 응답(L0)에서 To-Be 매트릭스 좌표를 계산한다.
+
+    매핑 방향:
+    - L0-1 A: 소수 파격 보상 -> 매트릭스 A Y축 상단(0.85)
+    - L0-1 B: 조직 균등 분배 -> 매트릭스 A Y축 하단(0.15)
+    - L0-2 A: 성과 추적/피드백 -> 매트릭스 A X축 우측(0.85)
+    - L0-2 B: 심리적 안전감 -> 매트릭스 A X축 좌측(0.15)
+    - L0-3 A: 외부 수혈 -> 매트릭스 B X축 좌측(0.15)
+    - L0-3 B: 내부 육성 -> 매트릭스 B X축 우측(0.85)
+    """
+    q1 = responses.get("L0-1", "")
+    q2 = responses.get("L0-2", "")
+    q3 = responses.get("L0-3", "")
+
+    y_a = _map_choice(q1, a_value=0.85, b_value=0.15)
+    x_a = _map_choice(q2, a_value=0.85, b_value=0.15)
+    x_b = _map_choice(q3, a_value=0.15, b_value=0.85)
+
+    return {
+        "matrix_a": {
+            "x": x_a,
+            "y": y_a,
+        },
+        "matrix_b": {
+            "x": x_b,
+            "y": 0.5,
+        },
+    }
+
+
 def calculate_core_talent_loss_severity(responses: dict[str, Any]) -> float:
     """
     핵심 인재 이탈 심각도 (0.0 ~ 1.0).
@@ -272,6 +306,15 @@ def _has_quantitative_reward_detail(detail: Any) -> bool:
 def _pain_point_score(pain_point: str) -> float:
     """알 수 없는 페인포인트는 중립값으로 처리한다."""
     return PAIN_POINT_Y_VALUES.get(pain_point, 0.5)
+
+
+def _map_choice(choice: Any, a_value: float, b_value: float) -> float:
+    """A/B 철학 선택을 좌표값으로 매핑한다."""
+    if choice == "A":
+        return a_value
+    if choice == "B":
+        return b_value
+    return 0.5
 
 
 def _as_int(value: Any, default: int) -> int:

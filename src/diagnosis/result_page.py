@@ -36,6 +36,18 @@ SEVERITY_BADGES: Final[dict[str, tuple[str, str]]] = {
     "medium": ("주의 필요", "#C9844A"),
     "low": ("참고", "#4F9A86"),
 }
+COLLECTION_TIPS: Final[dict[str, str]] = {
+    "자발적 이직률": "HRIS가 없어도 엑셀에 입사일과 퇴사일만 기록하면 산출 가능합니다. 올해 퇴사자 수를 평균 재직자 수로 나눠 추적해 보세요.",
+    "핵심 인재 이탈": "핵심 인재 3-5명의 이름을 먼저 정하고, 그중 올해 퇴사한 사람이 있는지만 확인해도 출발점이 됩니다.",
+    "신규 입사자 조기 퇴사율": "올해 입사자 명단에서 1년 내 퇴사한 사람 수를 세면 됩니다. 온보딩 품질을 보는 가장 빠른 지표입니다.",
+    "채용 소요 기간": "공고 게시일과 입사일의 차이를 최근 3건만 계산해도 평균 채용 리드타임이 나옵니다.",
+    "보상 구조 정량 비율": "기본급, 성과급, 지분보상의 대략적 비율만 적어도 됩니다. 정밀한 숫자보다 구조 파악이 먼저입니다.",
+    "매출 대비 인건비 비중": "월 급여 총액에 12를 곱한 뒤 연매출로 나누면 됩니다. 대략적 수치로도 충분합니다.",
+    "인건비 증가율": "작년 월평균 인건비와 올해 월평균 인건비를 비교해 증가율을 계산해 보세요.",
+    "시장 대비 보상 위치": "최근 채용 제안 과정에서 후보자가 받은 타사 오퍼 또는 리크루터 피드백을 기준으로 상·중·하를 먼저 잡아도 됩니다.",
+    "평가 운영 데이터": "평가 등급별 인원 분포와 연봉 인상률 차등 폭을 엑셀 한 장으로 남기는 것부터 시작하면 됩니다.",
+    "1on1 운영 데이터": "팀장별 1on1 실시 여부와 월별 완료 횟수만 체크해도 리더십 운영 리듬을 볼 수 있습니다.",
+}
 
 
 def render_diagnosis_result() -> None:
@@ -53,7 +65,6 @@ def render_result_summary() -> None:
 
     result = calculate_visibility_index(responses)
     areas = _get_cached_areas(responses)
-    cross_insights = get_cross_domain_insights(areas, responses)
     alias = st.session_state.get("session_alias") or "미지정"
 
     st.markdown(f"### {alias} 진단 결과 요약")
@@ -73,19 +84,16 @@ def render_result_summary() -> None:
             "'모름' 응답이 많을수록 진단의 정확도가 떨어집니다."
         )
 
-    _render_summary_dashboard(result, areas)
-
-    if cross_insights:
-        st.markdown("---")
-        st.markdown("### 핵심 인사이트")
-        for insight in cross_insights:
-            st.info(_format_display_text(insight))
+    _render_visibility_section(result)
+    _render_alignment_score(areas)
+    _render_radar_chart(areas)
+    _render_key_insights(areas, responses)
 
     st.markdown("---")
     st.markdown("### 어디를 먼저 개선해야 하는가")
     st.markdown(
         "아래 점수는 귀사의 설문 응답을 기반으로 자동 산출된 것이며, "
-        "100점 만점입니다. 목표는 동종업계(50–100인 B2B SaaS) 벤치마크 기준입니다."
+        "100점 만점입니다. 목표는 현재 방향으로 가기 위해 필요한 최소 제도 기준점입니다."
     )
     _render_gap_table(areas)
 
@@ -129,22 +137,95 @@ def _get_cached_areas(responses: dict) -> list[AreaAnalysis]:
     return st.session_state["cached_areas"]
 
 
+def _render_visibility_section(result: VisibilityResult) -> None:
+    """HR 데이터 가시성과 사각지대 액션 플랜을 먼저 렌더링한다."""
+    st.markdown("### HR 데이터 가시성")
+    st.markdown(
+        "먼저 무엇을 보고 있고, 무엇을 아직 못 보고 있는지 확인합니다. "
+        "빠진 데이터는 결함이 아니라 다음 액션을 정하는 단서입니다."
+    )
+
+    col1, col2 = st.columns([1, 1.2])
+    with col1:
+        _render_visibility_bar(result)
+    with col2:
+        _render_visibility_details(result)
+
+
+def _render_alignment_score(areas: list[AreaAnalysis]) -> None:
+    """인사제도 정합성 지수와 점수 맥락을 렌더링한다."""
+    consistency_score = round(sum(area.score for area in areas) / len(areas)) if areas else 0
+    weakest_area = min(areas, key=lambda area: area.score) if areas else None
+
+    st.markdown("---")
+    st.markdown("### 인사제도 정합성 지수")
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.metric(
+            label="정합성 지수",
+            value=f"{consistency_score}점",
+            delta=f"5개 영역 평균 · {_get_grade_label(consistency_score)}",
+            delta_color="off",
+        )
+    with col2:
+        if weakest_area:
+            st.markdown(
+                f'<div style="padding:14px 16px;border-radius:10px;background:#F8FAFC;'
+                f'border-left:4px solid #14B8A6;">'
+                f'<p style="font-size:13px;color:#475569;line-height:1.7;margin:0;">'
+                f'이 점수는 보상, 평가, 채용, 인력 안정성, 리더십 제도가 서로 같은 방향으로 '
+                f'맞물려 있는지를 보여줍니다. 현재 가장 큰 병목은 '
+                f'<strong>{html.escape(weakest_area.area_name)}</strong> 영역입니다.</p>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+
+def _render_radar_chart(areas: list[AreaAnalysis]) -> None:
+    """영역별 현재 위치를 레이더 차트로 렌더링한다."""
+    st.markdown("---")
+    st.markdown("### 영역별 현재 위치")
+    _render_area_radar(areas)
+
+
+def _render_key_insights(areas: list[AreaAnalysis], responses: dict) -> None:
+    """핵심 인사이트를 1줄 핵심과 상세 설명으로 나눠 렌더링한다."""
+    cross_insights = get_cross_domain_insights(areas, responses)
+    if not cross_insights:
+        return
+
+    st.markdown("---")
+    st.markdown("### 핵심 인사이트")
+
+    for insight in cross_insights:
+        sentences = _format_display_text(insight).split(". ")
+        headline = sentences[0]
+        if not headline.endswith("."):
+            headline = f"{headline}."
+        detail = ". ".join(sentences[1:]) if len(sentences) > 1 else ""
+
+        st.markdown(
+            f'<div style="padding:16px;border-radius:10px;background:#FFF7ED;'
+            f'border-left:4px solid #F97316;margin-bottom:12px;">'
+            f'<p style="font-size:15px;font-weight:700;color:#0F172A;margin:0 0 6px;">'
+            f'{html.escape(headline)}</p>'
+            f'<p style="font-size:13px;color:#64748B;line-height:1.6;margin:0;">'
+            f'{html.escape(detail)}</p>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+
 def _render_summary_actions() -> None:
     """진단 요약 상단의 시각 액션 버튼을 렌더링한다."""
     # TODO: PDF 리포트 생성 모듈 연결 후 실제 다운로드 버튼으로 전환한다.
-    # TODO: 공유용 링크/스냅샷 정책 확정 후 공유 버튼 동작을 연결한다.
     st.markdown(
         """
-        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
           <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
             border-radius:8px;border:1px solid #E5E8EC;background:#FFFFFF;
             color:#2C3E50;font-size:12px;font-weight:600;">
-            PDF 저장
-          </span>
-          <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
-            border-radius:8px;border:1px solid #E5E8EC;background:#FFFFFF;
-            color:#2C3E50;font-size:12px;font-weight:600;">
-            공유하기
+            ↓ PDF 저장
           </span>
         </div>
         """,
@@ -223,12 +304,36 @@ def _render_visibility_details(result: VisibilityResult) -> None:
     else:
         st.success(result.tier_message)
 
-    if result.blind_spot_labels:
-        st.markdown("**사각지대 (미측정 영역)**")
-        for label in result.blind_spot_labels:
-            st.markdown(f"- {label}")
-    else:
+    _render_blind_spots(result.blind_spot_labels)
+
+
+def _render_blind_spots(blind_spot_items: list[str]) -> None:
+    """사각지대 항목과 데이터 수집 방법을 렌더링한다."""
+    if not blind_spot_items:
         st.markdown("**모든 핵심 지표가 측정되고 있습니다.**")
+        return
+
+    st.markdown("**사각지대 - 측정되지 않는 영역**")
+    st.markdown(
+        '<p style="font-size:13px;color:#64748B;margin-bottom:8px;line-height:1.6;">'
+        '초기 스타트업이 완벽한 대시보드를 가질 수는 없습니다. '
+        '하지만 아래 항목들은 엑셀이나 수기로라도 추적을 시작해야 '
+        '제도를 설계할 수 있습니다.</p>',
+        unsafe_allow_html=True,
+    )
+
+    for item in blind_spot_items:
+        tip = COLLECTION_TIPS.get(item, "담당자에게 문의하여 수기로라도 기록을 시작하세요.")
+        st.markdown(
+            f'<div style="padding:10px 14px;border-radius:8px;background:#FFF7ED;'
+            f'border-left:3px solid #F97316;margin-bottom:6px;">'
+            f'<p style="font-size:13px;font-weight:700;color:#1E293B;margin:0 0 4px;">'
+            f'{html.escape(item)}</p>'
+            f'<p style="font-size:12px;color:#64748B;line-height:1.5;margin:0;">'
+            f'{html.escape(tip)}</p>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
 
 def _get_visibility_color(visibility: float) -> tuple[str, str, str]:
@@ -498,7 +603,7 @@ def _render_area_detail(area: AreaAnalysis) -> None:
         f'font-size:13px;font-weight:600;background:{grade_color}20;color:{grade_color};">'
         f'{grade}</span>'
         f'<span style="font-size:12px;color:#94A3B8;margin-left:8px;">'
-        f'목표: {area.benchmark}점 (동종업계 벤치마크)</span>'
+        f'목표: {area.benchmark}점 (Archetype 기준점)</span>'
         f'</div>'
         f'</div>',
         unsafe_allow_html=True,
@@ -745,18 +850,23 @@ def _render_benchmark(area: AreaAnalysis) -> None:
     if not benchmark:
         return
 
-    st.markdown("**4. 벤치마크**")
+    st.markdown("**4. Archetype 기준점**")
     st.caption(benchmark["title"])
+    if benchmark.get("intro"):
+        st.markdown(
+            f'<p style="font-size:13px;color:#64748B;line-height:1.6;margin-bottom:12px;">'
+            f'{html.escape(_format_display_text(benchmark["intro"]))}</p>',
+            unsafe_allow_html=True,
+        )
+
     rows_html = []
     for item in benchmark["items"]:
-        companies = item.get("companies") or []
-        companies_text = " · ".join(companies) if isinstance(companies, list) else str(companies)
         rows_html.append(
             "<tr>"
             f"<td>{html.escape(_format_display_text(item['label']))}</td>"
             f"<td><strong>{html.escape(_format_display_text(item['value']))}</strong>"
             f"<br><span>{html.escape(_format_display_text(item['note']))}</span></td>"
-            f"<td>{html.escape(_format_display_text(companies_text))}</td>"
+            f"<td>{html.escape(_format_display_text(item.get('archetype', '공통')))}</td>"
             "</tr>"
         )
 
@@ -766,8 +876,8 @@ def _render_benchmark(area: AreaAnalysis) -> None:
           <thead>
             <tr style="background:#F8F9FB;color:#2C3E50;">
               <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">항목</th>
-              <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">벤치마크</th>
-              <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">대표 기업</th>
+              <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">기준점</th>
+              <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">성격</th>
             </tr>
           </thead>
           <tbody>
@@ -777,6 +887,8 @@ def _render_benchmark(area: AreaAnalysis) -> None:
         """,
         unsafe_allow_html=True,
     )
+    if benchmark.get("archetype_companies"):
+        st.caption(f"참고 기업: {_format_display_text(benchmark['archetype_companies'])}")
     if benchmark.get("disclaimer"):
         st.markdown(f"*{_format_display_text(benchmark['disclaimer'])}*")
 

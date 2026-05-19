@@ -15,8 +15,12 @@ INTENT_COLORS = {
 
 
 def render_scenario_detail(responses: dict[str, Any]) -> None:
-    """시나리오 3개를 탭으로 렌더링한다."""
+    """시나리오 비교표와 3개 상세 탭을 렌더링한다."""
     st.markdown("---")
+    st.markdown("### 시나리오 비교")
+    st.caption("3가지 전략 방향의 핵심 차이를 한눈에 비교합니다.")
+    _render_scenario_comparison_table()
+
     st.markdown("### 시나리오별 상세 분석")
     st.caption("각 시나리오의 도입 패키지, 예상 임팩트, 재무 효과, 실현 가능성을 비교합니다.")
 
@@ -31,6 +35,58 @@ def render_scenario_detail(responses: dict[str, Any]) -> None:
     for tab, scenario_id in zip(tabs, SCENARIO_IDS):
         with tab:
             _render_single_scenario(SCENARIOS[scenario_id], scenario_id == recommended)
+
+
+def _render_scenario_comparison_table() -> None:
+    """3개 전략 시나리오의 핵심 차이를 표로 표시한다."""
+    st.markdown(
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;">'
+        '<thead><tr style="border-bottom:2px solid #E2E8F0;text-align:left;">'
+        '<th style="padding:10px;color:#94A3B8;width:20%;"></th>'
+        '<th style="padding:10px;color:#1E293B;font-weight:600;">성과주의 가속형</th>'
+        '<th style="padding:10px;color:#1E293B;font-weight:600;">공동체 안정형</th>'
+        '<th style="padding:10px;color:#1E293B;font-weight:600;">소수정예 집중형</th>'
+        '</tr></thead>'
+        '<tbody>'
+        '<tr style="border-bottom:1px solid #F1F5F9;">'
+        '<td style="padding:10px;color:#94A3B8;font-weight:500;">핵심 철학</td>'
+        '<td style="padding:10px;">성과 = 보상. 탁월함에 파격적 보상</td>'
+        '<td style="padding:10px;">함께 성장. 동료 신뢰가 최고의 성과</td>'
+        '<td style="padding:10px;">소수 A급이 조직 운명을 결정</td>'
+        '</tr>'
+        '<tr style="border-bottom:1px solid #F1F5F9;">'
+        '<td style="padding:10px;color:#94A3B8;font-weight:500;">보상 전략</td>'
+        '<td style="padding:10px;">밴드형 + 성과급 20-30%</td>'
+        '<td style="padding:10px;">기본급 안정성 + 팀 인센티브</td>'
+        '<td style="padding:10px;">Top 15% 시장 90%ile + RSU</td>'
+        '</tr>'
+        '<tr style="border-bottom:1px solid #F1F5F9;">'
+        '<td style="padding:10px;color:#94A3B8;font-weight:500;">평가 방식</td>'
+        '<td style="padding:10px;">OKR + 반기 상대평가</td>'
+        '<td style="padding:10px;">절대평가 + 격주 1on1</td>'
+        '<td style="padding:10px;">9-Box Grid + 분기 리뷰</td>'
+        '</tr>'
+        '<tr style="border-bottom:1px solid #F1F5F9;">'
+        '<td style="padding:10px;color:#94A3B8;font-weight:500;">인건비 변동</td>'
+        '<td style="padding:10px;color:#E11D48;font-weight:600;">+15-25%</td>'
+        '<td style="padding:10px;color:#F59E0B;font-weight:600;">+5-10%</td>'
+        '<td style="padding:10px;color:#E11D48;font-weight:600;">+30-50% (대상 인원분)</td>'
+        '</tr>'
+        '<tr style="border-bottom:1px solid #F1F5F9;">'
+        '<td style="padding:10px;color:#94A3B8;font-weight:500;">핵심 리스크</td>'
+        '<td style="padding:10px;">평가 수용성 붕괴</td>'
+        '<td style="padding:10px;">고성과자 동기 저하</td>'
+        '<td style="padding:10px;">내부 계급 갈등</td>'
+        '</tr>'
+        '<tr>'
+        '<td style="padding:10px;color:#94A3B8;font-weight:500;">적합 조건</td>'
+        '<td style="padding:10px;">리더 피드백 역량 확보</td>'
+        '<td style="padding:10px;">시장 보상 최소 중위 이상</td>'
+        '<td style="padding:10px;">50인 이상, 핵심 인재 식별 완료</td>'
+        '</tr>'
+        '</tbody></table>',
+        unsafe_allow_html=True,
+    )
 
 
 def _render_single_scenario(scenario: dict[str, Any], is_recommended: bool) -> None:
@@ -118,6 +174,13 @@ def _get_recommended_scenario(responses: dict[str, Any]) -> str:
     TODO: MVP 이후에는 현재 응답이 아니라 CEO가 매트릭스에서 선택한 목표 사분면에 따라
     시나리오를 연동해야 한다. 현재는 Transition 맥락이 약한 단순 현재 상태 기반 힌트다.
     """
+    if responses.get("L0-1") == "A" and responses.get("L0-2") == "A":
+        return "performance"
+    if responses.get("L0-1") == "B" and responses.get("L0-2") == "B":
+        return "community"
+    if responses.get("L0-3") == "A":
+        return "elite"
+
     comp_philosophy = _as_int(responses.get("2-3-1"), 3)
     eval_link = _as_int(responses.get("2-4-2"), 3)
 

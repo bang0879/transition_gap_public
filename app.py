@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from src.diagnosis.form_layer0 import get_layer0_missing, render_layer0
 from src.diagnosis.form_layer1 import get_layer1_missing, render_layer1_form
 from src.diagnosis.form_layer2 import (
     get_layer2_a_missing,
@@ -23,6 +24,7 @@ from src.simulation.simulation_page import render_simulation_page
 
 STEP_ORDER = [
     "intro",
+    "layer0",
     "layer1",
     "layer2_a",
     "layer2_b",
@@ -31,7 +33,7 @@ STEP_ORDER = [
     "result_detail",
     "simulation",
 ]
-INPUT_STEPS = {"intro", "layer1", "layer2_a", "layer2_b", "layer2_c"}
+INPUT_STEPS = {"intro", "layer0", "layer1", "layer2_a", "layer2_b", "layer2_c"}
 RESULT_STEPS = {"result_summary", "result_detail", "simulation"}
 LEGACY_STEP_MAP = {
     "layer2": "layer2_a",
@@ -109,6 +111,8 @@ def save_and_advance(next_step: str) -> None:
 
 def _is_all_input_complete() -> bool:
     """모든 입력 단계 완료 여부."""
+    if get_layer0_missing():
+        return False
     if get_layer1_missing():
         return False
     if get_layer2_a_missing():
@@ -126,6 +130,7 @@ def _reset_session() -> None:
         "cached_areas",
         "_responses_hash",
         "session_alias_input",
+        "layer0_complete",
     ):
         st.session_state.pop(key, None)
     for variable in ALL_VARIABLES:
@@ -170,10 +175,11 @@ def render_sidebar() -> str:
         st.markdown("#### 진단 단계")
         steps = [
             ("intro", "0. 시작 안내"),
-            ("layer1", "1. 조직 컨텍스트"),
-            ("layer2_a", "2-A. 인력 · 채용 진단"),
-            ("layer2_b", "2-B. 보상 진단"),
-            ("layer2_c", "2-C. 평가 · 리더십 진단"),
+            ("layer0", "1. 대표님의 인사 철학"),
+            ("layer1", "2. 조직 컨텍스트"),
+            ("layer2_a", "3-A. 인력 · 채용 진단"),
+            ("layer2_b", "3-B. 보상 진단"),
+            ("layer2_c", "3-C. 평가 · 리더십 진단"),
             ("result_summary", "03. 진단 결과 요약"),
             ("result_detail", "03-2. 영역별 상세 분석"),
             ("simulation", "04. 트레이드오프 시뮬레이션"),
@@ -188,9 +194,7 @@ def render_sidebar() -> str:
 
         for step_id, step_label in steps:
             is_current = step_id == current_step
-            is_accessible = step_id in INPUT_STEPS or (
-                step_id in RESULT_STEPS and all_complete
-            )
+            is_accessible = _is_step_accessible(step_id, all_complete)
 
             if is_current:
                 st.markdown(f"**▶ {step_label}**")
@@ -213,6 +217,17 @@ def render_sidebar() -> str:
             _reset_session()
 
     return current_step
+
+
+def _is_step_accessible(step_id: str, all_complete: bool) -> bool:
+    """사이드바에서 해당 단계로 이동 가능한지 판정한다."""
+    if step_id in RESULT_STEPS:
+        return all_complete
+    if step_id in {"intro", "layer0"}:
+        return True
+    if step_id in INPUT_STEPS:
+        return not get_layer0_missing()
+    return False
 
 
 def render_step_navigation(
@@ -289,16 +304,27 @@ def main() -> None:
         render_intro_page()
         render_step_navigation(
             prev_step=None,
-            next_step="layer1",
+            next_step="layer0",
             next_label="진단 시작 →",
             is_complete=True,
+        )
+
+    elif current_step == "layer0":
+        is_complete = render_layer0()
+        missing = get_layer0_missing()
+        render_step_navigation(
+            prev_step="intro",
+            next_step="layer1",
+            next_label="다음 →",
+            is_complete=is_complete,
+            missing_vars=missing,
         )
 
     elif current_step == "layer1":
         is_complete = render_layer1_form()
         missing = get_layer1_missing()
         render_step_navigation(
-            prev_step=None,
+            prev_step="layer0",
             next_step="layer2_a",
             next_label="다음 →",
             is_complete=is_complete,
