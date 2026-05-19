@@ -41,7 +41,7 @@ def render_result_summary() -> None:
     areas = _get_cached_areas(responses)
     cross_insights = get_cross_domain_insights(areas, responses)
 
-    st.markdown("## 진단 결과 요약")
+    st.markdown("### 진단 결과 요약")
     st.markdown(
         "30여 개 문항에 대한 귀사의 응답을 분석했습니다. "
         "5개 영역(보상·평가·채용·인력·리더십)의 현황을 종합하여 "
@@ -51,9 +51,10 @@ def render_result_summary() -> None:
 
     if result.score < 60:
         st.error(
-            "데이터 가시성 경고 — 현재 귀사의 HR 데이터 가시성이 "
+            "⚠️ **데이터 가시성 경고** — 현재 귀사의 HR 데이터 가시성이 "
             f"{result.score:.1f}%로 낮아, 본 진단 결과는 추정치에 기반하고 있습니다. "
-            "모든 제도 개선에 앞서 데이터 측정 인프라 구축이 0순위 과제입니다."
+            "모든 제도 개선에 앞서 **데이터 측정 인프라 구축이 '0순위' 과제**입니다. "
+            "'모름' 응답이 많을수록 진단의 정확도가 떨어집니다."
         )
 
     _render_summary_dashboard(result, areas)
@@ -68,7 +69,7 @@ def render_result_summary() -> None:
     st.markdown("### 어디를 먼저 개선해야 하는가")
     st.markdown(
         "아래 점수는 귀사의 설문 응답을 기반으로 자동 산출된 것이며, "
-        "100점 만점입니다. 목표는 동종업계 스타트업 벤치마크 기준입니다."
+        "100점 만점입니다. 목표는 동종업계(50~100인 B2B SaaS) 벤치마크 기준입니다."
     )
     _render_gap_table(areas)
 
@@ -86,7 +87,7 @@ def render_result_detail() -> None:
 
     areas = _get_cached_areas(responses)
 
-    st.markdown("## 영역별 상세 분석")
+    st.markdown("### 영역별 상세 분석")
     st.markdown(
         "각 영역의 현황을 진단하고, 주요 이슈와 개선 옵션을 제시합니다. "
         "점수 산출 근거도 함께 확인하실 수 있습니다."
@@ -102,7 +103,7 @@ def render_result_detail() -> None:
 
 def _get_cached_areas(responses: dict) -> list[AreaAnalysis]:
     """응답이 바뀌지 않았으면 영역 분석 결과를 session_state 캐시에서 재사용한다."""
-    responses_hash = json.dumps(responses, sort_keys=True, ensure_ascii=False, default=str)
+    responses_hash = hash(json.dumps(responses, sort_keys=True, ensure_ascii=False, default=str))
     if (
         "cached_areas" not in st.session_state
         or st.session_state.get("_responses_hash") != responses_hash
@@ -478,7 +479,11 @@ def _render_score_breakdown(area: AreaAnalysis) -> None:
             unsafe_allow_html=True,
         )
 
-    st.caption(f"기본 점수에서 귀사 응답에 따라 가감하여 최종 {area.score}점이 산출되었습니다.")
+    base_score = next(
+        (item["impact"] for item in area.score_breakdown if item["factor"] == "기본 점수"),
+        50,
+    )
+    st.caption(f"기본 {base_score}점에서 귀사 응답에 따라 가감하여 최종 {area.score}점이 산출되었습니다.")
 
 
 def _render_tags(tags: list[str]) -> None:
@@ -579,12 +584,12 @@ def _severity_label(gap: int) -> str:
 def _get_grade_label(score: int) -> str:
     """점수를 정성 등급으로 변환한다."""
     if score >= 80:
-        return "양호"
+        return "🟢 양호"
     if score >= 60:
-        return "보통"
+        return "🟡 보통"
     if score >= 40:
-        return "주의"
-    return "개선 필요"
+        return "🟠 주의"
+    return "🔴 개선 필요"
 
 
 def _get_grade_color(score: int) -> str:

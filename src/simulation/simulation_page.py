@@ -24,7 +24,7 @@ def render_simulation_page() -> None:
         st.warning("진단 응답이 없습니다. Layer 1부터 시작해 주세요.")
         return
 
-    st.markdown("## 트레이드오프 시뮬레이션")
+    st.markdown("### 트레이드오프 시뮬레이션")
     st.markdown(
         "인사제도의 모든 선택에는 반대급부가 있습니다. "
         "보상을 높이면 인건비가 올라가고, 평가를 정교하게 하면 운영 비용이 증가합니다. "
@@ -44,7 +44,7 @@ def render_simulation_page() -> None:
 
     if visibility.score < 60:
         st.warning(
-            "HR 데이터 가시성이 낮아 아래 시뮬레이션 결과의 정확도가 제한적입니다. "
+            "⚠️ HR 데이터 가시성이 낮아 아래 시뮬레이션 결과의 정확도가 제한적입니다. "
             "시나리오별 수치는 참고용으로 활용하시고, 데이터 인프라 구축 후 재진단을 권고합니다."
         )
 

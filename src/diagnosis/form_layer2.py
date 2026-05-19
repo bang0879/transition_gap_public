@@ -291,11 +291,10 @@ def _render_slider_fragment(var: Variable, responses: dict[str, Any], input_key:
     if var.input_type == InputType.SLIDER_10:
         options = SLIDER_OPTIONS_10.get(var.id, [f"{i}점" for i in range(1, 11)])
         max_value = 10
-        fallback_index = 4
     else:
         options = SLIDER_OPTIONS.get(var.id, ["1", "2", "3", "4", "5"])
         max_value = 5
-        fallback_index = 2
+    fallback_index = max_value // 2
 
     _render_slider_spectrum(var.id)
 

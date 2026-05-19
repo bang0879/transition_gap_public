@@ -923,11 +923,16 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
             f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
             f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
         ),
+        "CEO-직원 공정성 갭 심각": (
+            f"CEO({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
+            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
+        ),
         "대표-직원 공정성 인식 갭 위험": (
             f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
             f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식 차이가 있는"
         ),
         "대표-직원 공정성 인식 갭 주의": "대표와 직원 간 공정성 인식에 차이가 있는",
+        "CEO-직원 공정성 갭 주의": "CEO와 직원 간 공정성 인식에 차이가 있는",
         "평가-보상 디커플링": (
             f"평가-보상 연동이 '{responses.get('2-4-2', '?')}점/5점'인"
         ),
@@ -961,7 +966,9 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
             f"리더의 피드백 전달 역량이 '{responses.get('2-5-1', '?')}'인"
         ),
         "1on1 부재/형식화": f"정기 1on1이 '{responses.get('2-5-2', '?')}' 상태인",
+        "1on1 부재": "정기적 1on1이 운영되지 않는",
         "의사결정 병목": "CEO가 주요 채용/배포 의사결정을 직접 승인하는",
+        "의사결정 병목 (CEO 집중)": "CEO가 모든 채용/배포를 직접 승인하는",
         "핵심가치 형해화": "핵심가치가 문서로만 존재하는",
         "거버넌스 미성숙": (
             f"조직 규모가 '{responses.get('L1-2', '?')}'인데 실무진 채용 승인이 "

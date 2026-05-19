@@ -133,9 +133,9 @@ def render_sidebar() -> str:
             ("layer2_a", "2-A. 인력 · 채용 진단"),
             ("layer2_b", "2-B. 보상 진단"),
             ("layer2_c", "2-C. 평가 · 리더십 진단"),
-            ("result_summary", "3. 진단 결과 요약"),
-            ("result_detail", "3-2. 영역별 상세 분석"),
-            ("simulation", "4. 트레이드오프 시뮬레이션"),
+            ("result_summary", "03. 진단 결과 요약"),
+            ("result_detail", "03-2. 영역별 상세 분석"),
+            ("simulation", "04. 트레이드오프 시뮬레이션"),
         ]
 
         current_step = st.session_state.current_step
