@@ -10,7 +10,7 @@ SCENARIOS = {
         "id": "performance",
         "name": "성과주의 가속형",
         "subtitle": "Meritocracy Accelerator",
-        "icon": "🚀",
+        "icon": "",
         "description": "보상 차등을 극대화하고 평가 정교도를 높여 고성과자를 강하게 동기부여하는 전략입니다.",
         "philosophy": "성과가 곧 보상이다. 탁월한 기여에 탁월한 보상을.",
         "package": [
@@ -68,7 +68,7 @@ SCENARIOS = {
         "id": "community",
         "name": "공동체 안정형",
         "subtitle": "Community Stabilizer",
-        "icon": "🤝",
+        "icon": "",
         "description": "보상 차등을 최소화하고 조직 문화와 심리적 안전감을 통해 장기 리텐션을 확보하는 전략입니다.",
         "philosophy": "함께 성장한다. 동료 간 신뢰가 최고의 성과를 만든다.",
         "package": [
@@ -126,7 +126,7 @@ SCENARIOS = {
         "id": "elite",
         "name": "소수정예 집중형",
         "subtitle": "Elite Focus",
-        "icon": "💎",
+        "icon": "",
         "description": "핵심인재 10~15%에 자원을 집중 투자하고, 나머지는 최소 관리하는 전략입니다.",
         "philosophy": "소수의 A급 인재가 조직의 운명을 결정한다.",
         "package": [

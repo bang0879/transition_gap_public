@@ -204,7 +204,7 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
         else:
             recommendation += "성과급 운영 원칙을 명확히 해 보상-성과 연동을 점진적으로 강화하십시오."
     else:
-        recommendation = "보상 구조는 현재 큰 갭이 작습니다. 시장 데이터 업데이트와 밴드 미세 조정을 우선하십시오."
+        recommendation = "보상 구조는 현재 개선 필요량이 작습니다. 시장 데이터 업데이트와 밴드 미세 조정을 우선하십시오."
 
     return AreaAnalysis(
         area_id="compensation",
@@ -278,14 +278,14 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     if _is_evaluation_active(eval_cycle):
         status = (
             f"귀사는 현재 '{eval_cycle}' 주기로 '{eval_method}' 방식의 평가를 운영하고 있습니다. "
-            f"평가와 보상의 연동 수준은 {eval_link}점/5점이며, 대표님이 인식하는 "
+            f"평가와 보상의 연동 수준은 {eval_link}점/5점이며, CEO가 인식하는 "
             f"평가 공정성은 {ceo_fair}점/10점, 직원이 느낄 것으로 예상되는 공정성은 "
             f"{emp_fair}점/10점입니다."
         )
         if fairness_gap >= 3:
-            status += " 대표와 직원 간 공정성 인식 갭이 3점 이상으로 평가 신뢰 회복을 위한 즉시 대응이 필요합니다."
+            status += " 대표와 직원 간 공정성 인식 차이가 3점 이상으로 평가 신뢰 회복을 위한 즉시 대응이 필요합니다."
         elif fairness_gap >= 2:
-            status += " 대표와 직원 간 공정성 인식 갭이 2점 이상으로 위험 신호가 감지됩니다."
+            status += " 대표와 직원 간 공정성 인식 차이가 2점 이상으로 위험 신호가 감지됩니다."
         elif fairness_gap >= 1:
             status += " 대표와 직원 간 공정성 인식에 차이가 있어 수용성 관리가 필요합니다."
     else:
@@ -298,17 +298,17 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     if not _is_evaluation_active(eval_cycle):
         tags.append("평가 체계 부재")
     if fairness_gap >= 3:
-        tags.append("공정성 갭 심각")
+        tags.append("공정성 차이 심각")
     elif fairness_gap >= 2:
-        tags.append("공정성 갭 위험")
+        tags.append("공정성 차이 위험")
     elif fairness_gap == 1:
-        tags.append("공정성 갭 주의")
+        tags.append("공정성 차이 주의")
 
     issues: list[Issue] = []
     if fairness_gap >= 3:
         issues.append(
             Issue(
-                "대표-직원 공정성 인식 갭 심각",
+                "대표-직원 공정성 인식 차이 심각",
                 f"대표 인식({ceo_fair}점)과 직원 예상({emp_fair}점)의 차이가 {fairness_gap}점입니다.",
                 "high",
             )
@@ -316,7 +316,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     elif fairness_gap >= 2:
         issues.append(
             Issue(
-                "대표-직원 공정성 인식 갭 위험",
+                "대표-직원 공정성 인식 차이 위험",
                 f"대표 인식({ceo_fair}점)과 직원 예상({emp_fair}점)의 차이가 {fairness_gap}점입니다.",
                 "high",
             )
@@ -324,7 +324,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     elif fairness_gap == 1:
         issues.append(
             Issue(
-                "대표-직원 공정성 인식 갭 주의",
+                "대표-직원 공정성 인식 차이 주의",
                 f"대표 인식({ceo_fair}점)과 직원 예상({emp_fair}점)의 차이가 1점입니다.",
                 "medium",
             )
@@ -381,7 +381,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
             f"현재 {reason} 상황을 고려할 때, "
         )
         if _is_small_org(responses.get("L1-2")):
-            recommendation += "관대한 절대평가와 격주 1on1로 시작하고, 보상 연동은 1~2사이클 안착 후 진행하십시오."
+            recommendation += "관대한 절대평가와 격주 1on1로 시작하고, 보상 연동은 1–2사이클 안착 후 진행하십시오."
         else:
             recommendation += "OKR과 반기 공식 리뷰를 병행하되, 평가-보상 연동은 최소 3개월 이후 단계적으로 붙이십시오."
     else:
@@ -426,7 +426,7 @@ def _calc_evaluation_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
     score += fairness_impact
     score += gap_impact
     breakdown.append(_score_item("평가 공정성 평균", f"{avg_fair:.1f}점/10점", fairness_impact, "CEO/직원 예상 평균"))
-    breakdown.append(_score_item("공정성 인식 갭", f"{ceo_fair - emp_fair}점", gap_impact, "CEO 인식이 직원 예상보다 높을 때 감점"))
+    breakdown.append(_score_item("공정성 인식 차이", f"{ceo_fair - emp_fair}점", gap_impact, "CEO 인식이 직원 예상보다 높을 때 감점"))
 
     return _finalize_score(score, breakdown)
 
@@ -515,9 +515,9 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
         elif issues[0].title == "채용 소요 기간 과다":
             recommendation += "단기적으로 핵심 포지션 헤드헌터 병행을, 중기적으로 채용 브랜딩 투자를 권고합니다."
         else:
-            recommendation += "리퍼럴을 유지하되 채용 플랫폼을 1~2개 추가해 후보 풀을 넓히십시오."
+            recommendation += "리퍼럴을 유지하되 채용 플랫폼을 1–2개 추가해 후보 풀을 넓히십시오."
     else:
-        recommendation = "채용 파이프라인은 현재 큰 갭이 작습니다. 오퍼 경험과 채널별 전환율 기록을 시작하십시오."
+        recommendation = "채용 파이프라인은 현재 개선 필요량이 작습니다. 오퍼 경험과 채널별 전환율 기록을 시작하십시오."
 
     return AreaAnalysis(
         area_id="recruitment",
@@ -823,7 +823,7 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
         else:
             recommendation += "핵심가치를 관찰 가능한 행동 기준으로 바꿔 채용과 평가에 연결하십시오."
     else:
-        recommendation = "리더십·거버넌스는 현재 큰 갭이 작습니다. 위임 범위와 리더 운영 데이터를 정기 점검하십시오."
+        recommendation = "리더십·거버넌스는 현재 개선 필요량이 작습니다. 위임 범위와 리더 운영 데이터를 정기 점검하십시오."
 
     return AreaAnalysis(
         area_id="leadership",
@@ -896,7 +896,7 @@ def _score_item(factor: str, value: Any, impact: int, note: str = "") -> dict[st
 
 
 def _finalize_score(score: int, breakdown: list[dict[str, Any]]) -> tuple[int, list[dict[str, Any]]]:
-    """최종 점수를 0~100으로 제한하고 산출 근거에 합계를 추가한다."""
+    """최종 점수를 0–100으로 제한하고 산출 근거에 합계를 추가한다."""
     final_score = _clamp_score(score)
     breakdown.append(_score_item("최종 점수", "-", final_score, f"= {final_score}점"))
     return final_score, breakdown
@@ -919,6 +919,10 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
             f"복리후생 수준은 '{responses.get('2-3-6', '?')}'이나 "
             f"시장 보상이 '{responses.get('2-3-5', '?')}'인"
         ),
+        "대표-직원 공정성 인식 차이 심각": (
+            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
+            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
+        ),
         "대표-직원 공정성 인식 갭 심각": (
             f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
             f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
@@ -927,10 +931,15 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
             f"CEO({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
             f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
         ),
+        "대표-직원 공정성 인식 차이 위험": (
+            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
+            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식 차이가 있는"
+        ),
         "대표-직원 공정성 인식 갭 위험": (
             f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
             f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식 차이가 있는"
         ),
+        "대표-직원 공정성 인식 차이 주의": "대표와 직원 간 공정성 인식에 차이가 있는",
         "대표-직원 공정성 인식 갭 주의": "대표와 직원 간 공정성 인식에 차이가 있는",
         "CEO-직원 공정성 갭 주의": "CEO와 직원 간 공정성 인식에 차이가 있는",
         "평가-보상 디커플링": (

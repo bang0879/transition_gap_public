@@ -25,7 +25,7 @@ def render_scenario_detail(responses: dict[str, Any]) -> None:
     for scenario_id in SCENARIO_IDS:
         scenario = SCENARIOS[scenario_id]
         suffix = " · 추천" if scenario_id == recommended else ""
-        tab_labels.append(f"{scenario['icon']} {scenario['name']}{suffix}")
+        tab_labels.append(f"{scenario['name']}{suffix}")
 
     tabs = st.tabs(tab_labels)
     for tab, scenario_id in zip(tabs, SCENARIO_IDS):
@@ -35,7 +35,7 @@ def render_scenario_detail(responses: dict[str, Any]) -> None:
 
 def _render_single_scenario(scenario: dict[str, Any], is_recommended: bool) -> None:
     """단일 시나리오 상세를 렌더링한다."""
-    header = f"#### {scenario['icon']} {scenario['name']}"
+    header = f"#### {scenario['name']}"
     if is_recommended:
         header += " · 추천"
     st.markdown(header)
@@ -115,8 +115,8 @@ def _get_recommended_scenario(responses: dict[str, Any]) -> str:
     """
     매트릭스 결과 기반 추천 시나리오 ID를 반환한다.
 
-    TODO: MVP 이후에는 As-Is 응답이 아니라 CEO가 매트릭스에서 선택한 To-Be 사분면에 따라
-    시나리오를 연동해야 한다. 현재는 Transition 맥락이 약한 단순 As-Is 기반 힌트다.
+    TODO: MVP 이후에는 현재 응답이 아니라 CEO가 매트릭스에서 선택한 목표 사분면에 따라
+    시나리오를 연동해야 한다. 현재는 Transition 맥락이 약한 단순 현재 상태 기반 힌트다.
     """
     comp_philosophy = _as_int(responses.get("2-3-1"), 3)
     eval_link = _as_int(responses.get("2-4-2"), 3)

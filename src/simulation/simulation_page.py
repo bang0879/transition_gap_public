@@ -1,7 +1,7 @@
 """
 시뮬레이션 페이지 - Stage 1 트레이드오프 매트릭스.
 
-진단 응답을 바탕으로 조직의 현재 위치(As-Is)를
+진단 응답을 바탕으로 조직의 현재 위치를
 두 개의 2x2 매트릭스에서 시각화한다.
 """
 from __future__ import annotations
@@ -26,15 +26,22 @@ def render_simulation_page() -> None:
 
     st.markdown("### 트레이드오프 시뮬레이션")
     st.markdown(
-        "인사제도의 모든 선택에는 반대급부가 있습니다. "
-        "보상을 높이면 인건비가 올라가고, 평가를 정교하게 하면 운영 비용이 증가합니다. "
-        "아래 매트릭스는 귀사의 현재 위치와 개선 방향 간의 트레이드오프를 보여줍니다."
+        '<div style="border-left:4px solid #14B8A6;padding:12px 16px;background:#F0FDFA;'
+        'border-radius:0 8px 8px 0;margin-bottom:16px;">'
+        '<p style="font-size:15px;font-weight:600;color:#0F172A;margin:0 0 4px 0;">'
+        '"완벽한 인사제도는 없습니다"</p>'
+        '<p style="font-size:13px;color:#475569;margin:0;line-height:1.6;">'
+        '보상을 높이면 인건비가 올라가고, 평가를 정교하게 하면 운영 비용이 증가합니다. '
+        '성과 차등을 강화하면 동기 부여는 올라가지만 조직의 심리적 안전감은 떨어집니다. '
+        '인사제도의 모든 선택에는 반대급부가 있으며, 핵심은 '
+        '<strong>우리 조직에 맞는 균형점</strong>을 찾는 것입니다.'
+        '</p>'
+        '</div>',
+        unsafe_allow_html=True,
     )
-
-    st.info(
-        "**풍선 효과(Balloon Effect)**: 한쪽 가치를 강하게 누르면 다른 쪽의 비용이 부풀어 오를 수 있습니다. "
-        "예를 들어 성과급 중심 보상은 단기 성과를 자극하지만 협업 비용과 공정성 민감도를 높일 수 있습니다. "
-        "이 단계에서는 정답을 고르는 것이 아니라, 현재 조직이 어떤 긴장 위에 서 있는지 확인합니다."
+    st.markdown(
+        "아래 매트릭스는 귀사의 현재 위치(●)와 "
+        "벤치마크 기반 목표 방향(◆) 간의 트레이드오프를 보여줍니다."
     )
 
     st.markdown("---")
@@ -83,6 +90,7 @@ def _render_matrix_a(
 
     fig_a = render_matrix_a(coords, visibility_score, selected_scenario)
     st.plotly_chart(fig_a, use_container_width=True, config={"displayModeBar": False})
+    _render_matrix_legend()
 
     st.markdown(f"**현재 사분면**: {coords.matrix_a_quadrant}")
     st.markdown("---")
@@ -99,6 +107,7 @@ def _render_matrix_b(
 
     fig_b = render_matrix_b(coords, visibility_score, selected_scenario)
     st.plotly_chart(fig_b, use_container_width=True, config={"displayModeBar": False})
+    _render_matrix_legend()
 
     st.markdown(f"**현재 사분면**: {coords.matrix_b_quadrant}")
     st.markdown("---")
@@ -111,6 +120,21 @@ def _render_summary(matrix_a_quadrant: str, matrix_b_quadrant: str) -> None:
         f"- 매트릭스 A: **{matrix_a_quadrant}**\n"
         f"- 매트릭스 B: **{matrix_b_quadrant}**\n\n"
         "다음 단계에서는 이 현재 위치를 기준으로 선택 가능한 시나리오와 전환 비용을 비교합니다."
+    )
+
+
+def _render_matrix_legend() -> None:
+    """현재 상태와 목표 점의 의미를 설명한다."""
+    st.markdown(
+        '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;'
+        'margin:8px 0;font-size:12px;color:#64748B;">'
+        '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;'
+        'background:#94A3B8;margin-right:4px;"></span>현재 상태 — 귀사의 설문 응답 기반</span>'
+        '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;'
+        'background:#14B8A6;margin-right:4px;transform:rotate(45deg);"></span>'
+        '목표 — 동종업계 벤치마크 기반 추천 방향</span>'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
 
@@ -129,9 +153,7 @@ def _render_scenario_selection(responses: dict) -> None:
     selected = st.radio(
         "실행할 시나리오를 선택하세요.",
         options=SCENARIO_IDS,
-        format_func=lambda scenario_id: (
-            f"{SCENARIOS[scenario_id]['icon']} {SCENARIOS[scenario_id]['name']}"
-        ),
+        format_func=lambda scenario_id: SCENARIOS[scenario_id]["name"],
         horizontal=True,
         key="selected_scenario",
         label_visibility="collapsed",

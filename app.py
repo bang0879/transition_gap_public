@@ -5,7 +5,6 @@ Streamlit 진입점
 from __future__ import annotations
 
 import streamlit as st
-from streamlit_scroll_to_top import scroll_to_here
 
 from src.diagnosis.form_layer1 import get_layer1_missing, render_layer1_form
 from src.diagnosis.form_layer2 import (
@@ -16,7 +15,7 @@ from src.diagnosis.form_layer2 import (
     render_layer2_b_form,
     render_layer2_c_form,
 )
-from src.diagnosis.variables import get_question_number
+from src.diagnosis.variables import ALL_VARIABLES, get_question_number
 from src.diagnosis.result_page import render_result_detail, render_result_summary
 from src.database import init_db, load_latest_session_snapshot, save_session
 from src.intro_page import render_intro_page
@@ -45,6 +44,8 @@ if "responses" not in st.session_state:
     st.session_state.responses = {}
 if "session_id" not in st.session_state:
     st.session_state.session_id = None
+if "session_alias" not in st.session_state:
+    st.session_state.session_alias = ""
 if "selected_scenario" not in st.session_state:
     st.session_state.selected_scenario = "performance"
 if "_needs_scroll" not in st.session_state:
@@ -65,6 +66,10 @@ init_db()
 
 def _restore_session() -> None:
     """가장 최근 세션이 있으면 응답 데이터만 session_state에 복원한다."""
+    if st.session_state.get("_skip_restore_once"):
+        st.session_state["_skip_restore_once"] = False
+        return
+
     if st.session_state.get("responses"):
         return
 
@@ -115,6 +120,40 @@ def _is_all_input_complete() -> bool:
     return True
 
 
+def _reset_session() -> None:
+    """현재 브라우저 세션만 초기화하고 새 진단 입력으로 돌아간다."""
+    for key in (
+        "cached_areas",
+        "_responses_hash",
+        "session_alias_input",
+    ):
+        st.session_state.pop(key, None)
+    for variable in ALL_VARIABLES:
+        input_key = f"input_{variable.id}"
+        st.session_state.pop(input_key, None)
+        st.session_state.pop(f"{input_key}_base", None)
+        st.session_state.pop(f"{input_key}_performance", None)
+        st.session_state.pop(f"{input_key}_equity", None)
+
+    st.session_state.current_step = "intro"
+    st.session_state.responses = {}
+    st.session_state.session_id = None
+    st.session_state.session_alias = ""
+    st.session_state.selected_scenario = "performance"
+    st.session_state["_skip_restore_once"] = True
+    st.session_state["_needs_scroll"] = True
+    st.rerun()
+
+
+def _calc_progress(current_step: str) -> float:
+    """현재 단계 기준 진행률을 0.0~1.0으로 반환한다."""
+    if current_step not in STEP_ORDER:
+        return 0.0
+    if len(STEP_ORDER) <= 1:
+        return 1.0
+    return STEP_ORDER.index(current_step) / (len(STEP_ORDER) - 1)
+
+
 # ============================================================
 # 사이드바 — 진행 단계 표시
 # ============================================================
@@ -124,6 +163,8 @@ def render_sidebar() -> str:
     with st.sidebar:
         st.markdown("### Transition Gap")
         st.caption("스타트업 인사제도 정합성 진단 도구")
+        alias = st.session_state.get("session_alias") or "미지정"
+        st.caption(f"진단 대상: {alias}")
         st.markdown("---")
 
         st.markdown("#### 진단 단계")
@@ -140,6 +181,10 @@ def render_sidebar() -> str:
 
         current_step = st.session_state.current_step
         all_complete = _is_all_input_complete()
+        progress = _calc_progress(current_step)
+        st.progress(progress)
+        st.caption(f"진행률 {round(progress * 100)}%")
+        st.markdown("")
 
         for step_id, step_label in steps:
             is_current = step_id == current_step
@@ -162,6 +207,10 @@ def render_sidebar() -> str:
                     f"<span style='font-size: 11px; color: #C9844A;'>입력 필요</span>",
                     unsafe_allow_html=True,
                 )
+
+        st.markdown("---")
+        if st.button("새 진단 시작", key="reset_session", use_container_width=True):
+            _reset_session()
 
     return current_step
 
@@ -228,7 +277,6 @@ def render_step_navigation(
 
 def main() -> None:
     if st.session_state.get("_needs_scroll", False):
-        scroll_to_here(0)
         st.session_state["_needs_scroll"] = False
 
     current_step = render_sidebar()

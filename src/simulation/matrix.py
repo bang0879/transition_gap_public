@@ -1,7 +1,7 @@
 """
 매트릭스 A·B Plotly 시각화.
 
-As-Is를 흐린 원으로 표시하고, 가시성 지수와 페인포인트 분산도를
+현재 상태를 흐린 원으로 표시하고, 가시성 지수와 페인포인트 분산도를
 마커 크기·투명도·색상에 반영한다.
 """
 from __future__ import annotations
@@ -233,7 +233,7 @@ def _add_as_is_marker(
     visibility_score: float,
     dispersion: float,
 ) -> None:
-    """As-Is 위치를 흐린 원으로 추가한다."""
+    """현재 위치를 흐린 원으로 추가한다."""
     marker_size = max(40.0, 80.0 - (visibility_score * 0.6))
     marker_opacity = 0.3 + (_clamp(visibility_score, 0.0, 100.0) / 100.0) * 0.5
     marker_color = COLORS["accent"] if dispersion >= 0.3 else COLORS["primary"]
@@ -250,7 +250,7 @@ def _add_as_is_marker(
                 line=dict(width=2, color=COLORS["text_primary"]),
             ),
             hovertemplate=(
-                "<b>현재 위치 (As-Is)</b><br>"
+                "<b>현재 위치</b><br>"
                 f"X: {_clamp(x):.2f}<br>"
                 f"Y: {_clamp(y):.2f}<br>"
                 f"가시성 지수: {visibility_score:.1f}%<br>"
@@ -267,7 +267,7 @@ def _add_to_be_vector(
     as_is_y: float,
     target: dict[str, Any],
 ) -> None:
-    """As-Is에서 선택 시나리오의 To-Be 기준점으로 향하는 벡터를 추가한다."""
+    """현재 위치에서 선택 시나리오의 목표 기준점으로 향하는 벡터를 추가한다."""
     target_x = _clamp(float(target["x"]))
     target_y = _clamp(float(target["y"]))
     current_x = _clamp(as_is_x)
@@ -300,16 +300,16 @@ def _add_to_be_vector(
                 symbol="diamond",
                 line=dict(width=2, color=COLORS["background"]),
             ),
-            text=["To-Be"],
+            text=["목표"],
             textposition="top center",
             textfont=dict(size=11, color="#14B8A6"),
             hovertemplate=(
-                f"<b>To-Be 기준점</b><br>{target['label']}<br>"
+                f"<b>목표 기준점</b><br>{target['label']}<br>"
                 f"X: {target_x:.2f}<br>"
                 f"Y: {target_y:.2f}<br>"
                 "<extra></extra>"
             ),
-            name="To-Be 기준점",
+            name="목표 기준점",
         )
     )
 
@@ -318,7 +318,7 @@ def _target_for_scenario(
     selected_scenario_id: str,
     targets: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    """선택 시나리오에 맞는 To-Be 기준점을 반환한다."""
+    """선택 시나리오에 맞는 목표 기준점을 반환한다."""
     return targets.get(selected_scenario_id, targets["performance"])
 
 

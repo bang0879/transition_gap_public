@@ -74,3 +74,16 @@ def render_intro_page() -> None:
         "**다음 단계**: 입력하신 데이터를 바탕으로 전문가가 심층 분석하여 "
         "맞춤형 리포트를 영업일 기준 3~5일 내에 전달해 드립니다."
     )
+
+    st.markdown("---")
+    st.markdown("### 진단 대상")
+    if "session_alias_input" not in st.session_state:
+        st.session_state["session_alias_input"] = st.session_state.get("session_alias", "")
+
+    session_alias = st.text_input(
+        "회사명 또는 내부 식별명",
+        placeholder="예: Company A, 7월 파일럿 고객사",
+        key="session_alias_input",
+        help="민감한 실명 대신 내부 식별명을 사용해도 됩니다.",
+    )
+    st.session_state["session_alias"] = session_alias.strip()

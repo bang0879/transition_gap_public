@@ -5,7 +5,9 @@
 """
 from __future__ import annotations
 
+import html
 import json
+import re
 from typing import Final
 
 import plotly.graph_objects as go
@@ -21,6 +23,18 @@ TIER_COLORS: Final[dict[str, str]] = {
     "medium_low": COLORS["warning"],
     "medium": COLORS["accent"],
     "high": COLORS["success"],
+}
+PRIORITY_LABELS: Final[dict[int, tuple[str, str]]] = {
+    1: ("가장 먼저 개선", "#C8465A"),
+    2: ("두 번째로 개선", "#C9844A"),
+    3: ("세 번째로 개선", "#4F9A86"),
+    4: ("네 번째로 개선", "#4F9A86"),
+    5: ("다섯 번째로 개선", "#4F9A86"),
+}
+SEVERITY_BADGES: Final[dict[str, tuple[str, str]]] = {
+    "high": ("즉시 대응", "#C8465A"),
+    "medium": ("주의 필요", "#C9844A"),
+    "low": ("참고", "#4F9A86"),
 }
 
 
@@ -40,13 +54,15 @@ def render_result_summary() -> None:
     result = calculate_visibility_index(responses)
     areas = _get_cached_areas(responses)
     cross_insights = get_cross_domain_insights(areas, responses)
+    alias = st.session_state.get("session_alias") or "미지정"
 
-    st.markdown("### 진단 결과 요약")
+    st.markdown(f"### {alias} 진단 결과 요약")
     st.markdown(
         "30여 개 문항에 대한 귀사의 응답을 분석했습니다. "
         "5개 영역(보상·평가·채용·인력·리더십)의 현황을 종합하여 "
         "전체 정합성과 개선 우선순위를 보여드립니다."
     )
+    _render_summary_actions()
     st.markdown("---")
 
     if result.score < 60:
@@ -63,13 +79,13 @@ def render_result_summary() -> None:
         st.markdown("---")
         st.markdown("### 핵심 인사이트")
         for insight in cross_insights:
-            st.info(insight)
+            st.info(_format_display_text(insight))
 
     st.markdown("---")
     st.markdown("### 어디를 먼저 개선해야 하는가")
     st.markdown(
         "아래 점수는 귀사의 설문 응답을 기반으로 자동 산출된 것이며, "
-        "100점 만점입니다. 목표는 동종업계(50~100인 B2B SaaS) 벤치마크 기준입니다."
+        "100점 만점입니다. 목표는 동종업계(50–100인 B2B SaaS) 벤치마크 기준입니다."
     )
     _render_gap_table(areas)
 
@@ -111,6 +127,29 @@ def _get_cached_areas(responses: dict) -> list[AreaAnalysis]:
         st.session_state["cached_areas"] = analyze_all_areas(responses)
         st.session_state["_responses_hash"] = responses_hash
     return st.session_state["cached_areas"]
+
+
+def _render_summary_actions() -> None:
+    """진단 요약 상단의 시각 액션 버튼을 렌더링한다."""
+    # TODO: PDF 리포트 생성 모듈 연결 후 실제 다운로드 버튼으로 전환한다.
+    # TODO: 공유용 링크/스냅샷 정책 확정 후 공유 버튼 동작을 연결한다.
+    st.markdown(
+        """
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px;">
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+            border-radius:8px;border:1px solid #E5E8EC;background:#FFFFFF;
+            color:#2C3E50;font-size:12px;font-weight:600;">
+            PDF 저장
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+            border-radius:8px;border:1px solid #E5E8EC;background:#FFFFFF;
+            color:#2C3E50;font-size:12px;font-weight:600;">
+            공유하기
+          </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def build_visibility_gauge(result: VisibilityResult) -> go.Figure:
@@ -192,6 +231,53 @@ def _render_visibility_details(result: VisibilityResult) -> None:
         st.markdown("**모든 핵심 지표가 측정되고 있습니다.**")
 
 
+def _get_visibility_color(visibility: float) -> tuple[str, str, str]:
+    """가시성 수준별 색상과 라벨을 반환한다."""
+    if visibility >= 80:
+        return "#0D9488", "#F0FDFA", "높음"
+    if visibility >= 60:
+        return "#14B8A6", "#F0FDFA", "보통"
+    if visibility >= 40:
+        return "#F59E0B", "#FFFBEB", "주의"
+    return "#E11D48", "#FFF1F2", "위험"
+
+
+def _render_visibility_bar(result: VisibilityResult) -> None:
+    """HR 데이터 가시성 4단계 색상 바를 렌더링한다."""
+    score = max(0.0, min(100.0, result.score))
+    color, bg_color, label = _get_visibility_color(score)
+    st.markdown(
+        f"""
+        <div style="padding:16px;border-radius:10px;background:{bg_color};
+          border:1px solid {color}33;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:600;color:#1E293B;">HR 데이터 가시성</span>
+            <span style="display:inline-block;padding:2px 10px;border-radius:999px;
+              font-size:11px;font-weight:700;background:{color}22;color:{color};">{label}</span>
+          </div>
+          <div style="height:8px;border-radius:999px;background:#E2E8F0;overflow:hidden;">
+            <div style="width:{score}%;height:100%;border-radius:999px;background:{color};"></div>
+          </div>
+          <p style="font-size:24px;font-weight:700;color:{color};margin:8px 0 0;">
+            {score:.1f}%
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;
+            font-size:11px;color:#94A3B8;">
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#0D9488;margin-right:4px;"></span>80%↑ 높음</span>
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#14B8A6;margin-right:4px;"></span>60–79% 보통</span>
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#F59E0B;margin-right:4px;"></span>40–59% 주의</span>
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#E11D48;margin-right:4px;"></span>40%↓ 위험</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def _render_summary_dashboard(result: VisibilityResult, areas: list[AreaAnalysis]) -> None:
     """정합성 지수와 가시성 지수를 요약 카드와 차트로 표시한다."""
     consistency_score = round(sum(area.score for area in areas) / len(areas)) if areas else 0
@@ -207,12 +293,7 @@ def _render_summary_dashboard(result: VisibilityResult, areas: list[AreaAnalysis
         )
         st.caption("귀사의 인사제도 구성요소들이 서로 얼마나 일관되게 작동하는지를 나타냅니다.")
     with col2:
-        st.metric(
-            label="HR 데이터 가시성 지수",
-            value=f"{result.score:.1f}%",
-            delta=f"{_format_number(result.numerator)} / {result.denominator}개 핵심 지표 측정 중",
-            delta_color="off",
-        )
+        _render_visibility_bar(result)
         st.caption("인력 현황을 데이터로 파악하고 있는 정도를 나타냅니다. 측정하지 않는 것은 관리할 수 없습니다.")
 
     st.markdown("")
@@ -278,13 +359,13 @@ def _render_area_analysis(responses: dict) -> None:
     st.markdown("---")
 
     if cross_insights:
-        st.markdown("### Expert Insight")
+        st.markdown("### 핵심 인사이트")
         for insight in cross_insights:
-            st.info(insight)
+            st.info(_format_display_text(insight))
         st.markdown("---")
 
     st.markdown("### 어디를 먼저 개선해야 하는가")
-    st.caption("5개 영역의 현재 수준과 목표 수준의 갭을 비교합니다.")
+    st.caption("5개 영역의 현재 수준과 목표 수준의 차이를 비교합니다.")
     _render_gap_table(areas)
 
     st.markdown("---")
@@ -300,21 +381,21 @@ def _render_area_analysis(responses: dict) -> None:
 
 
 def _render_gap_table(areas: list[AreaAnalysis]) -> None:
-    """영역별 갭 비교를 Plotly 수평 바 차트로 렌더링한다."""
+    """영역별 목표 대비 차이를 Plotly 수평 바 차트로 렌더링한다."""
     y_positions = list(range(len(areas)))
     area_names = [area.area_name for area in areas]
-    as_is_scores = [area.score for area in areas]
-    gap_values = [max(area.gap, 0) for area in areas]
+    current_scores = [area.score for area in areas]
+    improvement_values = [max(area.gap, 0) for area in areas]
 
     fig = go.Figure()
     fig.add_trace(
         go.Bar(
             y=y_positions,
-            x=as_is_scores,
+            x=current_scores,
             orientation="h",
-            name="현재 (As-Is)",
+            name="현재",
             marker_color="#94A3B8",
-            text=[f"{score}점" for score in as_is_scores],
+            text=[f"{score}점" for score in current_scores],
             textposition="inside",
             textfont=dict(color="white", size=12),
             customdata=area_names,
@@ -324,15 +405,15 @@ def _render_gap_table(areas: list[AreaAnalysis]) -> None:
     fig.add_trace(
         go.Bar(
             y=y_positions,
-            x=gap_values,
+            x=improvement_values,
             orientation="h",
-            name="갭 (Gap)",
+            name="개선 필요량",
             marker_color="#F87171",
             text=[_format_gap(area.gap) for area in areas],
             textposition="inside",
             textfont=dict(color="white", size=12),
             customdata=area_names,
-            hovertemplate="%{customdata}<br>개선 갭 %{text}<extra></extra>",
+            hovertemplate="%{customdata}<br>개선 필요량 %{text}<extra></extra>",
         )
     )
 
@@ -381,11 +462,14 @@ def _render_gap_table(areas: list[AreaAnalysis]) -> None:
         with col:
             st.markdown(f"**{area.area_name}**")
             if area.priority > 0:
-                priority_color = "#C8465A" if area.priority <= 2 else "#C9844A"
+                priority_label, priority_color = PRIORITY_LABELS.get(
+                    area.priority,
+                    ("후속 개선", "#4F9A86"),
+                )
                 st.markdown(
                     f'<span style="display:inline-block;padding:2px 8px;border-radius:999px;'
                     f'font-size:11px;background:{priority_color};color:white;margin-right:4px;">'
-                    f'P{area.priority}</span>',
+                    f'{priority_label}</span>',
                     unsafe_allow_html=True,
                 )
             difficulty_color = {
@@ -424,7 +508,7 @@ def _render_area_detail(area: AreaAnalysis) -> None:
         _render_score_breakdown(area)
 
     st.markdown("**1. 현황 진단**")
-    st.markdown(area.status_text)
+    st.markdown(_format_status_html(area.status_text), unsafe_allow_html=True)
     _render_tags(area.tags)
 
     st.markdown("")
@@ -440,7 +524,7 @@ def _render_area_detail(area: AreaAnalysis) -> None:
 
     st.markdown("")
     st.markdown("**5. 추천 방향**")
-    st.success(area.recommendation)
+    st.success(_format_display_text(area.recommendation))
 
 
 def _render_score_breakdown(area: AreaAnalysis) -> None:
@@ -464,14 +548,20 @@ def _render_score_breakdown(area: AreaAnalysis) -> None:
             impact_text = "±0점"
             impact_color = "#94A3B8"
 
-        note = f'<span style="font-size:11px;color:#A0AAB5;margin-left:8px;">{item["note"]}</span>' if item.get("note") else ""
+        item_value = html.escape(_format_display_text(item["value"]))
+        note = (
+            f'<span style="font-size:11px;color:#A0AAB5;margin-left:8px;">'
+            f'{html.escape(_format_display_text(item["note"]))}</span>'
+            if item.get("note")
+            else ""
+        )
         st.markdown(
             f'<div style="display:flex;justify-content:space-between;align-items:center;'
             f'gap:12px;padding:6px 0;border-bottom:1px solid #F1F5F9;">'
             f'<div>'
-            f'<span style="font-size:13px;color:#1E293B;">{item["factor"]}</span>'
+            f'<span style="font-size:13px;color:#1E293B;">{html.escape(_format_display_text(item["factor"]))}</span>'
             f'<span style="font-size:12px;color:#94A3B8;margin-left:8px;">'
-            f'({item["value"]})</span>{note}'
+            f'({item_value})</span>{note}'
             f'</div>'
             f'<span style="font-size:13px;font-weight:600;color:{impact_color};white-space:nowrap;">'
             f'{impact_text}</span>'
@@ -486,6 +576,73 @@ def _render_score_breakdown(area: AreaAnalysis) -> None:
     st.caption(f"기본 {base_score}점에서 귀사 응답에 따라 가감하여 최종 {area.score}점이 산출되었습니다.")
 
 
+def _format_display_text(text: str) -> str:
+    """사용자 노출 텍스트의 표기만 정리한다."""
+    return (
+        str(text)
+        .replace("~", "–")
+        .replace("As-Is", "현재 상태")
+        .replace("To-Be", "목표")
+        .replace("갭", "차이")
+    )
+
+
+def _format_status_html(status_text: str) -> str:
+    """현황 진단 문구에 키워드 강조를 적용한 HTML을 반환한다."""
+    danger_keywords = (
+        "위험",
+        "심각",
+        "하위",
+        "부재",
+        "없음",
+        "비정기",
+        "회피함",
+        "어려워함",
+        "운영 안 함",
+        "불신",
+        "낮아",
+        "높은",
+        "즉시 대응",
+        "사각지대",
+        "4개월 초과",
+        "20% 이상",
+        "30% 이상",
+        "문서로만 존재함",
+        "모름",
+    )
+    positive_keywords = (
+        "양호",
+        "상위",
+        "관리 가능한",
+        "정기 운영",
+        "강한 연동",
+        "완전 연동",
+        "능숙하게 전달함",
+        "10% 미만",
+        "존재",
+        "일관",
+        "안정",
+    )
+
+    formatted = html.escape(_format_display_text(status_text))
+    for keyword in danger_keywords:
+        formatted = formatted.replace(
+            keyword,
+            f'<strong style="color:#C8465A;">{keyword}</strong>',
+        )
+    for keyword in positive_keywords:
+        formatted = formatted.replace(
+            keyword,
+            f'<strong style="color:#14B8A6;">{keyword}</strong>',
+        )
+    formatted = re.sub(
+        r"(\d+(?:\.\d+)?점(?:/\d+점)?|\d+(?:\.\d+)?%)",
+        r'<strong style="font-weight:700;">\1</strong>',
+        formatted,
+    )
+    return f'<p style="line-height:1.75;margin-top:0;">{formatted}</p>'
+
+
 def _render_tags(tags: list[str]) -> None:
     """현황 태그를 pill 형태로 렌더링한다."""
     if not tags:
@@ -494,7 +651,7 @@ def _render_tags(tags: list[str]) -> None:
     tag_html = " ".join(
         f'<span style="display:inline-block;padding:3px 10px;border-radius:999px;'
         f'font-size:12px;background:#F1F5F9;color:#475569;margin:2px 4px 2px 0;">'
-        f'{tag}</span>'
+        f'{html.escape(_format_display_text(tag))}</span>'
         for tag in tags
     )
     st.markdown(tag_html, unsafe_allow_html=True)
@@ -502,18 +659,24 @@ def _render_tags(tags: list[str]) -> None:
 
 def _render_issue_card(title: str, description: str, severity: str) -> None:
     """주요 이슈 카드를 렌더링한다."""
-    color = {
-        "high": "#C8465A",
-        "medium": "#C9844A",
-        "low": "#4F9A86",
-    }.get(severity, COLORS["text_secondary"])
+    badge_label, color = SEVERITY_BADGES.get(
+        severity,
+        ("참고", COLORS["text_secondary"]),
+    )
+    safe_title = html.escape(_format_display_text(title))
+    safe_description = html.escape(_format_display_text(description))
     st.markdown(
         f'<div style="padding:12px;border-radius:8px;background:#F8F9FB;'
         f'border:1px solid #E5E8EC;margin-bottom:8px;">'
-        f'<p style="font-size:14px;font-weight:600;color:#2C3E50;margin:0 0 4px 0;">'
-        f'<span style="color:{color};">●</span> {title}</p>'
+        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+        f'<span style="display:inline-block;padding:2px 8px;border-radius:999px;'
+        f'font-size:11px;font-weight:700;background:{color};color:white;">'
+        f'{badge_label}</span>'
+        f'<p style="font-size:14px;font-weight:600;color:#2C3E50;margin:0;">'
+        f'{safe_title}</p>'
+        f'</div>'
         f'<p style="font-size:13px;color:#6C7A89;line-height:1.6;margin:0;">'
-        f'{description}</p>'
+        f'{safe_description}</p>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -526,7 +689,6 @@ def _render_option_table(area: AreaAnalysis) -> None:
         return
 
     st.markdown("**3. 제도 옵션 비교**")
-    import pandas as pd
 
     include_cycle = any("cycle" in option for option in options)
     rows = []
@@ -535,21 +697,45 @@ def _render_option_table(area: AreaAnalysis) -> None:
         if option.get("recommended"):
             name = f"추천: {name}"
         row = {
-            "옵션": name,
-            "특징": option["feature"],
-            "적합 조건": option["fit"],
-            "장점": option["pro"],
-            "단점": option["con"],
+            "옵션": _format_display_text(name),
+            "특징": _format_display_text(option["feature"]),
+            "적합 조건": _format_display_text(option["fit"]),
+            "장점": _format_display_text(option["pro"]),
+            "단점": _format_display_text(option["con"]),
         }
         if include_cycle:
             row = {
-                "옵션": name,
-                "주기": option.get("cycle", "—"),
+                "옵션": _format_display_text(name),
+                "주기": _format_display_text(option.get("cycle", "—")),
                 **{key: value for key, value in row.items() if key != "옵션"},
             }
         rows.append(row)
 
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    headers = list(rows[0].keys()) if rows else []
+    header_html = "".join(
+        f'<th style="text-align:left;padding:8px;border-bottom:2px solid #E2E8F0;'
+        f'font-size:11px;color:#64748B;">{html.escape(header)}</th>'
+        for header in headers
+    )
+    rows_html = ""
+    for row in rows:
+        cells = "".join(
+            f'<td style="vertical-align:top;padding:8px;border-bottom:1px solid #F1F5F9;'
+            f'font-size:12px;color:#334155;line-height:1.5;">'
+            f'{html.escape(str(row[header]))}</td>'
+            for header in headers
+        )
+        rows_html += f"<tr>{cells}</tr>"
+
+    st.markdown(
+        f"""
+        <table style="width:100%;border-collapse:collapse;margin:8px 0 4px 0;">
+          <thead><tr>{header_html}</tr></thead>
+          <tbody>{rows_html}</tbody>
+        </table>
+        """,
+        unsafe_allow_html=True,
+    )
     st.caption("추천 표시는 현재 응답 조건에서 우선 검토할 수 있는 옵션입니다.")
 
 
@@ -561,19 +747,42 @@ def _render_benchmark(area: AreaAnalysis) -> None:
 
     st.markdown("**4. 벤치마크**")
     st.caption(benchmark["title"])
+    rows_html = []
     for item in benchmark["items"]:
-        col1, col2 = st.columns([1, 1.4])
-        with col1:
-            st.markdown(f"**{item['label']}**")
-        with col2:
-            st.markdown(item["value"])
-            st.caption(item["note"])
+        companies = item.get("companies") or []
+        companies_text = " · ".join(companies) if isinstance(companies, list) else str(companies)
+        rows_html.append(
+            "<tr>"
+            f"<td>{html.escape(_format_display_text(item['label']))}</td>"
+            f"<td><strong>{html.escape(_format_display_text(item['value']))}</strong>"
+            f"<br><span>{html.escape(_format_display_text(item['note']))}</span></td>"
+            f"<td>{html.escape(_format_display_text(companies_text))}</td>"
+            "</tr>"
+        )
+
+    st.markdown(
+        f"""
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;">
+          <thead>
+            <tr style="background:#F8F9FB;color:#2C3E50;">
+              <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">항목</th>
+              <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">벤치마크</th>
+              <th style="text-align:left;padding:8px;border:1px solid #E5E8EC;">대표 기업</th>
+            </tr>
+          </thead>
+          <tbody>
+            {"".join(rows_html)}
+          </tbody>
+        </table>
+        """,
+        unsafe_allow_html=True,
+    )
     if benchmark.get("disclaimer"):
-        st.markdown(f"*{benchmark['disclaimer']}*")
+        st.markdown(f"*{_format_display_text(benchmark['disclaimer'])}*")
 
 
 def _severity_label(gap: int) -> str:
-    """갭 크기별 상태 라벨."""
+    """목표 대비 차이 크기별 상태 라벨."""
     if gap >= 20:
         return "[위험]"
     if gap >= 10:
@@ -604,7 +813,7 @@ def _get_grade_color(score: int) -> str:
 
 
 def _format_gap(gap: int) -> str:
-    """갭을 부호 있는 문자열로 표시한다."""
+    """목표 대비 차이를 부호 있는 문자열로 표시한다."""
     return f"+{gap}" if gap >= 0 else str(gap)
 
 

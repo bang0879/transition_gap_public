@@ -98,7 +98,7 @@ def render_layer2_a_form() -> bool:
     st.caption("인력 안정성 및 채용 파이프라인 — 약 4분 소요")
     st.info(
         "지금부터 본격적인 진단입니다. 회사가 생각하는 '이상적인 방향'과 "
-        "조직의 '실제 운영 상태' 사이의 간극(Gap)을 찾습니다."
+        "조직의 '실제 운영 상태' 사이의 차이를 찾습니다."
     )
 
     responses = st.session_state.responses
@@ -175,7 +175,7 @@ def _get_missing_in_sub_categories(responses: dict[str, Any], sub_categories: li
 
 def _render_sub_category(sub_category: str, responses: dict[str, Any]) -> bool:
     """단일 sub-category를 렌더링하고 완료 여부를 반환한다."""
-    label = SUB_CATEGORY_LABELS[sub_category]
+    label = _format_display_text(SUB_CATEGORY_LABELS[sub_category])
     variables = get_variables_by_sub_category(sub_category)
 
     with st.expander(f"{sub_category}. {label}", expanded=True):
@@ -193,7 +193,7 @@ def _render_variable(var: Variable, responses: dict[str, Any]) -> None:
     """변수 정의에 맞는 Streamlit 입력 위젯을 렌더링한다."""
     _render_question_heading(var)
     if var.helper_text:
-        st.caption(var.helper_text)
+        st.caption(_format_display_text(var.helper_text))
 
     input_key = f"input_{var.id}"
 
@@ -218,10 +218,11 @@ def _render_variable(var: Variable, responses: dict[str, Any]) -> None:
 def _render_question_heading(var: Variable) -> None:
     """질문 번호와 질문 텍스트를 함께 표시한다."""
     question_number = get_question_number(var.id)
+    label = _format_display_text(var.label)
     if question_number:
-        st.markdown(f"#### Q{question_number}. {var.label}")
+        st.markdown(f"#### Q{question_number}. {label}")
     else:
-        st.markdown(f"#### {var.label}")
+        st.markdown(f"#### {label}")
 
 
 def _render_single_select(var: Variable, responses: dict[str, Any], input_key: str) -> None:
@@ -418,6 +419,11 @@ def _as_percent_int(value: Any) -> int:
     if not isinstance(value, int | float):
         return 0
     return max(0, min(100, int(value)))
+
+
+def _format_display_text(text: str) -> str:
+    """Layer 2 사용자 노출 문구의 전문 용어를 순화한다."""
+    return str(text).replace("Gap", "차이").replace("갭", "차이").replace("~", "–")
 
 
 def _is_empty_value(value: Any, input_type: InputType) -> bool:
