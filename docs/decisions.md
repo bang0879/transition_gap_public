@@ -265,3 +265,17 @@ Case study 작성 시 1차 자료로 활용된다.
 - 첫 핵심 endpoint는 `POST /api/diagnose`로 제한하고, DB/session 없이 `responses` dict만 받아 5개 영역 분석, 가시성 지수, 매트릭스 좌표, 교차 인사이트를 반환
 
 **근거**: 원본 Streamlit 동작을 보존하면서 Next.js 프론트엔드가 바로 호출할 수 있는 stateless API 계약을 먼저 고정하는 것이 마이그레이션 리스크를 가장 낮춘다.
+
+---
+
+## 2026-05-20: FastAPI 백엔드 Phase A-2 완성
+
+**컨텍스트**: Next.js 프론트엔드 전환 전에 진단 API 외에도 정적 content 조회, 사용자 행동 이벤트 로깅, implication 문구 데이터화를 완료해야 함.
+
+**결정 사항**:
+- `GET /api/schema`, `/api/scenarios`, `/api/options`를 추가해 프론트엔드가 JSON content를 직접 조회할 수 있게 함
+- `POST /api/events`와 SQLite `events.db` 로깅 구조를 추가하되, 이벤트 저장 실패가 진단 플로우를 막지 않도록 `error_logged` 응답을 반환
+- `_score_implication`의 하드코딩 분기를 `content/implications.json` 로딩 방식으로 전환하고, 기존 반환 문구 parity 테스트를 추가
+- Phase 2 JWT 인증을 위한 `app/api/deps.py` 자리만 마련하고 현재 endpoint 시그니처에는 연결하지 않음
+
+**근거**: API 계약과 content 데이터 소스를 먼저 고정하면 Next.js 화면 설계와 Zustand/API client 구현을 병렬로 진행할 수 있으며, 이벤트 로깅 장애가 MVP 진단 경험을 방해하지 않는다.

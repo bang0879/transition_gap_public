@@ -24,6 +24,10 @@ pytest tests/ -v
 | Method | Path | Description |
 |---|---|---|
 | POST | `/api/diagnose` | Returns area analysis, visibility index, matrix coordinates, and cross-domain insights |
+| GET | `/api/schema` | Returns diagnosis variable schema |
+| GET | `/api/scenarios` | Returns scenario content |
+| GET | `/api/options` | Returns HR option and benchmark content |
+| POST | `/api/events` | Logs user behavior events to local SQLite |
 | GET | `/health` | Server health check |
 
 ## Structure

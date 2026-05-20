@@ -5,11 +5,25 @@
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from app.core.visibility_index import calculate_visibility_index
 from app.core.trade_off import calculate_core_talent_loss_severity
+
+_IMPLICATIONS_PATH = Path(__file__).resolve().parent.parent / "content" / "implications.json"
+_implications_cache: dict[str, Any] | None = None
+
+
+def _load_implications() -> dict[str, Any]:
+    """Load and cache score implication text mappings."""
+    global _implications_cache
+    if _implications_cache is None:
+        with open(_IMPLICATIONS_PATH, encoding="utf-8") as f:
+            _implications_cache = json.load(f)
+    return _implications_cache
 
 
 @dataclass(frozen=True)
@@ -940,97 +954,40 @@ def _score_item(
 
 
 def _score_implication(factor: str, value: str, impact: int, note: str) -> str:
-    """점수 변동의 의미를 CEO가 이해하기 쉬운 자연어로 반환한다."""
-    if factor == "기본 점수":
-        return "[참고] 모든 영역은 기본 상태에서 시작해 실제 응답에 따라 강점과 리스크를 반영합니다."
-    if factor == "최종 점수":
-        return f"[결론] 응답 기반 리스크와 강점을 반영한 최종 점수입니다. {note}"
+    """Return the CEO-facing implication for a score change.
 
-    if factor == "시장 보상 수준":
-        if value == "하위":
-            return "[리스크] 경쟁사 대비 보상이 낮아 오퍼 거절과 핵심 인재 이탈 확률이 높습니다."
-        if value == "상위":
-            return "[강점] 시장 대비 보상 경쟁력이 안정적으로 확보된 상태입니다."
-        if value == "중위":
-            return "[참고] 시장 평균 수준이나, 핵심 포지션은 추가 투자가 필요할 수 있습니다."
-    if factor == "평가-보상 연동":
-        if impact < 0:
-            return "[리스크] 잘해도 못해도 보상이 같으면, 고성과자가 떠날 이유를 만드는 것입니다."
-        if impact > 0:
-            return "[강점] 평가가 보상에 반영되어 성과 동기가 작동하는 구조입니다."
-        return "[참고] 평가와 보상이 어느 정도 연결되어 있으나, 아직 강한 동기 장치는 아닙니다."
-    if factor == "인건비 비중":
-        if impact < 0:
-            return "[리스크] 매출 대비 인건비가 높은데 성과 연동이 약하면, 비용만 늘어나는 구조입니다."
-        return "[강점] 인건비 비중이 적정 범위입니다."
-    if factor == "보상 구조":
-        return "[강점] 성과급 구조가 있으면 보상 차등을 설계할 수 있는 기본 레버가 생깁니다."
+    Text mappings are loaded from content/implications.json. Unknown factors use
+    the same fallback templates as the previous hardcoded implementation.
+    """
+    data = _load_implications()
+    factors = data.get("factors", {})
+    factor_data = factors.get(factor)
 
-    if factor == "평가 운영 여부":
-        if impact < 0:
-            return "[리스크] 공식 평가 없이 보상을 결정하면 '사장 마음대로'라는 인식이 퍼집니다."
-        return "[강점] 공식적인 평가 프로세스가 있다는 것만으로 기본기가 잡혀 있습니다."
-    if factor == "평가 공정성 평균":
-        if impact < 0:
-            return "[리스크] 평가 공정성에 대한 기본 신뢰가 낮으면 어떤 제도도 방어하기 어렵습니다."
-        if impact > 0:
-            return "[강점] 평가 공정성에 대한 기본 신뢰가 있어 제도 개선의 토대가 있습니다."
-    if factor == "공정성 인식 차이":
-        if impact < 0:
-            return "[리스크] 대표님은 공정하다고 느끼지만 직원들은 그렇지 않습니다. 이 차이가 밖에서 폭발할 수 있습니다."
-        return "[강점] 대표와 직원의 공정성 인식 차이가 아직 크지 않습니다."
+    if factor_data is not None:
+        if "default" in factor_data:
+            return str(factor_data["default"]).replace("{note}", note)
 
-    if factor == "채용 소요 기간":
-        if impact < 0:
-            return "[리스크] 핵심 포지션 공백이 길어지면 사업 속도에 직접 타격을 줍니다."
-        return "[강점] 핵심 포지션을 비교적 빠르게 채울 수 있는 상태입니다."
-    if factor == "채용 채널 수":
-        if impact < 0:
-            return "[리스크] 채용 채널이 너무 적으면 후보 풀이 편향되고 대안이 없습니다."
-        return "[강점] 후보자 풀을 확보할 수 있는 기본 채널이 마련되어 있습니다."
-    if factor == "오퍼 거절 빈도":
-        if impact < 0:
-            return "[리스크] 합격자가 오퍼를 거절했다는 것은 보상 또는 브랜딩에 문제가 있다는 신호입니다."
-        return "[강점] 오퍼 단계에서 후보자를 설득하는 힘이 비교적 안정적입니다."
+        if value in factor_data:
+            return str(factor_data[value])
 
-    if factor == "자발적 이직률":
-        if impact < 0:
-            return "[리스크] 사람이 계속 나가면 남은 사람의 업무 부담과 불안이 눈덩이처럼 커집니다."
-        if impact > 0:
-            return "[강점] 자발적 이직률이 안정적이면 조직 지식과 실행력이 축적됩니다."
-    if factor == "핵심 인재 이탈 심각도":
-        if impact < 0:
-            return "[리스크] 대체 불가능한 사람이 떠나면 팀 역량이 즉시 훼손됩니다."
-        return "[강점] 현재 응답 기준으로 핵심 인재 이탈 충격은 제한적입니다."
-    if factor == "신규 입사자 조기 퇴사율":
-        if impact < 0:
-            return "[리스크] 뽑아놓은 사람이 1년 안에 나가면 채용에 쏟은 시간과 비용이 증발합니다."
-        if impact > 0:
-            return "[강점] 온보딩이 실제 전력화로 이어질 가능성이 높습니다."
-        return "[참고] 조기 퇴사율은 아직 중립 구간이지만 지속 추적이 필요합니다."
+        impact_key = _impact_to_key(impact)
+        if impact_key in factor_data:
+            return str(factor_data[impact_key])
 
-    if factor == "리더 피드백 역량":
-        if impact < 0:
-            return "[리스크] 리더가 피드백을 못 주면, 문제가 수면 아래 쌓이다 한꺼번에 터집니다."
-        return "[강점] 리더가 어려운 대화를 할 수 있으면 평가와 코칭이 작동할 가능성이 높습니다."
-    if factor == "1on1 운영":
-        if impact < 0:
-            return "[리스크] 리더와 구성원 사이에 정기적 소통 채널이 없으면 이슈를 조기에 잡을 수 없습니다."
-        if impact > 0:
-            return "[강점] 정기 소통 채널이 있으면 이탈과 성과 이슈를 더 빨리 감지할 수 있습니다."
-    if factor == "의사결정 구조":
-        return "[리스크] 모든 결정이 대표님을 거치면 조직 속도는 대표님 일정에 종속됩니다."
-    if factor == "핵심가치 작동성":
-        if impact < 0:
-            return "[리스크] 핵심가치가 벽에 걸린 액자일 뿐이면, 채용과 평가 기준이 사라집니다."
-        return "[강점] 핵심가치가 실제 기준으로 작동하면 채용과 평가의 일관성이 높아집니다."
+    fallback = factors.get("_fallback", {})
+    impact_key = _impact_to_key(impact)
+    template = str(fallback.get(impact_key, fallback.get("neutral", "")))
+    note_or_factor = note or factor
+    return template.replace("{note_or_factor}", note_or_factor)
 
+
+def _impact_to_key(impact: int) -> str:
+    """Map a numeric impact to the implication JSON key."""
     if impact < 0:
-        return f"[리스크] {note or factor} 때문에 제도 정합성이 낮아질 수 있습니다."
+        return "negative"
     if impact > 0:
-        return f"[강점] {note or factor}가 현재 영역 점수를 끌어올립니다."
-    return f"[참고] {note or factor}는 현재 점수에 중립적으로 반영되었습니다."
-
+        return "positive"
+    return "neutral"
 
 def _finalize_score(score: int, breakdown: list[dict[str, Any]]) -> tuple[int, list[dict[str, Any]]]:
     """최종 점수를 0–100으로 제한하고 산출 근거에 합계를 추가한다."""
