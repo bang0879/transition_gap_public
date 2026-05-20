@@ -57,36 +57,58 @@ def analyze_all_areas(responses: dict[str, Any]) -> list[AreaAnalysis]:
 def get_cross_domain_insights(
     areas: list[AreaAnalysis],
     responses: dict[str, Any],
-) -> list[str]:
+) -> list[dict[str, str]]:
     """영역 간 조합에서 발생하는 핵심 인사이트를 생성한다."""
-    insights: list[str] = []
+    insights: list[dict[str, str]] = []
     area_map = {area.area_id: area for area in areas}
     visibility = calculate_visibility_index(responses)
+    compensation = area_map.get("compensation")
+    evaluation = area_map.get("evaluation")
+    recruitment = area_map.get("recruitment")
+    leadership = area_map.get("leadership")
 
     if visibility.score < 50:
         insights.append(
-            "측정하지 않는 것은 관리할 수 없습니다. 모든 제도 변경에 앞서 "
-            "HR 데이터 가시성 확보가 최우선입니다."
+            {
+                "headline": "측정하지 않는 것은 관리할 수 없습니다.",
+                "detail": (
+                    "현재 HR 데이터 가시성이 50% 미만입니다. 새 제도를 도입하기 전에, "
+                    "이직률·채용 소요 기간·오퍼 수락률 등 핵심 지표를 엑셀로라도 "
+                    "추적하는 것부터 시작하십시오. 데이터 없이 만든 제도는 감에 의존한 "
+                    "도박이며, 가장 비싼 비용인 채용 실패와 핵심인재 이탈을 치르게 됩니다."
+                ),
+                "source": "HR 가시성",
+            }
         )
 
-    compensation = area_map.get("compensation")
-    evaluation = area_map.get("evaluation")
     if compensation and evaluation and compensation.issues and evaluation.issues:
         insights.append(
-            "평가와 보상을 동시에 변경하면 평가 수용성 붕괴 위험이 있습니다. "
-            "평가 기반 구축 후 최소 3개월 이후 보상 연동을 검토하십시오."
+            {
+                "headline": "평가와 보상을 동시에 바꾸면 조직이 흔들립니다.",
+                "detail": (
+                    "평가 체계가 안착되지 않은 상태에서 보상까지 건드리면, 구성원들은 "
+                    "'왜 내 등급이 이것인데 보상이 이것이냐'는 불만이 폭발합니다. "
+                    "평가를 먼저 1~2사이클 돌리고, 최소 3개월 후에 보상을 연동하십시오."
+                ),
+                "source": "보상 + 평가",
+            }
         )
 
-    recruitment = area_map.get("recruitment")
     if recruitment and compensation:
         recruitment_issue_titles = {issue.title for issue in recruitment.issues}
         if recruitment_issue_titles & {"오퍼 경쟁력 부족", "채용-보상 미스매치"}:
             insights.append(
-                "보상 경쟁력이 낮은 상태에서 채용에만 투자하면 ROI가 나오지 않습니다. "
-                "보상 개선이 선행되어야 채용 효율이 자연 상승합니다."
+                {
+                    "headline": "보상이 낮은데 채용에만 돈을 쏟으면 밑 빠진 독입니다.",
+                    "detail": (
+                        "시장 대비 보상이 낮은 상태에서 채용 채널이나 헤드헌터에 투자해도, "
+                        "오퍼 단계에서 계속 거절당합니다. 보상 경쟁력을 먼저 올려야 "
+                        "채용 효율이 자연스럽게 따라옵니다."
+                    ),
+                    "source": "채용 + 보상",
+                }
             )
 
-    leadership = area_map.get("leadership")
     if leadership and evaluation:
         leadership_issue_titles = {issue.title for issue in leadership.issues}
         evaluation_issue_titles = {issue.title for issue in evaluation.issues}
@@ -94,20 +116,34 @@ def get_cross_domain_insights(
             "평가 체계 부재" in evaluation_issue_titles or evaluation.gap >= 10
         ):
             insights.append(
-                "평가 제도를 먼저 만들지 마세요. 리더가 피드백을 전달할 준비가 안 된 "
-                "상태에서 평가를 도입하면 조직 갈등만 증폭됩니다."
+                {
+                    "headline": "리더가 준비 안 된 상태에서 평가 제도를 만들지 마세요.",
+                    "detail": (
+                        "평가 양식이 아무리 정교해도, 결과를 전달하는 리더가 피드백을 "
+                        "회피하거나 어려워하면 평가 자체가 조직 갈등의 불씨가 됩니다. "
+                        "수습하는 데 수개월의 시간과 리소스가 낭비됩니다. 제도보다 "
+                        "리더 교육이 먼저입니다."
+                    ),
+                    "source": "리더십 + 평가",
+                }
             )
 
     if leadership:
         leadership_issue_titles = {issue.title for issue in leadership.issues}
         headcount = responses.get("L1-2", "")
-        hiring_plan = responses.get("L1-4", "")
         if "의사결정 병목" in leadership_issue_titles and (
-            headcount in ("100~500인", "500인 초과") or _is_aggressive_hiring(hiring_plan)
+            headcount in ("100~500인", "500인 초과")
         ):
             insights.append(
-                "현재 거버넌스 구조로는 성장 구간에서 의사결정이 병목됩니다. "
-                "채용보다 위임 체계가 선행되어야 합니다."
+                {
+                    "headline": "CEO가 모든 결정을 쥐고 있으면, 100명이 10명처럼 움직입니다.",
+                    "detail": (
+                        "현재 채용과 배포를 CEO가 직접 승인하는 구조입니다. 조직이 100인을 "
+                        "넘기면 이 구조가 성장의 가장 큰 병목이 됩니다. 전결권 위임 "
+                        "체계를 설계하십시오."
+                    ),
+                    "source": "리더십 + 조직규모",
+                }
             )
 
     return insights[:3]
@@ -885,14 +921,115 @@ def _text(value: Any) -> str:
     return str(value) if value not in (None, "") else "미입력"
 
 
-def _score_item(factor: str, value: Any, impact: int, note: str = "") -> dict[str, Any]:
+def _score_item(
+    factor: str,
+    value: Any,
+    impact: int,
+    note: str = "",
+    implication: str | None = None,
+) -> dict[str, Any]:
     """점수 산출 근거 항목을 생성한다."""
+    display_value = _text(value)
     return {
         "factor": factor,
-        "value": _text(value),
+        "value": display_value,
         "impact": impact,
         "note": note,
+        "implication": implication or _score_implication(factor, display_value, impact, note),
     }
+
+
+def _score_implication(factor: str, value: str, impact: int, note: str) -> str:
+    """점수 변동의 의미를 CEO가 이해하기 쉬운 자연어로 반환한다."""
+    if factor == "기본 점수":
+        return "[참고] 모든 영역은 기본 상태에서 시작해 실제 응답에 따라 강점과 리스크를 반영합니다."
+    if factor == "최종 점수":
+        return f"[결론] 응답 기반 리스크와 강점을 반영한 최종 점수입니다. {note}"
+
+    if factor == "시장 보상 수준":
+        if value == "하위":
+            return "[리스크] 경쟁사 대비 보상이 낮아 오퍼 거절과 핵심 인재 이탈 확률이 높습니다."
+        if value == "상위":
+            return "[강점] 시장 대비 보상 경쟁력이 안정적으로 확보된 상태입니다."
+        if value == "중위":
+            return "[참고] 시장 평균 수준이나, 핵심 포지션은 추가 투자가 필요할 수 있습니다."
+    if factor == "평가-보상 연동":
+        if impact < 0:
+            return "[리스크] 잘해도 못해도 보상이 같으면, 고성과자가 떠날 이유를 만드는 것입니다."
+        if impact > 0:
+            return "[강점] 평가가 보상에 반영되어 성과 동기가 작동하는 구조입니다."
+        return "[참고] 평가와 보상이 어느 정도 연결되어 있으나, 아직 강한 동기 장치는 아닙니다."
+    if factor == "인건비 비중":
+        if impact < 0:
+            return "[리스크] 매출 대비 인건비가 높은데 성과 연동이 약하면, 비용만 늘어나는 구조입니다."
+        return "[강점] 인건비 비중이 적정 범위입니다."
+    if factor == "보상 구조":
+        return "[강점] 성과급 구조가 있으면 보상 차등을 설계할 수 있는 기본 레버가 생깁니다."
+
+    if factor == "평가 운영 여부":
+        if impact < 0:
+            return "[리스크] 공식 평가 없이 보상을 결정하면 '사장 마음대로'라는 인식이 퍼집니다."
+        return "[강점] 공식적인 평가 프로세스가 있다는 것만으로 기본기가 잡혀 있습니다."
+    if factor == "평가 공정성 평균":
+        if impact < 0:
+            return "[리스크] 평가 공정성에 대한 기본 신뢰가 낮으면 어떤 제도도 방어하기 어렵습니다."
+        if impact > 0:
+            return "[강점] 평가 공정성에 대한 기본 신뢰가 있어 제도 개선의 토대가 있습니다."
+    if factor == "공정성 인식 차이":
+        if impact < 0:
+            return "[리스크] 대표님은 공정하다고 느끼지만 직원들은 그렇지 않습니다. 이 차이가 밖에서 폭발할 수 있습니다."
+        return "[강점] 대표와 직원의 공정성 인식 차이가 아직 크지 않습니다."
+
+    if factor == "채용 소요 기간":
+        if impact < 0:
+            return "[리스크] 핵심 포지션 공백이 길어지면 사업 속도에 직접 타격을 줍니다."
+        return "[강점] 핵심 포지션을 비교적 빠르게 채울 수 있는 상태입니다."
+    if factor == "채용 채널 수":
+        if impact < 0:
+            return "[리스크] 채용 채널이 너무 적으면 후보 풀이 편향되고 대안이 없습니다."
+        return "[강점] 후보자 풀을 확보할 수 있는 기본 채널이 마련되어 있습니다."
+    if factor == "오퍼 거절 빈도":
+        if impact < 0:
+            return "[리스크] 합격자가 오퍼를 거절했다는 것은 보상 또는 브랜딩에 문제가 있다는 신호입니다."
+        return "[강점] 오퍼 단계에서 후보자를 설득하는 힘이 비교적 안정적입니다."
+
+    if factor == "자발적 이직률":
+        if impact < 0:
+            return "[리스크] 사람이 계속 나가면 남은 사람의 업무 부담과 불안이 눈덩이처럼 커집니다."
+        if impact > 0:
+            return "[강점] 자발적 이직률이 안정적이면 조직 지식과 실행력이 축적됩니다."
+    if factor == "핵심 인재 이탈 심각도":
+        if impact < 0:
+            return "[리스크] 대체 불가능한 사람이 떠나면 팀 역량이 즉시 훼손됩니다."
+        return "[강점] 현재 응답 기준으로 핵심 인재 이탈 충격은 제한적입니다."
+    if factor == "신규 입사자 조기 퇴사율":
+        if impact < 0:
+            return "[리스크] 뽑아놓은 사람이 1년 안에 나가면 채용에 쏟은 시간과 비용이 증발합니다."
+        if impact > 0:
+            return "[강점] 온보딩이 실제 전력화로 이어질 가능성이 높습니다."
+        return "[참고] 조기 퇴사율은 아직 중립 구간이지만 지속 추적이 필요합니다."
+
+    if factor == "리더 피드백 역량":
+        if impact < 0:
+            return "[리스크] 리더가 피드백을 못 주면, 문제가 수면 아래 쌓이다 한꺼번에 터집니다."
+        return "[강점] 리더가 어려운 대화를 할 수 있으면 평가와 코칭이 작동할 가능성이 높습니다."
+    if factor == "1on1 운영":
+        if impact < 0:
+            return "[리스크] 리더와 구성원 사이에 정기적 소통 채널이 없으면 이슈를 조기에 잡을 수 없습니다."
+        if impact > 0:
+            return "[강점] 정기 소통 채널이 있으면 이탈과 성과 이슈를 더 빨리 감지할 수 있습니다."
+    if factor == "의사결정 구조":
+        return "[리스크] 모든 결정이 대표님을 거치면 조직 속도는 대표님 일정에 종속됩니다."
+    if factor == "핵심가치 작동성":
+        if impact < 0:
+            return "[리스크] 핵심가치가 벽에 걸린 액자일 뿐이면, 채용과 평가 기준이 사라집니다."
+        return "[강점] 핵심가치가 실제 기준으로 작동하면 채용과 평가의 일관성이 높아집니다."
+
+    if impact < 0:
+        return f"[리스크] {note or factor} 때문에 제도 정합성이 낮아질 수 있습니다."
+    if impact > 0:
+        return f"[강점] {note or factor}가 현재 영역 점수를 끌어올립니다."
+    return f"[참고] {note or factor}는 현재 점수에 중립적으로 반영되었습니다."
 
 
 def _finalize_score(score: int, breakdown: list[dict[str, Any]]) -> tuple[int, list[dict[str, Any]]]:
@@ -903,86 +1040,42 @@ def _finalize_score(score: int, breakdown: list[dict[str, Any]]) -> tuple[int, l
 
 
 def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
-    """이슈의 트리거 근거를 자연어로 반환한다."""
+    """이슈의 트리거 근거를 CEO가 납득할 수 있는 자연어로 반환한다."""
     reasons = {
-        "보상-성과 연동 부재": (
-            f"평가는 운영하나 보상과의 연동이 "
-            f"'{responses.get('2-4-2', '?')}점/5점'으로 약한"
-        ),
-        "시장 경쟁력 열위": f"시장 대비 보상이 '{responses.get('2-3-5', '?')}'인",
-        "인건비 효율성 저하": (
-            f"인건비 비중이 '{responses.get('2-3-3', '?')}'로 높으면서 "
-            "성과 연동이 약한"
-        ),
-        "성과급 구조 부재": f"보상 구조가 '{responses.get('2-3-2', '?')}'인",
-        "복리후생 과잉 투자": (
-            f"복리후생 수준은 '{responses.get('2-3-6', '?')}'이나 "
-            f"시장 보상이 '{responses.get('2-3-5', '?')}'인"
-        ),
-        "대표-직원 공정성 인식 차이 심각": (
-            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
-            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
-        ),
-        "대표-직원 공정성 인식 갭 심각": (
-            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
-            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
-        ),
-        "CEO-직원 공정성 갭 심각": (
-            f"CEO({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
-            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식이 크게 차이나는"
-        ),
-        "대표-직원 공정성 인식 차이 위험": (
-            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
-            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식 차이가 있는"
-        ),
-        "대표-직원 공정성 인식 갭 위험": (
-            f"대표({responses.get('2-4-3-ceo', '?')}점)와 직원 예상"
-            f"({responses.get('2-4-3-employee', '?')}점)의 공정성 인식 차이가 있는"
-        ),
-        "대표-직원 공정성 인식 차이 주의": "대표와 직원 간 공정성 인식에 차이가 있는",
-        "대표-직원 공정성 인식 갭 주의": "대표와 직원 간 공정성 인식에 차이가 있는",
-        "CEO-직원 공정성 갭 주의": "CEO와 직원 간 공정성 인식에 차이가 있는",
-        "평가-보상 디커플링": (
-            f"평가-보상 연동이 '{responses.get('2-4-2', '?')}점/5점'인"
-        ),
-        "평가 체계 부재": "공식적인 정기 평가 체계가 없는",
-        "리더 비전 공감 부족": (
-            f"리더 비전 공감도가 '{responses.get('2-4-4', '?')}점/5점'인"
-        ),
-        "평가 데이터 사각지대": "평가 운영 데이터를 측정하고 있지 않은",
-        "채용 소요 기간 과다": f"핵심 포지션 채용에 '{responses.get('2-2-1', '?')}'이 소요되는",
-        "채널 집중 리스크": f"채용 채널이 '{responses.get('2-2-2', '?')}'에 집중된",
-        "오퍼 경쟁력 부족": (
-            f"오퍼 거절 경험이 있으면서 보상이 시장 '{responses.get('2-3-5', '?')}'인"
-        ),
-        "채용-보상 미스매치": (
-            f"채용 기조가 '{responses.get('L1-4', '?')}'인데 보상이 시장 "
-            f"'{responses.get('2-3-5', '?')}'인"
-        ),
-        "채용 브랜딩 부재": (
-            f"채용 채널이 '{responses.get('2-2-2', '?')}'이고 채용 소요 기간이 "
-            f"'{responses.get('2-2-1', '?')}'인"
-        ),
-        "핵심 인재 유출 위기": f"핵심 인재 이탈이 '{responses.get('2-1-2', '?')}'인",
-        "높은 자발적 이직률": f"자발적 이직률이 '{responses.get('2-1-1', '?')}'인",
-        "온보딩 실패": f"신규 입사자 조기 퇴사율이 '{responses.get('2-1-3', '?')}'인",
-        "이직률 사각지대": "이직률이나 조기퇴사율을 측정하고 있지 않은",
-        "보상-리텐션 디커플링": (
-            f"이직률이 '{responses.get('2-1-1', '?')}'이고 보상이 시장 "
-            f"'{responses.get('2-3-5', '?')}'인"
-        ),
-        "리더 피드백 역량 부족": (
-            f"리더의 피드백 전달 역량이 '{responses.get('2-5-1', '?')}'인"
-        ),
-        "1on1 부재/형식화": f"정기 1on1이 '{responses.get('2-5-2', '?')}' 상태인",
-        "1on1 부재": "정기적 1on1이 운영되지 않는",
-        "의사결정 병목": "CEO가 주요 채용/배포 의사결정을 직접 승인하는",
-        "의사결정 병목 (CEO 집중)": "CEO가 모든 채용/배포를 직접 승인하는",
-        "핵심가치 형해화": "핵심가치가 문서로만 존재하는",
-        "거버넌스 미성숙": (
-            f"조직 규모가 '{responses.get('L1-2', '?')}'인데 실무진 채용 승인이 "
-            f"'{responses.get('2-5-4', '?')}'인"
-        ),
+        "보상-성과 연동 부재": "평가는 하고 있지만 그 결과가 보상에 반영되지 않는",
+        "시장 경쟁력 열위": "같은 포지션 경쟁사 대비 보상이 밀리는",
+        "인건비 효율성 저하": "인건비는 올라가는데 성과와 연결되지 않아 투자가 아닌 비용으로만 쌓이는",
+        "성과급 구조 부재": "고성과자에게 줄 명확한 upside가 없는",
+        "복리후생 과잉 투자": "기본 보상 경쟁력보다 주변 복지에 재원이 먼저 쓰이는",
+        "대표-직원 공정성 인식 차이 심각": "대표님은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
+        "대표-직원 공정성 인식 갭 심각": "대표님은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
+        "CEO-직원 공정성 갭 심각": "대표님은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
+        "대표-직원 공정성 인식 차이 위험": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "대표-직원 공정성 인식 갭 위험": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "대표-직원 공정성 인식 차이 주의": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "대표-직원 공정성 인식 갭 주의": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "CEO-직원 공정성 갭 주의": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "평가-보상 디커플링": "평가는 하지만 그 결과가 실제 보상 결정에 힘을 쓰지 못하는",
+        "평가 체계 부재": "공식적인 평가 기준 없이 보상과 승진이 결정되는",
+        "리더 비전 공감 부족": "리더들이 회사의 방향을 자기 말로 설명하지 못하는",
+        "평가 데이터 사각지대": "평가 결과가 어떻게 분포되는지조차 보이지 않는",
+        "채용 소요 기간 과다": "핵심 인재를 뽑는 데 너무 오래 걸려 사업 기회를 놓치는",
+        "채널 집중 리스크": "채용 창구가 1~2개뿐이라 후보 풀이 편향된",
+        "오퍼 경쟁력 부족": "좋은 후보를 찾아놓고도 오퍼 단계에서 놓치는",
+        "채용-보상 미스매치": "적극적으로 뽑으려 하지만 보상이 뒷받침되지 않는",
+        "채용 브랜딩 부재": "후보자가 회사를 선택해야 할 이유가 충분히 전달되지 않는",
+        "핵심 인재 유출 위기": "대체 불가능한 핵심 인재가 이미 이탈하기 시작한",
+        "높은 자발적 이직률": "사람이 계속 나가서 남은 사람의 부담이 커지는 악순환에 빠진",
+        "온보딩 실패": "뽑아놓은 사람이 1년도 안 되어 나가는",
+        "이직률 사각지대": "사람이 왜 나가는지, 얼마나 나가는지조차 파악이 안 되는",
+        "보상-리텐션 디커플링": "사람이 나가는데 보상으로 붙잡을 카드가 없는",
+        "리더 피드백 역량 부족": "팀장들이 솔직한 피드백을 주지 못해 문제가 수면 아래 쌓이는",
+        "1on1 부재/형식화": "리더와 구성원 사이에 정기적 소통 채널이 없는",
+        "1on1 부재": "리더와 구성원 사이에 정기적 소통 채널이 없는",
+        "의사결정 병목": "모든 결정이 대표님을 거쳐야 해서 조직이 대표님 일정에 종속된",
+        "의사결정 병목 (CEO 집중)": "모든 결정이 대표님을 거쳐야 해서 조직이 대표님 일정에 종속된",
+        "핵심가치 형해화": "핵심가치를 외치지만 실제 채용과 평가에서 기준으로 쓰이지 않는",
+        "거버넌스 미성숙": "조직 규모는 커졌는데 권한 위임은 아직 대표님에게 묶여 있는",
     }
     return reasons.get(issue.title, "현재 조직 상황의")
 

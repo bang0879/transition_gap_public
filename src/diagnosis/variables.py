@@ -45,6 +45,7 @@ class Variable:
     unknown_option: Optional[str] = None # "모름 / 측정 안 함" 등 (있을 경우)
     max_select: Optional[int] = None     # multi_select 시 최대 개수
     short_label: str = ""                # 미입력 안내용 짧은 라벨
+    tags: list[str] = field(default_factory=list)
 
 
 # ============================================================
@@ -58,37 +59,40 @@ LAYER_0_VARIABLES: list[Variable] = [
         id="L0-1",
         layer="L0",
         sub_category="philosophy",
-        label="회사가 크게 성장했을 때, 대표님이 꿈꾸는 이상적인 보상 분배 방식은?",
+        label="회사가 크게 성장했을 때, 이상적인 보상 분배 방식은?",
         input_type=InputType.SINGLE_SELECT,
         options=[
-            "소수의 압도적 퍼포머 10%에게 업계 최고 수준의 파격적 보상을 몰아준다",
-            "묵묵히 기여한 다수의 팀원들이 박탈감을 느끼지 않도록, 조직 전체가 고르게 과실을 나눈다",
+            "상위 고성과자 10%에게 업계 최고 수준의 파격적 보상을 집중한다",
+            "뛰어난 소수보다, 탄탄한 팀워크와 협업을 유도하여 조직 전체의 평균 성과를 높인다",
         ],
         short_label="보상 철학",
+        tags=["성과주의", "전반적 모티베이션"],
     ),
     Variable(
         id="L0-2",
         layer="L0",
         sub_category="philosophy",
-        label="리더십 자원이 한정되어 있을 때, 대표님이 팀장들에게 먼저 요구하는 것은?",
+        label="리더들의 업무 과중을 고려할 때, 팀장들에게 먼저 요구하는 것은?",
         input_type=InputType.SINGLE_SELECT,
         options=[
             "명확한 목표 대비 성과 추적과 저성과 영역에 대한 솔직한 피드백",
             "구성원과의 정기 1on1을 통한 고충 청취와 심리적 안전감 확보",
         ],
         short_label="리더십 철학",
+        tags=["경쟁", "안정감"],
     ),
     Variable(
         id="L0-3",
         layer="L0",
         sub_category="philosophy",
-        label="앞으로 우리 조직을 이끌어갈 핵심 인재 그룹은 어떻게 구성되기를 원하십니까?",
+        label="장기적 관점에서, 우리 조직을 이끌어갈 핵심 인재 그룹은 어떻게 구성되기를 원하십니까?",
         input_type=InputType.SINGLE_SELECT,
         options=[
             "외부에서 검증된 최고의 S급 인재를 높은 비용을 치르더라도 영입하여 즉시 전력으로 활용한다",
             "우리 회사의 비전에 깊이 공감하고 문화를 잘 아는 내부 주니어를 오랜 시간 공들여 핵심 인재로 육성한다",
         ],
         short_label="인재 전략",
+        tags=["외부 수혈(엘리트 지향)", "내부 육성(로열티 지향)"],
     ),
 ]
 
