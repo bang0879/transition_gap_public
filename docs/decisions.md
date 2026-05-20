@@ -251,3 +251,17 @@ Case study 작성 시 1차 자료로 활용된다.
 - 사각지대 수집 팁을 `src/data/hr_tips.py`의 정적 데이터로 분리
 
 **근거**: Next.js/FastAPI 전환 시 Streamlit 렌더링 코드는 폐기되지만, 진단 계산·인사이트·텍스트 데이터는 제품 IP로 유지되어야 함.
+
+---
+
+## 2026-05-20: FastAPI Stateless 백엔드 병행 부트스트랩
+
+**컨텍스트**: Streamlit MVP의 진단 계산 로직을 Next.js 전환 전에 API 형태로 분리해야 하며, 기존 `app.py`와 `src/`는 유지한 채 백엔드 구조를 병행 생성해야 함.
+
+**결정 사항**:
+- `backend/` 하위에 FastAPI 앱, Pydantic schema, core 계산 모듈, 정적 JSON content, endpoint 테스트를 신규 생성
+- 기존 `src/diagnosis`와 `src/simulation` core 파일은 복사 후 import 경로만 `app.core.*`로 전환
+- `schema.json`, `scenarios.json`, `hr_options.json`, `hr_tips.json`, `implications.json`을 생성하되, 동적 로딩 리팩터링은 #10으로 보류
+- 첫 핵심 endpoint는 `POST /api/diagnose`로 제한하고, DB/session 없이 `responses` dict만 받아 5개 영역 분석, 가시성 지수, 매트릭스 좌표, 교차 인사이트를 반환
+
+**근거**: 원본 Streamlit 동작을 보존하면서 Next.js 프론트엔드가 바로 호출할 수 있는 stateless API 계약을 먼저 고정하는 것이 마이그레이션 리스크를 가장 낮춘다.

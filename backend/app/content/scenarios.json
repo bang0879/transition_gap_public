@@ -1,0 +1,345 @@
+{
+  "performance": {
+    "id": "performance",
+    "name": "성과주의 가속형",
+    "subtitle": "Meritocracy Accelerator",
+    "icon": "",
+    "description": "보상 차등을 극대화하고 평가 정교도를 높여 고성과자를 강하게 동기부여하는 전략입니다.",
+    "philosophy": "성과가 곧 보상이다. 탁월한 기여에 탁월한 보상을.",
+    "package": [
+      {
+        "area": "보상",
+        "action": "밴드형 급여 + 분기 성과급 20~30%",
+        "timeline": "3개월"
+      },
+      {
+        "area": "평가",
+        "action": "OKR + 반기 상대평가 병행",
+        "timeline": "2개월"
+      },
+      {
+        "area": "채용",
+        "action": "시장 75%ile 오퍼 기준 설정",
+        "timeline": "1개월"
+      },
+      {
+        "area": "인력",
+        "action": "핵심인재 리텐션 패키지 (Top 20%)",
+        "timeline": "2개월"
+      },
+      {
+        "area": "리더십",
+        "action": "평가 피드백 역량 코칭 (팀장급)",
+        "timeline": "6개월"
+      }
+    ],
+    "impact": [
+      {
+        "metric": "핵심인재 이탈률",
+        "before": "현재 수준",
+        "after": "-30~50%",
+        "direction": "down"
+      },
+      {
+        "metric": "고성과자 동기 부여",
+        "before": "현재 수준",
+        "after": "+40~60%",
+        "direction": "up"
+      },
+      {
+        "metric": "오퍼 수락률",
+        "before": "현재 수준",
+        "after": "+15~25%",
+        "direction": "up"
+      },
+      {
+        "metric": "평가 수용성",
+        "before": "현재 수준",
+        "after": "도입 초기 -20%, 6개월 후 +30%",
+        "direction": "neutral"
+      }
+    ],
+    "financial_impact": [
+      {
+        "item": "인건비 증가",
+        "amount": "+15~25%",
+        "note": "성과급 확대 + 시장 보상 조정",
+        "color_intent": "negative",
+        "rationale": "현재 인건비에 성과급 20% 신설 + 시장 중위 보상 조정분 반영"
+      },
+      {
+        "item": "채용 비용 절감",
+        "amount": "-20~30%",
+        "note": "오퍼 수락률 상승으로 채용 사이클 단축",
+        "color_intent": "positive",
+        "rationale": "오퍼 수락률 10%p 상승 시 채용 1건당 소요 기간 약 30% 단축 → 헤드헌터/공고비 절감"
+      },
+      {
+        "item": "교육/코칭 투자",
+        "amount": "+500~1,000만/년",
+        "note": "리더십 코칭 프로그램",
+        "color_intent": "negative",
+        "rationale": "팀장급 5명 기준, 외부 코칭 프로그램 1인당 연 100~200만 원"
+      },
+      {
+        "item": "순 ROI (12개월)",
+        "amount": "인건비 대비 +8~15%",
+        "note": "이탈 방지 + 생산성 향상 효과",
+        "color_intent": "positive",
+        "rationale": "핵심인재 1명 이탈 시 대체 비용(연봉의 100~150%)을 이탈률 감소분에 적용"
+      }
+    ],
+    "warnings": [
+      "평가 수용성이 낮은 조직에서 보상 차등을 먼저 도입하면 조직 갈등이 커질 수 있습니다.",
+      "리더 피드백 역량이 준비되지 않은 상태에서 상대평가를 도입하면 평가 불신이 높아집니다.",
+      "성과급 비중이 30%를 초과하면 단기 성과주의로 흐를 위험이 있습니다."
+    ],
+    "next_steps": [
+      {
+        "step": "1단계 (1~2개월)",
+        "action": "평가 프레임워크 설계 (OKR 목표 설정 워크숍)"
+      },
+      {
+        "step": "2단계 (3~4개월)",
+        "action": "1사이클 평가 시범 운영 + 리더 코칭 시작"
+      },
+      {
+        "step": "3단계 (5~6개월)",
+        "action": "평가 결과 기반 보상 연동 (밴드형 급여 적용)"
+      },
+      {
+        "step": "4단계 (7~12개월)",
+        "action": "성과급 지급 + 리텐션 패키지 가동 + 효과 측정"
+      }
+    ]
+  },
+  "community": {
+    "id": "community",
+    "name": "공동체 안정형",
+    "subtitle": "Community Stabilizer",
+    "icon": "",
+    "description": "보상 차등을 최소화하고 조직 문화와 심리적 안전감을 통해 장기 리텐션을 확보하는 전략입니다.",
+    "philosophy": "함께 성장한다. 동료 간 신뢰가 최고의 성과를 만든다.",
+    "package": [
+      {
+        "area": "보상",
+        "action": "호봉제 기반 + 팀 인센티브 10~15%",
+        "timeline": "2개월"
+      },
+      {
+        "area": "평가",
+        "action": "관대한 절대평가 + 격주 1on1",
+        "timeline": "1개월"
+      },
+      {
+        "area": "채용",
+        "action": "리퍼럴 중심 + 컬처핏 면접 강화",
+        "timeline": "1개월"
+      },
+      {
+        "area": "인력",
+        "action": "체계적 온보딩 30/60/90 + Stay Interview",
+        "timeline": "2개월"
+      },
+      {
+        "area": "리더십",
+        "action": "1on1 제도화 + 핵심가치 행동 지표화",
+        "timeline": "3개월"
+      }
+    ],
+    "impact": [
+      {
+        "metric": "자발적 이직률",
+        "before": "현재 수준",
+        "after": "-20~35%",
+        "direction": "down"
+      },
+      {
+        "metric": "조직 몰입도",
+        "before": "현재 수준",
+        "after": "+25~40%",
+        "direction": "up"
+      },
+      {
+        "metric": "조기 퇴사율 (1년 내)",
+        "before": "현재 수준",
+        "after": "-40~60%",
+        "direction": "down"
+      },
+      {
+        "metric": "고성과자 동기 부여",
+        "before": "현재 수준",
+        "after": "+5~10% (제한적)",
+        "direction": "neutral"
+      }
+    ],
+    "financial_impact": [
+      {
+        "item": "인건비 증가",
+        "amount": "+5~10%",
+        "note": "팀 인센티브 도입",
+        "color_intent": "negative",
+        "rationale": "팀 인센티브 10~15% 신설분"
+      },
+      {
+        "item": "채용 비용 절감",
+        "amount": "-30~40%",
+        "note": "리퍼럴 + 이직률 감소",
+        "color_intent": "positive",
+        "rationale": "리퍼럴 비율 상승(20→40%) + 이직률 감소로 대체 채용 건수 축소"
+      },
+      {
+        "item": "온보딩/교육 투자",
+        "amount": "+300~500만/년",
+        "note": "온보딩 프로그램 설계 운영",
+        "color_intent": "negative",
+        "rationale": "온보딩 프로그램 설계 외주 + 내부 운영 인건비"
+      },
+      {
+        "item": "순 ROI (12개월)",
+        "amount": "인건비 대비 +5~10%",
+        "note": "이탈 방지 중심 효과",
+        "color_intent": "positive",
+        "rationale": "이직률 20%p 감소 시 연간 대체 채용 비용 절감 + 생산성 유지 효과"
+      }
+    ],
+    "warnings": [
+      "고성과자의 동기 부여가 제한적입니다. 시장 보상이 하위권이면 핵심인재는 결국 이탈합니다.",
+      "팀 인센티브만으로는 무임승차 문제를 해결하기 어렵습니다.",
+      "관대한 절대평가는 보상 차등의 기준을 만들기 어렵게 만들 수 있습니다."
+    ],
+    "next_steps": [
+      {
+        "step": "1단계 (1~2개월)",
+        "action": "핵심가치 재정의 + 행동 지표화 워크숍"
+      },
+      {
+        "step": "2단계 (2~3개월)",
+        "action": "1on1 제도화 + 온보딩 30/60/90 설계"
+      },
+      {
+        "step": "3단계 (4~6개월)",
+        "action": "컬처핏 면접 기준 적용 + Stay Interview 시작"
+      },
+      {
+        "step": "4단계 (7~12개월)",
+        "action": "팀 인센티브 지급 + 조직 몰입도 서베이 + 효과 측정"
+      }
+    ]
+  },
+  "elite": {
+    "id": "elite",
+    "name": "소수정예 집중형",
+    "subtitle": "Elite Focus",
+    "icon": "",
+    "description": "핵심인재 10~15%에 자원을 집중 투자하고, 나머지는 최소 관리하는 전략입니다.",
+    "philosophy": "소수의 A급 인재가 조직의 운명을 결정한다.",
+    "package": [
+      {
+        "area": "보상",
+        "action": "Top 15% 별도 밴드 (시장 90%ile) + RSU/스톡옵션",
+        "timeline": "3개월"
+      },
+      {
+        "area": "평가",
+        "action": "9-Box Grid (성과 × 잠재력) + 분기 리뷰",
+        "timeline": "3개월"
+      },
+      {
+        "area": "채용",
+        "action": "핵심 포지션 헤드헌터 + 시니어 중심",
+        "timeline": "상시"
+      },
+      {
+        "area": "인력",
+        "action": "핵심인재 전용 성장 트랙 + 멘토링",
+        "timeline": "3개월"
+      },
+      {
+        "area": "리더십",
+        "action": "전결권 위임 체계 + 리더십 파이프라인",
+        "timeline": "6개월"
+      }
+    ],
+    "impact": [
+      {
+        "metric": "핵심인재 이탈률",
+        "before": "현재 수준",
+        "after": "-50~70%",
+        "direction": "down"
+      },
+      {
+        "metric": "핵심인재 생산성",
+        "before": "현재 수준",
+        "after": "+30~50%",
+        "direction": "up"
+      },
+      {
+        "metric": "비핵심 인력 이탈률",
+        "before": "현재 수준",
+        "after": "+10~20% (증가)",
+        "direction": "up"
+      },
+      {
+        "metric": "조직 내부 형평성",
+        "before": "현재 수준",
+        "after": "-30~40% (하락)",
+        "direction": "down"
+      }
+    ],
+    "financial_impact": [
+      {
+        "item": "핵심인재 보상 증가",
+        "amount": "+30~50% (대상 인원분)",
+        "note": "Top 15% 시장 90%ile 보상",
+        "color_intent": "negative",
+        "rationale": "Top 15%(약 5~8명) × 연봉 30~50% 인상분"
+      },
+      {
+        "item": "채용 비용 증가",
+        "amount": "+20~30%",
+        "note": "헤드헌터 + 시니어 프리미엄",
+        "color_intent": "negative",
+        "rationale": "시니어 헤드헌터 수수료(연봉의 25~30%) + 시장 프리미엄"
+      },
+      {
+        "item": "비핵심 인력 관리 절감",
+        "amount": "-10~15%",
+        "note": "자연 감소 허용",
+        "color_intent": "positive",
+        "rationale": "자연 감소 허용 시 대체 채용 미실시 → 채용 비용 절감"
+      },
+      {
+        "item": "순 ROI (12개월)",
+        "amount": "인건비 대비 +10~20%",
+        "note": "소수 고성과 집중 효과",
+        "color_intent": "positive",
+        "rationale": "핵심인재 생산성 30% 향상 × 인원 수 기준, 비핵심 이탈 비용 차감"
+      }
+    ],
+    "warnings": [
+      "핵심/비핵심 구분이 조직 내 계층 갈등을 유발할 수 있습니다.",
+      "비핵심 인력의 이탈률 증가를 허용하면 예상보다 빠르게 운영 기반이 약해질 수 있습니다.",
+      "50인 이하 조직에서 이 전략은 지나치게 극단적일 수 있습니다.",
+      "동일 직무 내 과도한 보상 차등은 법적 리스크를 수반할 수 있습니다."
+    ],
+    "next_steps": [
+      {
+        "step": "1단계 (1~2개월)",
+        "action": "9-Box Grid 설계 + 핵심인재 선별 기준 합의"
+      },
+      {
+        "step": "2단계 (3~4개월)",
+        "action": "핵심인재 리텐션 패키지 설계 + 개별 커뮤니케이션"
+      },
+      {
+        "step": "3단계 (5~6개월)",
+        "action": "전결권 위임 체계 설계 + 리더십 파이프라인 구축"
+      },
+      {
+        "step": "4단계 (7~12개월)",
+        "action": "패키지 가동 + 비핵심 인력 관리 정책 수립 + 효과 측정"
+      }
+    ]
+  }
+}
