@@ -25,6 +25,28 @@ interface Scenario {
   warnings?: string[];
 }
 
+const OPERATING_REFERENCES: Record<string, string> = {
+  performance: "Netflix식 고성과·고책임 운영 이미지",
+  community: "Google식 심리적 안전감·협업 운영 이미지",
+  elite: "초기 토스식 소수정예·빠른 실행 이미지",
+};
+
+function referenceForScenario(id: string): string {
+  return OPERATING_REFERENCES[id] ?? "성장 단계 스타트업의 혼합 운영 이미지";
+}
+
+function gainForScenario(scenario: Scenario): string {
+  const impact = scenario.impact?.[0];
+  if (!impact) return scenario.description;
+  return `${impact.metric} ${impact.after}`;
+}
+
+function costForScenario(scenario: Scenario): string {
+  const financial = scenario.financial_impact?.[0];
+  if (financial) return `${financial.item} ${financial.amount}`;
+  return scenario.warnings?.[0] ?? "운영 리스크 검토";
+}
+
 function ScenariosContent() {
   const router = useRouter();
   const params = useSearchParams();
@@ -52,8 +74,8 @@ function ScenariosContent() {
     <>
       <PageHeader
         eyebrow="시나리오 비교"
-        title="실행 방향을 선택하기 전에 얻는 것과 감수할 것을 비교합니다."
-        lead="각 시나리오는 추천이 아니라 선택지입니다. 대표가 감수할 리스크와 조직이 견딜 수 있는 속도를 함께 봅니다."
+        title="좋은 시나리오는 비용이 없는 선택지가 아니라, 감수할 비용이 명확한 선택지입니다."
+        lead="각 시나리오는 추천 순위가 아니라 제도 패키지입니다. 대표가 얻을 효과, 감수할 비용, 당장 도입할 제도를 함께 비교합니다."
         actions={
           <>
             <Button onClick={() => router.push("/matrix")}>매트릭스로</Button>
@@ -69,6 +91,9 @@ function ScenariosContent() {
             name={scenario.name}
             subtitle={scenario.subtitle}
             description={scenario.description}
+            gain={gainForScenario(scenario)}
+            cost={costForScenario(scenario)}
+            reference={referenceForScenario(scenario.id)}
             selected={selectedId === scenario.id}
             onSelect={selectScenario}
           />

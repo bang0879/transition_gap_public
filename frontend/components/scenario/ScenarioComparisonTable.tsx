@@ -20,7 +20,7 @@ function financialText(scenario: Scenario): string {
   const item = scenario.financial_impact?.[0];
   if (!item) return "-";
 
-  return `${item.item}: ${item.amount}${item.unit ? ` ${item.unit}` : ""}`;
+  return `${item.item}: ${item.amount}${item.unit ? ` ${item.unit}` : ""}${item.note ? ` · ${item.note}` : ""}`;
 }
 
 function impactText(scenario: Scenario, index: number): string {
@@ -31,13 +31,13 @@ function impactText(scenario: Scenario, index: number): string {
 
 export function ScenarioComparisonTable({ scenarios, selectedId }: ScenarioComparisonTableProps) {
   const selected = scenarios.find((scenario) => scenario.id === selectedId) ?? scenarios[0];
-  const criteria = ["핵심 효과", "재무 영향", "운영 리스크"];
+  const criteria = ["핵심 효과", "재무 영향", "운영 리스크", "대표 질문"];
 
   return (
     <div className="overflow-x-auto rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
       {selected ? (
         <div className="border-b border-slate-100 bg-teal-soft px-4 py-3">
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">현재 선택 기준</p>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">비교표에서 현재 강조 중인 선택지</p>
           <p className="m-0 mt-1 text-[13px] font-[680] text-slate-900">{selected.name}</p>
           <p className="m-0 mt-1 text-[12px] leading-[1.55] text-slate-600">
             {impactText(selected, 0)} · {financialText(selected)}
@@ -47,7 +47,7 @@ export function ScenarioComparisonTable({ scenarios, selectedId }: ScenarioCompa
       <table className="w-full min-w-[760px] border-collapse text-left">
         <thead className="bg-slate-50">
             <tr className="text-[11px] font-[760] tracking-[0.04em] text-slate-500">
-            <th className="w-[150px] px-4 py-3">선택 기준</th>
+            <th className="w-[150px] px-4 py-3">비교 기준</th>
             {scenarios.map((scenario) => (
               <th key={scenario.id} className={`px-4 py-3 ${selectedId === scenario.id ? "text-teal-deep" : ""}`}>{scenario.name}</th>
             ))}
@@ -63,7 +63,13 @@ export function ScenarioComparisonTable({ scenarios, selectedId }: ScenarioCompa
                     ? impactText(scenario, 0)
                     : rowIndex === 1
                       ? financialText(scenario)
-                      : scenario.warnings?.[0] ?? "-"}
+                      : rowIndex === 2
+                        ? scenario.warnings?.[0] ?? "-"
+                        : scenario.id === "performance"
+                          ? "평가 갈등을 감수하고 성과 메시지를 선명하게 만들 준비가 되었습니까?"
+                          : scenario.id === "community"
+                            ? "고성과자 차등을 늦추고 조직 수용성을 먼저 회복할 수 있습니까?"
+                            : "형평성 논란을 관리하면서 핵심 인재에 자원을 집중할 수 있습니까?"}
                 </td>
               ))}
             </tr>

@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 interface ScenarioImpact {
   metric: string;
   after: string;
@@ -34,10 +36,21 @@ interface ScenarioDetailPanelProps {
   scenario: ScenarioDetail;
 }
 
-const OPERATING_IMAGE: Record<string, string> = {
-  performance: "고성과 보상형 운영 이미지: 평가 신뢰를 전제로 성과 차등과 보상 메시지를 강하게 연결합니다.",
-  community: "공동체 안정형 운영 이미지: 정기 1:1 면담, 온보딩, 팀 단위 보상을 통해 이탈과 불안을 먼저 낮춥니다.",
-  elite: "소수정예 집중형 운영 이미지: 핵심 인재군에 보상과 권한을 집중하고, 내부 형평성 비용을 의식적으로 감수합니다.",
+type PackageDecision = "도입" | "보류" | "대체 검토";
+
+const OPERATING_IMAGE: Record<string, { label: string; body: string }> = {
+  performance: {
+    label: "Netflix식 고성과·고책임 운영 이미지",
+    body: "평가 신뢰를 전제로 성과 차등과 보상 메시지를 강하게 연결합니다.",
+  },
+  community: {
+    label: "Google식 심리적 안전감·협업 운영 이미지",
+    body: "정기 1:1 면담, 온보딩, 팀 단위 보상을 통해 이탈과 불안을 먼저 낮춥니다.",
+  },
+  elite: {
+    label: "초기 토스식 소수정예·빠른 실행 이미지",
+    body: "핵심 인재군에 보상과 권한을 집중하고, 내부 형평성 비용을 의식적으로 감수합니다.",
+  },
 };
 
 const RECOMMENDATION_REASON: Record<string, string> = {
@@ -58,10 +71,26 @@ function primaryCost(scenario: ScenarioDetail): string {
   return scenario.warnings?.[0] ?? "운영 리스크를 추가 검토해야 합니다.";
 }
 
+function financialTone(colorIntent?: string): string {
+  if (colorIntent === "positive") return "text-teal-deep";
+  if (colorIntent === "negative") return "text-coral";
+  return "text-slate-800";
+}
+
 export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
   const mainFinancial = scenario.financial_impact?.slice(0, 3) ?? [];
   const mainImpacts = scenario.impact?.slice(0, 3) ?? [];
   const mainPackages = scenario.package?.slice(0, 4) ?? [];
+  const operatingImage = OPERATING_IMAGE[scenario.id];
+  const [decisions, setDecisions] = useState<Record<string, PackageDecision>>({});
+
+  useEffect(() => {
+    setDecisions({});
+  }, [scenario.id]);
+
+  const setPackageDecision = (key: string, decision: PackageDecision) => {
+    setDecisions((current) => ({ ...current, [key]: decision }));
+  };
 
   return (
     <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-5 print:break-inside-avoid">
@@ -76,6 +105,21 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
         <span className="w-fit rounded-full border border-teal-line bg-teal-soft px-[9px] py-[4px] text-[11px] font-[680] text-teal-deep">
           {scenario.subtitle}
         </span>
+      </div>
+
+      <div className="mb-5 grid grid-cols-1 gap-3 rounded-[10px] border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.1fr_1fr_1fr]">
+        <div>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">선택한 시나리오 요약</p>
+          <p className="m-0 mt-2 text-[13px] font-[690] leading-[1.5] text-slate-900">{scenario.description}</p>
+        </div>
+        <div>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">얻는 것</p>
+          <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-700">{primaryGain(scenario)}</p>
+        </div>
+        <div>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">감수할 것</p>
+          <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-700">{primaryCost(scenario)}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -106,7 +150,7 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           <div className="mt-3 divide-y divide-slate-100">
             {mainFinancial.map((item) => (
               <div key={`${item.item}-${item.amount}`} className="py-2 first:pt-0 last:pb-0">
-                <p className="m-0 text-[12px] font-[650] text-slate-700">{item.item}: {item.amount}</p>
+                <p className={`m-0 text-[12px] font-[650] ${financialTone(item.color_intent)}`}>{item.item}: {item.amount}</p>
                 <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-500">
                   {item.rationale ?? item.note ?? "현재 인건비 대비 연간 추정 기준입니다."}
                 </p>
@@ -131,7 +175,15 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           <div>
             <p className="m-0 text-[12px] font-[680] text-slate-900">주요 제도와 참고 운영 이미지</p>
             <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-600">
-              {OPERATING_IMAGE[scenario.id] ?? "선택한 방향에 맞춰 제도 묶음을 단계적으로 조정합니다."}
+              {operatingImage ? (
+                <>
+                  <span className="font-[680] text-slate-800">{operatingImage.label}</span>
+                  {" · "}
+                  {operatingImage.body}
+                </>
+              ) : (
+                "선택한 방향에 맞춰 제도 묶음을 단계적으로 조정합니다."
+              )}
             </p>
           </div>
           <div>
@@ -141,15 +193,37 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
             </p>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           {mainPackages.map((item, index) => (
             <div
               key={`${item.area}-${item.action}`}
-              className={`grid grid-cols-[54px_1fr_58px] gap-3 border-t border-slate-100 pt-2 text-[11px] ${index < 2 ? "md:border-t-0 md:pt-0" : ""}`}
+              className={`rounded-[9px] border border-slate-200 bg-white p-3 text-[11px] ${index < 2 ? "" : ""}`}
             >
-              <strong className="text-teal-deep">{item.area}</strong>
-              <span className="leading-[1.55] text-slate-600">{item.action}</span>
-              <span className="text-right text-slate-400">{item.timeline}</span>
+              <div className="grid grid-cols-[54px_1fr_58px] gap-3">
+                <strong className="text-teal-deep">{item.area}</strong>
+                <span className="leading-[1.55] text-slate-600">{item.action}</span>
+                <span className="text-right text-slate-400">{item.timeline}</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3">
+                {(["도입", "보류", "대체 검토"] as const).map((decision) => {
+                  const key = `${item.area}-${item.action}`;
+                  const active = (decisions[key] ?? "도입") === decision;
+                  return (
+                    <button
+                      key={decision}
+                      type="button"
+                      onClick={() => setPackageDecision(key, decision)}
+                      className={`rounded-full border px-2 py-1 text-[10px] font-[680] transition-colors ${
+                        active
+                          ? "border-teal-line bg-teal-soft text-teal-deep"
+                          : "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
+                      }`}
+                    >
+                      {decision}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
