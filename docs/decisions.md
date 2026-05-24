@@ -279,3 +279,66 @@ Case study 작성 시 1차 자료로 활용된다.
 - Phase 2 JWT 인증을 위한 `app/api/deps.py` 자리만 마련하고 현재 endpoint 시그니처에는 연결하지 않음
 
 **근거**: API 계약과 content 데이터 소스를 먼저 고정하면 Next.js 화면 설계와 Zustand/API client 구현을 병렬로 진행할 수 있으며, 이벤트 로깅 장애가 MVP 진단 경험을 방해하지 않는다.
+
+---
+
+## 2026-05-20: Next.js 프론트엔드 Phase 11-A 부트스트랩
+
+**컨텍스트**: Streamlit MVP와 FastAPI 백엔드가 병행 완성된 상태에서, 클라이언트가 보게 될 Next.js App Router 기반 진단 입력 경험을 별도 `frontend/`로 시작해야 함.
+
+**결정 사항**:
+- `frontend/`에 Next.js 15, TypeScript strict, Tailwind, Zustand, TanStack Query 기반 앱 구조를 신규 생성
+- Landing과 4단계 진단 입력 페이지를 구현하고, 응답은 `tg-responses` localStorage persist store에 저장
+- 백엔드 schema에 없는 `2-2-4`는 프론트에서 임의 생성하지 않고, 현재 `schema.json` 기준 변수와 옵션 텍스트를 우선 적용
+- Zustand persist 구독 화면은 `SessionGuard`로 브라우저 마운트 후 렌더링해 hydration mismatch 위험을 낮춤
+- 기존 `backend/`, `app.py`, `src/`는 수정하지 않고 Next.js 전환 축만 추가
+
+**근거**: 분석 로직과 옵션 SSOT는 백엔드에 유지하고, 프론트엔드는 진단 경험과 저장 상태만 책임지게 분리해야 #11-B 결과 화면/API 연동으로 안전하게 이어갈 수 있음.
+
+---
+
+## 2026-05-21: Next.js 결과/시뮬레이션 화면 Phase 11-B 구현
+
+**컨텍스트**: #11-A에서 Landing과 진단 입력 4단계가 완성되었고, 결과 이후 페이지는 빈 셸 상태였음. FastAPI의 `POST /api/diagnose`, `/api/scenarios`, `/api/options` 계약을 사용해 실데이터 화면으로 전환해야 함.
+
+**결정 사항**:
+- 결과 이후 라우트를 `app/(analysis)/` 라우트 그룹으로 이동하고 공통 Rail 레이아웃을 적용
+- `useDiagnosis`와 TanStack Query provider를 추가해 Zustand 응답을 `POST /api/diagnose`로 전송
+- 결과 요약, 영역 상세, Matrix A/B, 시나리오 비교, 12개월 로드맵을 각각 전용 컴포넌트로 분리
+- 레이더 차트와 매트릭스는 외부 차트 라이브러리 없이 SVG로 직접 구현
+- 시나리오 선택은 `/scenarios?scenario=...`, `/roadmap?scenario=...` URL query parameter를 기준으로 유지
+- 인쇄 출력은 `print:` 유틸리티 중심으로 Rail과 버튼을 숨기고 카드 단위 분리 방지를 적용
+
+**근거**: 결과 화면은 단순 리포트가 아니라 워크샵에서 논의 순서를 잡는 실행 화면이어야 하므로, 요약 → 근거 → 선택지 → 로드맵 흐름을 URL과 컴포넌트 경계로 명확히 분리해야 함.
+
+---
+
+## 2026-05-21: Next.js Phase 11-C 1차 피드백 폴리싱
+
+**컨텍스트**: 11-B 이후 결과 페이지가 백엔드 미기동/응답 복원 전 상태를 에러처럼 보여주고, 진단 입력 화면의 하단 이동성·선택 강조·질문 설명이 부족했음.
+
+**결정 사항**:
+- API client에 네트워크/HTTP 에러 디테일을 추가하고, 응답이 없을 때 `/result`가 "진단 입력이 필요합니다" 상태를 표시하도록 분리
+- BrandMark를 teal 배경의 SVG T 마크로 교체
+- 4개 진단 페이지 하단에 sticky 이전/다음 네비게이션을 추가
+- 슬라이더 트랙을 slate→teal gradient로 조정하고 스펙트럼 슬라이더의 숫자 표시는 제거
+- 선택된 option card의 border, font weight, inset shadow를 강화
+- 핵심 질문 helper text를 프론트 상수로 복원하고 이벤트 로깅(result_view, print CTA, scenario click)을 추가
+- FastAPI 누락 의존성 `fastapi`를 requirements에 반영하고 로컬 venv에 설치
+
+**근거**: MVP 데모에서는 "에러처럼 보이는 빈 상태"와 "스크롤 후 이동 불편"이 신뢰를 크게 떨어뜨리므로, 계산 로직 변경 없이 사용 흐름과 피드백 가시성을 먼저 안정화해야 함.
+
+---
+
+## 2026-05-23: 결과 이후 화면을 의사결정 리포트 흐름으로 강화
+
+**컨텍스트**: 빌드 피드백 기준으로 결과 이후 화면이 점수 발표에 머물지 않고 대표가 선택과 실행을 판단하는 리포트처럼 이어져야 했음.
+
+**결정 사항**:
+- 결과 요약은 벤치마크 대비 갭을 논의 우선순위로 읽도록 설명과 표기를 강화
+- 영역 상세는 감점 근거에 As-Is → To-Be 해석 블록을 추가하되 Python core 계산 로직은 수정하지 않음
+- 인사제도 시뮬레이션은 선택지별 `얻는 것 / 감수할 것` 구조와 대표적 운영 이미지를 중심으로 재정리
+- 시나리오 비교는 선택 카드 클릭 시 상세 패널이 바뀌도록 하고, 효과·재무 영향·운영 리스크·추천 사유를 함께 노출
+- 실행 로드맵은 선택 시나리오를 12개월 5단계 실행계획으로 확장하고, 단계별 제도·커뮤니케이션·리스크·검증 지표를 표시
+
+**근거**: Transition Gap의 핵심 경험은 "정답 추천"이 아니라 진단 근거를 보고 대표가 감수할 선택을 결정하는 것이므로, 계산 결과보다 해석과 실행 순서가 화면에서 먼저 읽혀야 함.
