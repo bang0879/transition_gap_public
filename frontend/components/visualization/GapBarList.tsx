@@ -18,23 +18,41 @@ function barColor(gap: number): string {
   return "bg-teal";
 }
 
+function gapText(gap: number): string {
+  if (gap >= 10) return `기준점 대비 ${gap}점 미달`;
+  if (gap > 0) return `기준점 차이 ${gap}점`;
+  return "기준점 충족";
+}
+
+function gapTone(gap: number): string {
+  if (gap >= 20) return "text-coral";
+  if (gap >= 10) return "text-amber";
+  return "text-teal-deep";
+}
+
 export function GapBarList({ areas }: GapBarListProps) {
   const sorted = [...areas].sort((a, b) => b.gap - a.gap);
-  const maxGap = Math.max(...sorted.map((area) => area.gap), 1);
+  const maxGap = Math.max(...sorted.map((area) => Math.max(area.gap, 0)), 1);
 
   return (
     <div className="grid gap-[14px] p-[18px]">
-      {sorted.map((area) => (
-        <div key={area.area_id} className="grid grid-cols-1 gap-2 text-[12px] sm:grid-cols-[96px_1fr] sm:items-center xl:grid-cols-[92px_1fr_150px]">
+      {sorted.map((area, index) => (
+        <div
+          key={area.area_id}
+          className="grid grid-cols-[48px_minmax(84px,108px)_1fr] items-center gap-2 text-[12px] xl:grid-cols-[48px_92px_1fr_142px]"
+        >
+          <div className="inline-flex h-[24px] w-[42px] items-center justify-center rounded-[7px] border border-slate-200 bg-slate-50 text-[11px] font-[760] text-slate-500">
+            {index + 1}순위
+          </div>
           <div className="font-[620] text-slate-700">{AREA_NAMES[area.area_id] ?? area.area_name}</div>
           <div className="relative h-[9px] rounded-full bg-slate-100">
             <div
               className={`absolute bottom-0 left-0 top-0 rounded-full ${barColor(area.gap)}`}
-              style={{ width: `${(area.gap / maxGap) * 100}%` }}
+              style={{ width: `${(Math.max(area.gap, 0) / maxGap) * 100}%` }}
             />
           </div>
-          <div className="font-[650] text-coral sm:col-start-2 xl:col-start-auto xl:text-right">
-            벤치마크 대비 {area.gap}점 미달
+          <div className={`col-span-3 font-[650] xl:col-span-1 xl:text-right ${gapTone(area.gap)}`}>
+            {gapText(area.gap)}
           </div>
         </div>
       ))}

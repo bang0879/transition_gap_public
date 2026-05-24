@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
+
 interface PageHeaderProps {
   eyebrow: string;
-  title: string;
+  title: ReactNode;
   lead: string;
-  actions?: React.ReactNode;
+  actions?: ReactNode;
 }
 
 export function PageHeader({ eyebrow, title, lead, actions }: PageHeaderProps) {
@@ -14,13 +16,13 @@ export function PageHeader({ eyebrow, title, lead, actions }: PageHeaderProps) {
         </div>
         <h2
           className="m-0 text-[28px] font-[680] leading-[1.25] text-slate-900"
-          style={{ overflowWrap: "anywhere", wordBreak: "break-all" }}
+          style={{ overflowWrap: "anywhere", wordBreak: "keep-all" }}
         >
           {title}
         </h2>
         <p
           className="mt-3 max-w-[700px] text-[14px] leading-[1.75] text-slate-500"
-          style={{ overflowWrap: "anywhere", wordBreak: "break-all" }}
+          style={{ overflowWrap: "anywhere", wordBreak: "keep-all" }}
         >
           {lead}
         </p>

@@ -38,7 +38,7 @@ export default function MatrixPage() {
     return (
       <AnalysisNotice
         eyebrow="진단 입력 필요"
-        title="인사제도 시뮬레이션은 진단 결과를 기준으로 생성됩니다."
+        title="트레이드오프 분석은 진단 결과를 기준으로 생성됩니다."
         body="현재 운영 위치와 대표 철학 기준점을 비교하려면 먼저 진단 입력을 완료해야 합니다."
       >
         <Button onClick={() => router.push("/diagnose/context")}>진단 입력으로</Button>
@@ -73,7 +73,7 @@ export default function MatrixPage() {
   return (
     <>
       <PageHeader
-        eyebrow="인사제도 시뮬레이션"
+        eyebrow="트레이드오프 분석"
         title="우리 회사의 현재 운영 위치와 바꿀 수 있는 방향"
         lead="매트릭스는 정답을 고르는 표가 아니라, 어떤 제도를 얻기 위해 무엇을 감수할지 결정하는 앵커링 도구입니다."
         actions={

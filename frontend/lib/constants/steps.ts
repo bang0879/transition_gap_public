@@ -43,9 +43,9 @@ export const DIAGNOSE_STEPS: DiagnoseStep[] = [
 ];
 
 export const RESULT_STEPS = [
-  { id: "result", label: "진단 결과", path: "/result" },
+  { id: "result", label: "진단결과 요약", path: "/result" },
   { id: "detail", label: "영역별 상세", path: "/result/detail" },
-  { id: "matrix", label: "인사제도 시뮬레이션", path: "/matrix" },
+  { id: "matrix", label: "트레이드오프 분석", path: "/matrix" },
   { id: "scenarios", label: "시나리오 비교", path: "/scenarios" },
   { id: "roadmap", label: "실행 로드맵", path: "/roadmap" },
 ];

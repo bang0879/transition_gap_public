@@ -60,7 +60,7 @@ export default function DetailPage() {
         actions={
           <>
             <Button onClick={() => router.push("/result")}>요약으로</Button>
-            <Button variant="teal" onClick={() => router.push("/matrix")}>인사제도 시뮬레이션</Button>
+            <Button variant="teal" onClick={() => router.push("/matrix")}>트레이드오프 분석</Button>
           </>
         }
       />
