@@ -26,6 +26,22 @@ interface Scenario {
   warnings?: string[];
 }
 
+const OPERATING_REFERENCES: Record<string, string> = {
+  performance: "Netflix식 고성과·고책임 운영 이미지",
+  community: "Google식 심리적 안전감·협업 운영 이미지",
+  elite: "초기 토스식 소수정예·빠른 실행 이미지",
+};
+
+function referenceForScenario(id: string): string {
+  return OPERATING_REFERENCES[id] ?? "성장 단계 스타트업의 혼합 운영 이미지";
+}
+
+function confidenceText(score: number): string {
+  if (score >= 70) return `가시성 ${Math.round(score)}% · 정량 비교 신뢰도 높음`;
+  if (score >= 40) return `가시성 ${Math.round(score)}% · 신뢰도 중간`;
+  return `가시성 ${Math.round(score)}% · 정성 판단 우선`;
+}
+
 export default function MatrixPage() {
   const router = useRouter();
   const { data, isLoading, error, isWaitingForResponses } = useDiagnosis();
@@ -69,13 +85,15 @@ export default function MatrixPage() {
   const selectedCost = selected?.financial_impact?.[0]
     ? `${selected.financial_impact[0].item} ${selected.financial_impact[0].amount}`
     : selected?.warnings?.[0];
+  const matrixConfidence = confidenceText(data.visibility.score);
+  const selectedReference = selected ? referenceForScenario(selected.id) : undefined;
 
   return (
     <>
       <PageHeader
-        eyebrow="트레이드오프 분석"
-        title="우리 회사의 현재 운영 위치와 바꿀 수 있는 방향"
-        lead="매트릭스는 정답을 고르는 표가 아니라, 어떤 제도를 얻기 위해 무엇을 감수할지 결정하는 앵커링 도구입니다."
+        eyebrow="트레이드오프 분석 · 매트릭스 A/B"
+        title="어느 제도를 도입할지가 아니라, 어느 모순을 감수할지 선택합니다."
+        lead="As-Is는 현재 운영 데이터로 자동 배치하고, To-Be는 대표님의 철학 입력과 목표 방향으로 도출합니다. 두 점 사이의 거리가 클수록 제도 변경보다 리더십 운영 비용이 커집니다."
         actions={
           <>
             <Button onClick={() => router.push("/result/detail")}>상세로</Button>
@@ -88,7 +106,13 @@ export default function MatrixPage() {
         body="아래 매트릭스는 대표님의 철학이 향하는 방향(To-Be)과 현재 제도가 실제로 작동하는 위치(As-Is)의 거리를 보여줍니다. 이 거리가 곧 전환 비용이며, 어떤 방향이든 반드시 포기해야 할 것이 있습니다."
       />
       <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
-        <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
+        <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+          <div className="py-2 lg:px-4 lg:first:pl-0">
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">읽는 순서</p>
+            <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
+              현재 위치를 먼저 보고, To-Be까지의 선 길이로 전환 비용을 봅니다.
+            </p>
+          </div>
           <div className="py-2 lg:px-4 lg:first:pl-0">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">얻는 것</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
@@ -114,25 +138,27 @@ export default function MatrixPage() {
           title="매트릭스 A"
           markerId="matrix-a-arrow"
           subtitle="보상 구조와 성과 운영의 방향"
-          quadrantLabels={["비전형 · 공동체", "성과형 · 차등", "안정형 · 평균", "현금형 · 개인성과"]}
+          quadrantLabels={["Q2 장기 비전형 공동체", "Q1 단기 성과형 용병조직", "Q3 평균의 함정형", "Q4 소수정예 중심형"]}
           quadrantExamples={["미션 결속형", "고성과 보상형", "평균 안정형", "개인 인센티브형"]}
           xAxisLabel="지분/비전 ← → 현금/인센티브"
-          yAxisLabel="팀 시너지 ← → 개인 성과"
+          yAxisLabel="팀 시너지 ↑  개인 압도적 성과 ↓"
           asIs={{ x: data.matrix.a_x_as_is, y: data.matrix.a_y_as_is }}
           toBe={{ x: data.matrix.a_x_to_be, y: data.matrix.a_y_to_be }}
           badgeText={data.matrix.a_quadrant_as_is}
+          confidenceText={matrixConfidence}
         />
         <MatrixSVG
           title="매트릭스 B"
           markerId="matrix-b-arrow"
           subtitle="의사결정 통제와 컬처핏 운영의 방향"
-          quadrantLabels={["자율 · 스킬", "통제 · 스킬", "자율 · 컬처", "통제 · 컬처"]}
+          quadrantLabels={["Q2 가족형 자율 조직", "Q4 대기업 공채 시스템형", "Q1 개인플레이어 중심형", "Q3 에이전시형 분업 조직"]}
           quadrantExamples={["전문가 자율형", "절차 기반 전문가형", "가족형 자율 조직", "대기업 시스템형"]}
-          xAxisLabel="자율 ← → 통제"
-          yAxisLabel="스킬 ← → 컬처핏"
+          xAxisLabel="자율과 속도 ← → 통제와 절차"
+          yAxisLabel="조직 적합성 ↑  즉시 전력 ↓"
           asIs={{ x: data.matrix.b_x_as_is, y: data.matrix.b_y_as_is }}
           toBe={{ x: data.matrix.b_x_to_be ?? data.matrix.b_x_as_is, y: data.matrix.b_y_to_be ?? data.matrix.b_y_as_is }}
           badgeText={data.matrix.b_quadrant_as_is}
+          confidenceText="Matrix B는 의사결정 병목과 컬처핏 기준의 비용을 보여줍니다."
         />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
@@ -145,6 +171,7 @@ export default function MatrixPage() {
             gain={selectedGain}
             cost={selectedCost}
             warning={selected.warnings?.[0]}
+            reference={selectedReference}
           />
         ) : null}
       </div>
