@@ -50,6 +50,7 @@ export default function DetailPage() {
 
   const sorted = [...data.areas].sort((a, b) => b.gap - a.gap);
   const active = sorted.find((area) => area.area_id === selectedAreaId) ?? sorted[0];
+  const activeRank = sorted.findIndex((area) => area.area_id === active.area_id) + 1;
 
   return (
     <>
@@ -67,12 +68,24 @@ export default function DetailPage() {
       <div className="grid gap-[18px] xl:grid-cols-[270px_1fr]">
         <AreaSidebar areas={sorted} activeId={active.area_id} onSelect={setSelectedAreaId} />
         <section>
-          <ScoreHero area={active} />
+          <ScoreHero area={active} rank={activeRank} />
           <AsIsToBePanel breakdown={active.score_breakdown} />
           <BreakdownTable breakdown={active.score_breakdown} />
           <BenchmarkRow areaId={active.area_id} />
         </section>
       </div>
+      <section className="mt-4 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 print:hidden sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="m-0 text-[12px] font-[680] text-slate-900">다음 단계</p>
+          <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
+            상세 근거를 확인했다면, 이제 어떤 방향을 얻고 무엇을 감수할지 비교합니다.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => router.push("/result")}>진단결과 요약</Button>
+          <Button variant="primary" onClick={() => router.push("/matrix")}>트레이드오프 분석</Button>
+        </div>
+      </section>
     </>
   );
 }

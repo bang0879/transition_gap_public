@@ -1,6 +1,7 @@
 "use client";
 
 import type { AreaAnalysisOut } from "@/lib/types/api";
+import { areaDisplayName, gapLabel } from "@/lib/utils/areaDisplay";
 
 interface AreaSidebarProps {
   areas: AreaAnalysisOut[];
@@ -11,8 +12,9 @@ interface AreaSidebarProps {
 export function AreaSidebar({ areas, activeId, onSelect }: AreaSidebarProps) {
   return (
     <aside className="grid h-fit gap-[10px]">
-      {areas.map((area) => {
+      {areas.map((area, index) => {
         const active = area.area_id === activeId;
+        const name = areaDisplayName(area.area_id, area.area_name);
         return (
           <button
             key={area.area_id}
@@ -25,15 +27,20 @@ export function AreaSidebar({ areas, activeId, onSelect }: AreaSidebarProps) {
             }`}
           >
             <div className="mb-[10px] flex items-start justify-between gap-3">
-              <strong className="text-[13px] font-[680] text-slate-900">{area.area_name}</strong>
-              <span className="text-[12px] font-[700] text-teal-deep">{area.score}</span>
+              <div>
+                <span className="mb-1 inline-flex rounded-[7px] border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-[760] text-slate-500">
+                  {index + 1}순위
+                </span>
+                <strong className="block text-[13px] font-[680] text-slate-900">{name}</strong>
+              </div>
+              <span className="shrink-0 text-[12px] font-[700] text-teal-deep">현재 {area.score}</span>
             </div>
             <div className="h-[6px] overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-teal" style={{ width: `${Math.max(8, area.score)}%` }} />
             </div>
-            <div className="mt-[10px] flex justify-between text-[11px] text-slate-500">
-              <span>벤치마크 대비 {area.gap}점 미달</span>
-              <span>Priority {area.priority}</span>
+            <div className="mt-[10px] flex justify-between gap-2 text-[11px] text-slate-500">
+              <span>{gapLabel(area.gap)}</span>
+              <span>{area.difficulty}</span>
             </div>
           </button>
         );

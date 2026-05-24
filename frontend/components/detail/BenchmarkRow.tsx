@@ -31,12 +31,14 @@ export function BenchmarkRow({ areaId }: BenchmarkRowProps) {
   const benchmark = data?.benchmarks?.[areaId];
 
   if (!benchmark) {
-    return <div className="rounded-[10px] border border-slate-200 bg-white p-5 text-[12px] text-slate-400" />;
+    return null;
   }
+
+  const title = benchmark.title.replace(/벤치마크/g, "참고 기준");
 
   return (
     <section className="rounded-[10px] border border-slate-200 bg-white p-5 print:break-inside-avoid">
-      <h3 className="m-0 text-[14px] font-[680] text-slate-900">{benchmark.title}</h3>
+      <h3 className="m-0 text-[14px] font-[680] text-slate-900">{title}</h3>
       <p className="mt-2 text-[12px] leading-[1.65] text-slate-500">{benchmark.intro}</p>
       <div className="mt-4 grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 lg:grid-cols-3">
         {benchmark.items.slice(0, 3).map((item) => (
