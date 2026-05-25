@@ -51,11 +51,7 @@ if not errorlevel 1 (
 
 :: Start backend in a new window.
 if "%BACKEND_ALREADY_RUNNING%"=="0" (
-  if exist "backend\.venv\Scripts\python.exe" (
-    start "Transition Gap Backend" /D "%ROOT%backend" cmd /k ".venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"
-  ) else (
-    start "Transition Gap Backend" /D "%ROOT%backend" cmd /k "uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"
-  )
+  start "Transition Gap Backend" /D "%ROOT%backend" cmd /k start_backend.bat
 )
 
 :: Start frontend in a new window.
@@ -68,7 +64,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference='SilentlyContinue';" ^
   "$backendReady=$false; $frontendReady=$false;" ^
   "for($i=0; $i -lt 60; $i++) {" ^
-  "  if(-not $backendReady) { try { $backendReady = (Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8000/health' -TimeoutSec 2).StatusCode -eq 200 } catch {} }" ^
+  "  if(-not $backendReady) { try { $r=Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:8000/health' -TimeoutSec 2; $backendReady = $r.StatusCode -eq 200 -and [string]$r.Content -match '\"status\"\\s*:\\s*\"ok\"' } catch {} }" ^
   "  if(-not $frontendReady) { try { $frontendReady = (Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:3000' -TimeoutSec 2).StatusCode -eq 200 } catch {} }" ^
   "  if($backendReady -and $frontendReady) { exit 0 }" ^
   "  Start-Sleep -Seconds 1" ^
