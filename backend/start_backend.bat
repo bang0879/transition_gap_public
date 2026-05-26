@@ -1,6 +1,7 @@
 @echo off
 setlocal
 
+cd /d "%~dp0"
 set "ROOT=%~dp0.."
 if "%BACKEND_PORT%"=="" set "BACKEND_PORT=8010"
 set "LOCAL_PYTHON=%ROOT%\.uv-python\cpython-3.12.13-windows-x86_64-none\python.exe"
