@@ -9,12 +9,13 @@ interface ScoreHeroProps {
 
 export function ScoreHero({ area, rank }: ScoreHeroProps) {
   const name = areaDisplayName(area.area_id, area.area_name);
+  const gapValue = area.gap >= 10 ? `${area.gap}점 미달` : area.gap > 0 ? `${area.gap}점 차이` : "충족";
 
   return (
     <section className="mb-4 grid grid-cols-1 gap-4 rounded-[10px] border border-slate-200 bg-white p-5 print:break-inside-avoid lg:grid-cols-[180px_1fr_190px]">
       <div>
         <p className="m-0 text-[11px] font-[760] uppercase tracking-[0.08em] text-slate-400">
-          현재 정합성
+          현재 점수
         </p>
         <div className="mt-3 flex items-baseline gap-1">
           <strong className="text-[52px] font-[680] leading-none text-slate-900">{area.score}</strong>
@@ -35,8 +36,11 @@ export function ScoreHero({ area, rank }: ScoreHeroProps) {
         </div>
       </div>
       <div className="rounded-[10px] border border-slate-200 bg-slate-50 p-4">
-        <p className="m-0 text-[11px] font-[680] text-slate-500">기준점 차이</p>
-        <strong className="mt-2 block text-[18px] font-[680] leading-[1.35] text-coral">{gapLabel(area.gap)}</strong>
+        <p className="m-0 text-[11px] font-[680] text-slate-500">필요 기준과 차이</p>
+        <strong className="mt-2 block text-[18px] font-[680] leading-[1.35] text-coral">
+          <span className="block">필요 기준 대비</span>
+          <span className="block">{gapValue}</span>
+        </strong>
         <p className="m-0 mt-2 text-[11px] leading-[1.55] text-slate-500">실행 난이도: {area.difficulty}</p>
       </div>
     </section>

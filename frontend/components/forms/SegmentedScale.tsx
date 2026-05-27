@@ -13,8 +13,10 @@ interface SegmentedScaleProps {
 }
 
 export function SegmentedScale({ value, onChange, options }: SegmentedScaleProps) {
+  const gridClass = options.length >= 5 ? "md:grid-cols-3" : "md:grid-cols-3";
+
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+    <div className={`grid grid-cols-1 gap-2 ${gridClass}`}>
       {options.map((option) => {
         const selected = value === option.value;
 

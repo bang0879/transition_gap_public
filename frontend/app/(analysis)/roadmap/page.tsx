@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { fetchScenarios } from "@/lib/api/content";
 import { Button } from "@/components/shared/Button";
-import { MemoBlock } from "@/components/result/MemoBlock";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RoadmapTimeline } from "@/components/roadmap/RoadmapTimeline";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
@@ -37,8 +36,8 @@ function RoadmapContent() {
     <>
       <PageHeader
         eyebrow={`실행 로드맵 · ${scenario.name}`}
-        title={`${scenario.name}을 실행 가능한 12개월 계획으로 번역합니다.`}
-        lead="이 화면은 추천안의 발표 자료가 아니라 대표가 실행 여부를 판단하기 위한 최종 산출물입니다. 선택한 시나리오를 선행과제, 파일럿 도입, 세부 제도 도입, 제도 안정화, 성과 검증의 순서로 나눠 무엇을 준비하고 무엇을 확인할지 정리합니다."
+        title="12개월 동안 무엇을 먼저 바꾸고, 무엇을 확인할지 정합니다."
+        lead="이 화면은 정답안 발표 자료가 아니라 회사가 실행 여부를 판단하기 위한 최종 산출물입니다. 선택한 시나리오를 선행과제, 파일럿 도입, 세부 제도 도입, 제도 안정화, 성과 검증의 순서로 나눠 무엇을 준비하고 무엇을 확인할지 정리합니다."
         actions={
           <>
             <Button onClick={() => router.push("/scenarios")}>시나리오 비교</Button>
@@ -46,12 +45,18 @@ function RoadmapContent() {
           </>
         }
       />
-      <MemoBlock
-        icon="1"
-        title="0~1개월 선행과제는 일정이 아니라 도입 조건입니다."
-        body="HR 데이터, 보상 기준, 평가 운영 기준이 정리되지 않은 상태에서 제도부터 바꾸면 실행 리스크가 커집니다. 이 로드맵은 먼저 기준선을 고정하고, 작은 파일럿으로 수용성을 확인한 뒤, 12개월 안에 유지할 제도와 되돌릴 제도를 판단하도록 설계했습니다."
-      />
+      <RoadmapCautionCards />
       <RoadmapTimeline scenario={scenario} />
+      <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
+        <div>
+          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 내부 공유용 초안을 출력합니다.</p>
+          <p className="m-0 mt-1 text-[12px] text-slate-500">PDF 디자인은 별도 작업으로 분리하고, 지금은 현재 화면 기준으로 인쇄합니다.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => router.push(`/scenarios?scenario=${scenarioId}`)}>시나리오 비교</Button>
+          <Button variant="primary" onClick={() => window.print()}>리포트 초안 생성</Button>
+        </div>
+      </section>
     </>
   );
 }
@@ -61,5 +66,33 @@ export default function RoadmapPage() {
     <Suspense fallback={<div className="p-9 text-slate-400">로딩 중...</div>}>
       <RoadmapContent />
     </Suspense>
+  );
+}
+
+function RoadmapCautionCards() {
+  const items = [
+    {
+      title: "선행과제는 도입 조건입니다.",
+      body: "HR 데이터, 보상 기준, 평가 운영 기준이 정리되지 않은 상태에서 제도부터 바꾸면 실행 리스크가 커집니다.",
+    },
+    {
+      title: "작게 검증한 뒤 넓힙니다.",
+      body: "먼저 작은 파일럿으로 리더 실행력과 구성원 수용성을 확인하고, 전사 확대 여부를 다시 판단합니다.",
+    },
+    {
+      title: "유지할 것과 되돌릴 것을 정합니다.",
+      body: "12개월 동안 비용, 수용성, 성과 신호를 함께 보고 다음 사이클에 남길 제도만 확정합니다.",
+    },
+  ];
+
+  return (
+    <section className="mb-[22px] grid gap-3 md:grid-cols-3">
+      {items.map((item) => (
+        <article key={item.title} className="rounded-[10px] border border-[#e8dcc7] bg-[#fffaf0] p-4">
+          <p className="m-0 text-[13px] font-[700] leading-[1.45] text-slate-900">{item.title}</p>
+          <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-600">{item.body}</p>
+        </article>
+      ))}
+    </section>
   );
 }

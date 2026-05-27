@@ -6,17 +6,13 @@ import { Button } from "@/components/shared/Button";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
 import { PreviewAside } from "./PreviewAside";
+import { DiagnosisFlowModal } from "./DiagnosisFlowModal";
 
 export function LandingHero() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
+  const [flowOpen, setFlowOpen] = useState(false);
   const initSession = useSessionStore((state) => state.initSession);
-  const scrollToFlow = () => {
-    document.getElementById("diagnosis-flow")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
   const handleStart = () => {
     const trimmedCompanyName = companyName.trim();
 
@@ -29,7 +25,7 @@ export function LandingHero() {
   };
 
   return (
-    <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[1fr_420px]">
+    <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[1fr_360px]">
       <div>
         <div className="mb-[18px] inline-flex min-h-7 max-w-full items-center rounded-full border border-slate-200 bg-white px-[10px] py-1 text-[11px] font-[680] leading-[1.35] text-slate-500">
           인사제도 정합성 진단 · Transition Gap
@@ -46,7 +42,7 @@ export function LandingHero() {
           <strong className="font-[760] text-teal-deep">
             인사제도의 본질은 정답의 조합이 아니라, 하나의 경영 철학 아래 채용·평가·보상이 엇박자 없이 정렬되는 것입니다.
           </strong>{" "}
-          본 진단은 대표님이 원하는 조직의 미래 방향과 현재 제도의 충돌을 정밀 진단하여,
+          본 진단은 회사가 원하는 조직의 미래 방향과 현재 제도의 충돌을 정밀 진단하여,
           귀사가 실행 가능한 단계적 전환 플랜을 제시합니다.
         </p>
         <form
@@ -66,12 +62,13 @@ export function LandingHero() {
           <Button type="submit" variant="primary" disabled={!companyName.trim()}>
             진단 시작
           </Button>
-          <Button onClick={scrollToFlow}>
+          <Button onClick={() => setFlowOpen(true)}>
             진단 흐름 보기
           </Button>
         </form>
       </div>
       <PreviewAside />
+      <DiagnosisFlowModal open={flowOpen} onClose={() => setFlowOpen(false)} />
     </div>
   );
 }

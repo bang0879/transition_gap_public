@@ -2,7 +2,6 @@
 
 import { BrandMark } from "@/components/layout/BrandMark";
 import { LandingHero } from "@/components/landing/LandingHero";
-import { ProcessStrip } from "@/components/landing/ProcessStrip";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
 
 function LandingContent() {
@@ -22,7 +21,6 @@ function LandingContent() {
         </div>
       </div>
       <LandingHero />
-      <ProcessStrip />
     </main>
   );
 }

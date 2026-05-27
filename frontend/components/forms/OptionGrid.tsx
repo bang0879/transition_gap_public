@@ -1,5 +1,7 @@
 "use client";
 
+import { GlossaryText } from "@/components/shared/GlossaryText";
+
 interface OptionGridProps {
   options: string[];
   value: string | undefined;
@@ -40,7 +42,7 @@ export function OptionGrid({
                   : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
             }`}
           >
-            {option}
+            <GlossaryText text={option} />
           </button>
         );
       })}

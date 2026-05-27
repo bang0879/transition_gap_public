@@ -1,4 +1,5 @@
 import { Badge } from "@/components/shared/Badge";
+import { GlossaryText } from "@/components/shared/GlossaryText";
 
 interface QuestionBlockProps {
   title: string;
@@ -16,10 +17,12 @@ export function QuestionBlock({ title, help, badge, children }: QuestionBlockPro
       <div className="mb-[14px] flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="m-0 text-[14px] font-[680] leading-[1.45] text-slate-900">
-            {title}
+            <GlossaryText text={title} />
           </p>
           {help ? (
-            <p className="mt-[6px] text-[12px] leading-[1.55] text-slate-500">{help}</p>
+            <p className="mt-[6px] text-[12px] leading-[1.55] text-slate-500">
+              <GlossaryText text={help} />
+            </p>
           ) : null}
         </div>
         {badge ? (

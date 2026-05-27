@@ -163,9 +163,58 @@ def get_cross_domain_insights(
     return insights[:3]
 
 
+def benchmark_for(area_id: str, responses: dict[str, Any]) -> int:
+    """Return a context-aware benchmark for each HR domain."""
+    base = {
+        "compensation": 70,
+        "evaluation": 75,
+        "recruitment": 75,
+        "retention": 72,
+        "leadership": 75,
+    }[area_id]
+
+    headcount = responses.get("L1-2")
+    if headcount == "20인 이하":
+        base += {
+            "retention": -8,
+            "evaluation": -5,
+            "leadership": -7,
+            "recruitment": -3,
+        }.get(area_id, 0)
+    elif headcount == "20~50인":
+        base += {
+            "retention": -5,
+            "leadership": -3,
+        }.get(area_id, 0)
+    elif headcount in ("100~500인", "500인 초과", "100인 초과"):
+        base += {
+            "evaluation": 5,
+            "leadership": 5,
+        }.get(area_id, 0)
+
+    if _is_aggressive_hiring(responses.get("L1-4")):
+        base += {
+            "recruitment": 5,
+            "retention": -3,
+        }.get(area_id, 0)
+
+    if responses.get("L0-1") == "A":
+        base += {
+            "compensation": 3,
+            "evaluation": 3,
+        }.get(area_id, 0)
+    elif responses.get("L0-1") == "B":
+        base += {
+            "retention": 3,
+            "leadership": 3,
+        }.get(area_id, 0)
+
+    return max(50, min(90, base))
+
+
 def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
     score, score_breakdown = _calc_compensation_score(responses)
-    benchmark = 70
+    benchmark = benchmark_for("compensation", responses)
     gap = benchmark - score
 
     comp_philosophy = _as_int(responses.get("2-3-1"), 3)
@@ -234,7 +283,7 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
             )
         )
 
-    if responses.get("2-3-6") == "상" and market_position == "하위":
+    if responses.get("2-3-6") == "동종업계보다 높은 편" and market_position == "하위":
         issues.append(
             Issue(
                 "복리후생 과잉 투자",
@@ -315,7 +364,7 @@ def _calc_compensation_score(responses: dict[str, Any]) -> tuple[int, list[dict[
 
 def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     score, score_breakdown = _calc_evaluation_score(responses)
-    benchmark = 75
+    benchmark = benchmark_for("evaluation", responses)
     gap = benchmark - score
 
     eval_cycle = _text(responses.get("2-4-1a"))
@@ -325,7 +374,9 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     emp_fair = _as_int(responses.get("2-4-3-employee"), 5)
     fairness_gap = ceo_fair - emp_fair
 
-    if _is_evaluation_active(eval_cycle):
+    fairness_not_operated = ceo_fair == 0 or emp_fair == 0
+
+    if _is_evaluation_active(eval_cycle) and not fairness_not_operated:
         status = (
             f"귀사는 현재 '{eval_cycle}' 주기로 '{eval_method}' 방식의 평가를 운영하고 있습니다. "
             f"평가와 보상의 연동 수준은 {eval_link}점/5점이며, CEO가 인식하는 "
@@ -338,6 +389,12 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
             status += " 대표와 직원 간 공정성 인식 차이가 2점 이상으로 위험 신호가 감지됩니다."
         elif fairness_gap >= 1:
             status += " 대표와 직원 간 공정성 인식에 차이가 있어 수용성 관리가 필요합니다."
+    elif _is_evaluation_active(eval_cycle) and fairness_not_operated:
+        status = (
+            f"귀사는 현재 '{eval_cycle}' 주기로 평가를 운영한다고 응답했지만, 평가 공정성을 "
+            "판단할 운영 기준은 아직 없다고 답했습니다. 이 경우 평가 제도를 더 늘리기보다 "
+            "먼저 평가 기준과 결과 설명 방식을 정리해야 합니다."
+        )
     else:
         status = (
             "귀사는 현재 정기적인 공식 평가 체계가 부재합니다. 이 상태에서 보상 차등이나 "
@@ -347,6 +404,8 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     tags: list[str] = []
     if not _is_evaluation_active(eval_cycle):
         tags.append("평가 체계 부재")
+    if fairness_not_operated:
+        tags.append("평가 공정성 판단 기준 부재")
     if fairness_gap >= 3:
         tags.append("공정성 차이 심각")
     elif fairness_gap >= 2:
@@ -439,7 +498,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
 
     return AreaAnalysis(
         area_id="evaluation",
-        area_name="평가 정교도",
+        area_name="평가 제도",
         score=score,
         benchmark=benchmark,
         gap=gap,
@@ -471,19 +530,24 @@ def _calc_evaluation_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
     ceo_fair = _as_int(responses.get("2-4-3-ceo"), 5)
     emp_fair = _as_int(responses.get("2-4-3-employee"), 5)
     avg_fair = (ceo_fair + emp_fair) / 2
-    fairness_impact = int((avg_fair - 5) * 3)
-    gap_impact = -(max(0, ceo_fair - emp_fair) * 4)
+    fairness_not_operated = ceo_fair == 0 or emp_fair == 0
+    fairness_impact = -18 if fairness_not_operated else int((avg_fair - 5) * 3)
+    gap_impact = 0 if fairness_not_operated else -(max(0, ceo_fair - emp_fair) * 4)
     score += fairness_impact
     score += gap_impact
-    breakdown.append(_score_item("평가 공정성 평균", f"{avg_fair:.1f}점/10점", fairness_impact, "CEO/직원 예상 평균"))
-    breakdown.append(_score_item("공정성 인식 차이", f"{ceo_fair - emp_fair}점", gap_impact, "CEO 인식이 직원 예상보다 높을 때 감점"))
+    fairness_value = "운영하지 않음" if fairness_not_operated else f"{avg_fair:.1f}점/10점"
+    gap_value = "판단 기준 없음" if fairness_not_operated else f"{ceo_fair - emp_fair}점"
+    fairness_note = "평가 공정성을 판단할 공식 운영 기준 없음" if fairness_not_operated else "CEO/직원 예상 평균"
+    gap_note = "공정성 판단 기준 부재 시 인식 차이 계산 보류" if fairness_not_operated else "CEO 인식이 직원 예상보다 높을 때 감점"
+    breakdown.append(_score_item("평가 공정성 평균", fairness_value, fairness_impact, fairness_note))
+    breakdown.append(_score_item("공정성 인식 차이", gap_value, gap_impact, gap_note))
 
     return _finalize_score(score, breakdown)
 
 
 def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
     score, score_breakdown = _calc_recruitment_score(responses)
-    benchmark = 75
+    benchmark = benchmark_for("recruitment", responses)
     gap = benchmark - score
 
     duration = _text(responses.get("2-2-1"))
@@ -629,7 +693,7 @@ def _calc_recruitment_score(responses: dict[str, Any]) -> tuple[int, list[dict[s
 
 def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
     score, score_breakdown = _calc_retention_score(responses)
-    benchmark = 72
+    benchmark = benchmark_for("retention", responses)
     gap = benchmark - score
 
     turnover = _text(responses.get("2-1-1"))
@@ -780,7 +844,7 @@ def _calc_retention_score(responses: dict[str, Any]) -> tuple[int, list[dict[str
 
 def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
     score, score_breakdown = _calc_leadership_score(responses)
-    benchmark = 75
+    benchmark = benchmark_for("leadership", responses)
     gap = benchmark - score
 
     feedback = _text(responses.get("2-5-1"))
@@ -841,7 +905,7 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
     if core_values == "문서로만 존재함":
         issues.append(
             Issue(
-                "핵심가치 형해화",
+                "핵심가치 미작동",
                 "핵심가치가 채용·평가 기준으로 작동하지 않으면 문화는 선언에 머뭅니다.",
                 "medium",
             )
@@ -1004,14 +1068,14 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
         "인건비 효율성 저하": "인건비는 올라가는데 성과와 연결되지 않아 투자가 아닌 비용으로만 쌓이는",
         "성과급 구조 부재": "고성과자에게 줄 명확한 upside가 없는",
         "복리후생 과잉 투자": "기본 보상 경쟁력보다 주변 복지에 재원이 먼저 쓰이는",
-        "대표-직원 공정성 인식 차이 심각": "대표님은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
-        "대표-직원 공정성 인식 갭 심각": "대표님은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
-        "CEO-직원 공정성 갭 심각": "대표님은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
-        "대표-직원 공정성 인식 차이 위험": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
-        "대표-직원 공정성 인식 갭 위험": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
-        "대표-직원 공정성 인식 차이 주의": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
-        "대표-직원 공정성 인식 갭 주의": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
-        "CEO-직원 공정성 갭 주의": "대표님과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "대표-직원 공정성 인식 차이 심각": "경영진은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
+        "대표-직원 공정성 인식 갭 심각": "경영진은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
+        "CEO-직원 공정성 갭 심각": "경영진은 공정하다고 느끼지만 직원들은 그렇지 않다고 느끼는",
+        "대표-직원 공정성 인식 차이 위험": "경영진과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "대표-직원 공정성 인식 갭 위험": "경영진과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "대표-직원 공정성 인식 차이 주의": "경영진과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "대표-직원 공정성 인식 갭 주의": "경영진과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
+        "CEO-직원 공정성 갭 주의": "경영진과 직원 사이에 평가 공정성 인식 차이가 벌어지기 시작한",
         "평가-보상 디커플링": "평가는 하지만 그 결과가 실제 보상 결정에 힘을 쓰지 못하는",
         "평가 체계 부재": "공식적인 평가 기준 없이 보상과 승진이 결정되는",
         "리더 비전 공감 부족": "리더들이 회사의 방향을 자기 말로 설명하지 못하는",
@@ -1029,10 +1093,10 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
         "리더 피드백 역량 부족": "팀장들이 솔직한 피드백을 주지 못해 문제가 수면 아래 쌓이는",
         "1on1 부재/형식화": "리더와 구성원 사이에 정기적 소통 채널이 없는",
         "1on1 부재": "리더와 구성원 사이에 정기적 소통 채널이 없는",
-        "의사결정 병목": "모든 결정이 대표님을 거쳐야 해서 조직이 대표님 일정에 종속된",
-        "의사결정 병목 (CEO 집중)": "모든 결정이 대표님을 거쳐야 해서 조직이 대표님 일정에 종속된",
-        "핵심가치 형해화": "핵심가치를 외치지만 실제 채용과 평가에서 기준으로 쓰이지 않는",
-        "거버넌스 미성숙": "조직 규모는 커졌는데 권한 위임은 아직 대표님에게 묶여 있는",
+        "의사결정 병목": "모든 결정이 경영진에게 집중되어 조직 속도가 특정 의사결정자 일정에 종속된",
+        "의사결정 병목 (CEO 집중)": "모든 결정이 경영진에게 집중되어 조직 속도가 특정 의사결정자 일정에 종속된",
+        "핵심가치 미작동": "핵심가치를 외치지만 실제 채용과 평가에서 기준으로 쓰이지 않는",
+        "거버넌스 미성숙": "조직 규모는 커졌는데 권한 위임은 아직 경영진에게 묶여 있는",
     }
     return reasons.get(issue.title, "현재 조직 상황의")
 

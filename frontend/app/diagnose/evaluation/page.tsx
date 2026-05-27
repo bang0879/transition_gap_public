@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { BottomNav } from "@/components/forms/BottomNav";
 import { ContextPanel } from "@/components/forms/ContextPanel";
-import { NumericSlider } from "@/components/forms/NumericSlider";
 import { OptionGrid } from "@/components/forms/OptionGrid";
 import { QuestionBlock } from "@/components/forms/QuestionBlock";
 import { SegmentedScale } from "@/components/forms/SegmentedScale";
@@ -36,19 +35,52 @@ const options = {
 
 const visionDecisionOptions = [
   {
-    label: "낮음",
+    label: "아니다",
     value: 1,
     description: "리더마다 판단 기준이 다르고, 대표의 개입 후에야 방향이 맞춰집니다.",
   },
   {
-    label: "중간",
+    label: "보통이다",
     value: 3,
     description: "방향은 공유되어 있지만 채용·평가·자원 배분 기준으로는 아직 흔들립니다.",
   },
   {
-    label: "높음",
+    label: "그렇다",
     value: 5,
     description: "장기 방향이 리더의 채용·평가·자원 배분 판단 기준으로 작동합니다.",
+  },
+];
+
+const fairnessAgreementOptions = [
+  {
+    label: "전혀 아니다",
+    value: 1,
+    description: "공정하다고 보기 어렵고, 불만이 표면화될 가능성이 큽니다.",
+  },
+  {
+    label: "아니다",
+    value: 3,
+    description: "일부 기준은 있으나 납득 가능한 수준으로 작동하지 않습니다.",
+  },
+  {
+    label: "보통이다",
+    value: 5,
+    description: "큰 불만은 없지만 기준과 설명 방식이 더 명확해야 합니다.",
+  },
+  {
+    label: "그렇다",
+    value: 7,
+    description: "대체로 공정하게 받아들여질 만한 운영 기준이 있습니다.",
+  },
+  {
+    label: "매우 그렇다",
+    value: 10,
+    description: "기준, 근거, 설명 방식이 일관되게 작동하고 있습니다.",
+  },
+  {
+    label: "운영하지 않음",
+    value: 0,
+    description: "공식 평가 제도가 없거나, 공정성을 판단할 운영 기준이 아직 없습니다.",
   },
 ];
 
@@ -82,10 +114,18 @@ export default function EvaluationPage() {
             <OptionGrid options={options["2-4-2"]} value={responses["2-4-2"] as string | undefined} onChange={(value) => setResponse("2-4-2", value)} columns={1} />
           </QuestionBlock>
           <QuestionBlock title="우리 회사의 평가 제도가 공정하게 운영되고 있다고 생각하십니까?" help={QUESTION_HELP["2-4-3-ceo"]}>
-            <NumericSlider value={responses["2-4-3-ceo"] as number | undefined} onChange={(value) => setResponse("2-4-3-ceo", value)} leftLabel="낮음" rightLabel="높음" />
+            <SegmentedScale
+              options={fairnessAgreementOptions}
+              value={responses["2-4-3-ceo"] as number | undefined}
+              onChange={(value) => setResponse("2-4-3-ceo", value)}
+            />
           </QuestionBlock>
           <QuestionBlock title="직원들도 현재 평가 제도를 공정하다고 느낄 것이라 생각하십니까?" help={QUESTION_HELP["2-4-3-employee"]}>
-            <NumericSlider value={responses["2-4-3-employee"] as number | undefined} onChange={(value) => setResponse("2-4-3-employee", value)} leftLabel="낮음" rightLabel="높음" />
+            <SegmentedScale
+              options={fairnessAgreementOptions}
+              value={responses["2-4-3-employee"] as number | undefined}
+              onChange={(value) => setResponse("2-4-3-employee", value)}
+            />
           </QuestionBlock>
           <QuestionBlock
             title="리더들이 채용·평가·자원 배분을 결정할 때, 회사의 장기 방향을 기준으로 삼고 있습니까?"

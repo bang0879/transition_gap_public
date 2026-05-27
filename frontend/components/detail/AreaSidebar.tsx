@@ -9,6 +9,19 @@ interface AreaSidebarProps {
   onSelect: (areaId: string) => void;
 }
 
+function scoreTone(score: number, index: number): string {
+  if (score < 50 || index === 0) return "bg-coral";
+  if (score < 70 || index === 1) return "bg-amber";
+  if (score < 80) return "bg-teal";
+  return "bg-green";
+}
+
+function activeTone(score: number, index: number): string {
+  if (score < 50 || index === 0) return "border-coral/30 bg-coral-soft";
+  if (score < 70 || index === 1) return "border-amber/30 bg-amber-soft";
+  return "border-teal-line bg-teal-soft";
+}
+
 export function AreaSidebar({ areas, activeId, onSelect }: AreaSidebarProps) {
   return (
     <aside className="grid h-fit gap-[10px]">
@@ -22,7 +35,7 @@ export function AreaSidebar({ areas, activeId, onSelect }: AreaSidebarProps) {
             onClick={() => onSelect(area.area_id)}
             className={`rounded-[10px] border p-4 text-left transition-all print:break-inside-avoid ${
               active
-                ? "border-teal-line bg-teal-soft shadow-soft"
+                ? `${activeTone(area.score, index)} shadow-soft`
                 : "border-slate-200 bg-white hover:border-slate-300"
             }`}
           >
@@ -33,10 +46,10 @@ export function AreaSidebar({ areas, activeId, onSelect }: AreaSidebarProps) {
                 </span>
                 <strong className="block text-[13px] font-[680] text-slate-900">{name}</strong>
               </div>
-              <span className="shrink-0 text-[12px] font-[700] text-teal-deep">현재 {area.score}</span>
+              <span className="shrink-0 text-[12px] font-[700] text-teal-deep">현재 {area.score}점</span>
             </div>
             <div className="h-[6px] overflow-hidden rounded-full bg-slate-100">
-              <div className="h-full rounded-full bg-teal" style={{ width: `${Math.max(8, area.score)}%` }} />
+              <div className={`h-full rounded-full ${scoreTone(area.score, index)}`} style={{ width: `${Math.max(8, area.score)}%` }} />
             </div>
             <div className="mt-[10px] flex justify-between gap-2 text-[11px] text-slate-500">
               <span>{gapLabel(area.gap)}</span>
