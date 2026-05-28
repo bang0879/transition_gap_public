@@ -217,8 +217,10 @@ def calc_to_be_coordinates(responses: dict[str, Any]) -> dict[str, dict[str, flo
     - L0-1 B: 조직 균등 분배 -> 매트릭스 A Y축 하단(0.15)
     - L0-2 A: 성과 추적/피드백 -> 매트릭스 A X축 우측(0.85)
     - L0-2 B: 심리적 안전감 -> 매트릭스 A X축 좌측(0.15)
-    - L0-3 A: 외부 수혈 -> 매트릭스 B X축 좌측(0.15)
-    - L0-3 B: 내부 육성 -> 매트릭스 B X축 우측(0.85)
+    - L0-2 A: 성과 추적/피드백 -> 매트릭스 B X축 우측(0.80)
+    - L0-2 B: 심리적 안전감 -> 매트릭스 B X축 좌측(0.20)
+    - L0-3 A: 외부 수혈 -> 매트릭스 B Y축 하단(0.20)
+    - L0-3 B: 내부 육성 -> 매트릭스 B Y축 상단(0.80)
     """
     q1 = responses.get("L0-1", "")
     q2 = responses.get("L0-2", "")
@@ -226,7 +228,8 @@ def calc_to_be_coordinates(responses: dict[str, Any]) -> dict[str, dict[str, flo
 
     y_a = _map_choice(q1, a_value=0.85, b_value=0.15)
     x_a = _map_choice(q2, a_value=0.85, b_value=0.15)
-    x_b = _map_choice(q3, a_value=0.15, b_value=0.85)
+    x_b = _map_choice(q2, a_value=0.80, b_value=0.20)
+    y_b = _map_choice(q3, a_value=0.20, b_value=0.80)
 
     return {
         "matrix_a": {
@@ -235,7 +238,7 @@ def calc_to_be_coordinates(responses: dict[str, Any]) -> dict[str, dict[str, flo
         },
         "matrix_b": {
             "x": x_b,
-            "y": 0.5,
+            "y": y_b,
         },
     }
 

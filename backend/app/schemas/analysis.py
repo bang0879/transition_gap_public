@@ -60,7 +60,54 @@ class MatrixOut(BaseModel):
     a_quadrant_as_is: str
     a_quadrant_to_be: str
     b_quadrant_as_is: str
+    b_quadrant_to_be: str
     pain_point_dispersion: float
+
+
+class AlignmentConflictOut(BaseModel):
+    id: str
+    title: str
+    detail: str
+    severity: str
+    penalty: int
+    domains: list[str]
+
+
+class AlignmentOut(BaseModel):
+    score: int
+    base_score: int
+    total_penalty: int
+    conflicts: list[AlignmentConflictOut]
+
+
+class AlignmentMapVectorOut(BaseModel):
+    domain_id: str
+    domain_name: str
+    x: float
+    y: float
+    magnitude: float
+    direction_label: str
+    evidence: list[str]
+
+
+class AlignmentMapConflictOut(BaseModel):
+    id: str
+    title: str
+    detail: str
+    domains: list[str]
+    severity: str
+
+
+class AlignmentMapOut(BaseModel):
+    alignment_score: int
+    alignment_level: str
+    dispersion: float
+    centroid_x: float
+    centroid_y: float
+    headline: str
+    summary: str
+    vectors: list[AlignmentMapVectorOut]
+    conflicts: list[AlignmentMapConflictOut]
 
 
 class InsightOut(BaseModel):
@@ -73,4 +120,6 @@ class DiagnoseResponse(BaseModel):
     areas: list[AreaAnalysisOut]
     visibility: VisibilityOut
     matrix: MatrixOut
+    alignment: AlignmentOut
+    alignment_map: AlignmentMapOut
     insights: list[InsightOut]

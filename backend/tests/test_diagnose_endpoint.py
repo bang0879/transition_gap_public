@@ -44,6 +44,22 @@ def test_diagnose_empty_responses(client):
     assert len(data["areas"]) == 5
 
 
+def test_diagnose_normalizes_frontend_philosophy_text_to_to_be_coordinates(client, full_responses):
+    full_responses["L0-1"] = "상위 고성과자 10%에게 업계 최고 수준의 파격적 보상을 집중한다"
+    full_responses["L0-2"] = "명확한 목표 대비 성과 추적과 저성과 영역에 대한 솔직한 피드백"
+    full_responses["L0-3"] = "우리 회사의 비전에 깊이 공감하고 문화를 잘 아는 내부 주니어를 오랜 시간 공들여 핵심 인재로 육성한다"
+
+    response = client.post("/api/diagnose", json={"responses": full_responses})
+
+    assert response.status_code == 200
+    matrix = response.json()["matrix"]
+    assert matrix["a_x_to_be"] == 0.85
+    assert matrix["a_y_to_be"] == 0.85
+    assert matrix["b_x_to_be"] == 0.8
+    assert matrix["b_y_to_be"] == 0.8
+    assert matrix["b_quadrant_to_be"] == "Q4: 대기업 공채 시스템형"
+
+
 def test_health(client):
     response = client.get("/health")
 

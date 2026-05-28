@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { GapBarList } from "@/components/visualization/GapBarList";
 import { InsightCard } from "@/components/result/InsightCard";
+import { CompanyContextBar } from "@/components/result/CompanyContextBar";
 import { MemoBlock } from "@/components/result/MemoBlock";
 import { MetricCard } from "@/components/result/MetricCard";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -11,15 +12,19 @@ import { RadarChart } from "@/components/visualization/RadarChart";
 import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
+import { AlignmentMap } from "@/components/visualization/AlignmentMap";
 import { logEvent } from "@/lib/api/events";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
+import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
+import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
 
 export default function ResultPage() {
   const router = useRouter();
   const sessionId = useSessionStore((state) => state.sessionId);
   const companyName = useSessionStore((state) => state.companyName);
+  const responses = useResponsesStore((state) => state.responses);
   const { data, isLoading, error, isWaitingForResponses } = useDiagnosis();
   usePageTracking("/result");
 
@@ -33,6 +38,9 @@ export default function ResultPage() {
       metadata: {
         avg_score: avgScore,
         visibility_score: data.visibility.score,
+        alignment_map_score: data.alignment_map?.alignment_score,
+        alignment_map_level: data.alignment_map?.alignment_level,
+        alignment_map_dispersion: data.alignment_map?.dispersion,
       },
       timestamp: new Date().toISOString(),
     });
@@ -80,9 +88,10 @@ export default function ResultPage() {
     );
   }
 
-  const { areas, visibility, insights, alignment } = data;
+  const { areas, visibility, insights, alignment, alignment_map } = data;
   const avgScore = Math.round(areas.reduce((sum, area) => sum + area.score, 0) / areas.length);
   const alignmentScore = alignment?.score ?? avgScore;
+  const alignmentMap = alignment_map ?? buildFallbackAlignmentMap(responses, areas);
   const topConflicts = alignment?.conflicts?.slice(0, 2) ?? [];
   const topicAreas = areas.filter((area) => area.gap >= 10).sort((a, b) => b.gap - a.gap);
   const topicCount = topicAreas.length;
@@ -137,6 +146,10 @@ export default function ResultPage() {
           </>
         }
       />
+
+      <CompanyContextBar companyName={companyName} responses={responses} />
+
+      <AlignmentMap map={alignmentMap} />
 
       <MemoBlock
         title={`${topicNames} 영역을 먼저 논의해야 합니다.`}

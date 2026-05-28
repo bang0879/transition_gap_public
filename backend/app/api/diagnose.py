@@ -7,10 +7,17 @@ from typing import Any
 
 from fastapi import APIRouter
 
+from app.core.alignment_engine import analyze_alignment
+from app.core.alignment_map import analyze_alignment_map
 from app.core.analysis_engine import analyze_all_areas, get_cross_domain_insights
 from app.core.trade_off import calc_to_be_coordinates, calculate_coordinates
 from app.core.visibility_index import calculate_visibility_index
 from app.schemas.analysis import (
+    AlignmentConflictOut,
+    AlignmentMapConflictOut,
+    AlignmentMapOut,
+    AlignmentMapVectorOut,
+    AlignmentOut,
     AreaAnalysisOut,
     BlindSpotTip,
     DiagnoseResponse,
@@ -109,6 +116,7 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
         a_quadrant_as_is=coords.matrix_a_quadrant,
         a_quadrant_to_be=_matrix_a_quadrant(to_be["matrix_a"]["x"], to_be["matrix_a"]["y"]),
         b_quadrant_as_is=coords.matrix_b_quadrant,
+        b_quadrant_to_be=_matrix_b_quadrant(to_be["matrix_b"]["x"], to_be["matrix_b"]["y"]),
         pain_point_dispersion=coords.pain_point_dispersion,
     )
 
@@ -117,11 +125,62 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
         InsightOut(headline=item["headline"], detail=item["detail"], source=item["source"])
         for item in insights
     ]
+    alignment = analyze_alignment(areas, responses)
+    alignment_out = AlignmentOut(
+        score=alignment.score,
+        base_score=alignment.base_score,
+        total_penalty=alignment.total_penalty,
+        conflicts=[
+            AlignmentConflictOut(
+                id=conflict.id,
+                title=conflict.title,
+                detail=conflict.detail,
+                severity=conflict.severity,
+                penalty=conflict.penalty,
+                domains=list(conflict.domains),
+            )
+            for conflict in alignment.conflicts
+        ],
+    )
+    alignment_map = analyze_alignment_map(responses, areas)
+    alignment_map_out = AlignmentMapOut(
+        alignment_score=alignment_map.alignment_score,
+        alignment_level=alignment_map.alignment_level,
+        dispersion=alignment_map.dispersion,
+        centroid_x=alignment_map.centroid_x,
+        centroid_y=alignment_map.centroid_y,
+        headline=alignment_map.headline,
+        summary=alignment_map.summary,
+        vectors=[
+            AlignmentMapVectorOut(
+                domain_id=vector.domain_id,
+                domain_name=vector.domain_name,
+                x=vector.x,
+                y=vector.y,
+                magnitude=vector.magnitude,
+                direction_label=vector.direction_label,
+                evidence=vector.evidence,
+            )
+            for vector in alignment_map.vectors
+        ],
+        conflicts=[
+            AlignmentMapConflictOut(
+                id=conflict.id,
+                title=conflict.title,
+                detail=conflict.detail,
+                domains=list(conflict.domains),
+                severity=conflict.severity,
+            )
+            for conflict in alignment_map.conflicts
+        ],
+    )
 
     return DiagnoseResponse(
         areas=areas_out,
         visibility=visibility_out,
         matrix=matrix_out,
+        alignment=alignment_out,
+        alignment_map=alignment_map_out,
         insights=insights_out,
     )
 
@@ -135,3 +194,14 @@ def _matrix_a_quadrant(x: float, y: float) -> str:
     if x >= 0.5 and y < 0.5:
         return "Q3: 평균형 안정형"
     return "Q4: 소수정예 중심형"
+
+
+def _matrix_b_quadrant(x: float, y: float) -> str:
+    """Return Matrix B quadrant label for To-Be coordinates."""
+    if x < 0.5 and y < 0.5:
+        return "Q1: 개인플레이어 중심형"
+    if x < 0.5 and y >= 0.5:
+        return "Q2: 가족형 자율 조직"
+    if x >= 0.5 and y < 0.5:
+        return "Q3: 에이전시형 분업/기능 조직"
+    return "Q4: 대기업 공채 시스템형"

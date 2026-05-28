@@ -71,3 +71,14 @@
 | `[x]` | 제품 전반의 전문 용어 설명 체계 필요 | `TermTooltip.tsx`, `hrGlossary.ts`, `GlossaryText.tsx` | roadmap/시나리오/진단 문구에 tooltip 적용 | hover 설명 표시 |
 | `[ ]` | 기준점/벤치마크 설명을 한 번만이 아니라 반복 가능한 도움말로 제공 | `result/page.tsx`, shared tooltip/help | 기준점 badge/help 추가 | 대표가 근거 이해 가능 |
 | `[ ]` | 시나리오 제도 선택 결과를 로드맵에 이어받는 구조는 v0.2 후보 | store/API | 이번 pass에서는 화면 내 상태만 반영, v0.2에서 persistence 검토 | 별도 결정 |
+
+## Aha Moment Sprint
+
+| 상태 | 피드백 | 처리 파일 | 처리 방식 | 검증 |
+|---|---|---|---|---|
+| `[ ]` | 정합성 맵 신설 | `alignment_map.py`, `AlignmentMap.tsx`, `result/page.tsx` | 5개 영역 방향 벡터와 엇박자 conflict를 첫 화면에 표시 | `/result` 3초 이해 테스트 |
+| `[ ]` | 회사 맥락화 강화 | `CompanyContextBar.tsx`, `result/page.tsx` | 회사명, 규모, 산업, 성장 기조를 결과 카피에 반영 | 회사 입력값이 결과 화면에 노출 |
+| `[ ]` | 로드맵 데이터 대확충 | `scenarios.json`, `RoadmapTimeline.tsx`, `WeeklyActionList.tsx` | 단계별 4요소와 1단계 주간 액션 추가 | Gate B 피드백 |
+| `[ ]` | 정합성 맵 이후 보상 시뮬레이터 연결 순서 확정 | `docs/decisions.md` | 시뮬레이터는 후속 스프린트로 분리 | 의사결정 로그 기록 |
+| `[ ]` | iPad 시연 대응 | `globals.css`, analysis/diagnose layouts | 1180px 이하 compact layout 적용 | 1024x768, 820x1180 확인 |
+| `[ ]` | 배포 준비 | `frontend/next.config.ts`, backend CORS/env docs | Vercel/Render 환경변수와 health check 확인 | 배포 URL smoke test |

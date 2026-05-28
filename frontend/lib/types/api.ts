@@ -54,7 +54,54 @@ export interface MatrixOut {
   a_quadrant_as_is: string;
   a_quadrant_to_be: string;
   b_quadrant_as_is: string;
+  b_quadrant_to_be: string;
   pain_point_dispersion: number;
+}
+
+export interface AlignmentConflictOut {
+  id: string;
+  title: string;
+  detail: string;
+  severity: string;
+  penalty: number;
+  domains: string[];
+}
+
+export interface AlignmentOut {
+  score: number;
+  base_score: number;
+  total_penalty: number;
+  conflicts: AlignmentConflictOut[];
+}
+
+export interface AlignmentMapVectorOut {
+  domain_id: string;
+  domain_name: string;
+  x: number;
+  y: number;
+  magnitude: number;
+  direction_label: string;
+  evidence: string[];
+}
+
+export interface AlignmentMapConflictOut {
+  id: string;
+  title: string;
+  detail: string;
+  domains: string[];
+  severity: string;
+}
+
+export interface AlignmentMapOut {
+  alignment_score: number;
+  alignment_level: string;
+  dispersion: number;
+  centroid_x: number;
+  centroid_y: number;
+  headline: string;
+  summary: string;
+  vectors: AlignmentMapVectorOut[];
+  conflicts: AlignmentMapConflictOut[];
 }
 
 export interface InsightOut {
@@ -67,5 +114,7 @@ export interface DiagnoseResponse {
   areas: AreaAnalysisOut[];
   visibility: VisibilityOut;
   matrix: MatrixOut;
+  alignment: AlignmentOut;
+  alignment_map?: AlignmentMapOut;
   insights: InsightOut[];
 }
