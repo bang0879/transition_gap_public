@@ -45,6 +45,33 @@ function markerLabelPosition(
   return { x: labelX, y: labelY };
 }
 
+function QuadrantLabel({
+  x,
+  y,
+  align = "left",
+  label,
+  example,
+}: {
+  x: number;
+  y: number;
+  align?: "left" | "right";
+  label: string;
+  example?: string;
+}) {
+  return (
+    <foreignObject x={x} y={y} width="178" height="46">
+      <div
+        className={`flex h-full flex-col justify-start text-[11px] font-[680] leading-[1.25] text-slate-700 ${
+          align === "right" ? "items-end text-right" : "items-start text-left"
+        }`}
+      >
+        <span className="max-w-full">{label}</span>
+        {example ? <span className="mt-1 text-[9.5px] font-[560] leading-[1.2] text-slate-400">{example}</span> : null}
+      </div>
+    </foreignObject>
+  );
+}
+
 export function MatrixSVG({
   title,
   markerId,
@@ -98,18 +125,13 @@ export function MatrixSVG({
         <line x1={CX} y1={Y0} x2={CX} y2={Y1} stroke="#d8e0ea" />
         <line x1={X0} y1={CY} x2={X1} y2={CY} stroke="#d8e0ea" />
         <line x1={X0 + 10} y1={CY} x2={X1 - 10} y2={CY} stroke="#94a3b8" strokeWidth=".9" opacity=".65" markerEnd={`url(#${markerId})`} />
-        <text x="34" y="47" fontSize="11.5" fontWeight="680" fill="#334155">{quadrantLabels[0]}</text>
-        {quadrantExamples ? <text x="34" y="64" fontSize="9.5" fontWeight="560" fill="#94a3b8">{quadrantExamples[0]}</text> : null}
-        <text x="466" y="47" textAnchor="end" fontSize="11.5" fontWeight="680" fill="#334155">{quadrantLabels[1]}</text>
-        {quadrantExamples ? <text x="466" y="64" textAnchor="end" fontSize="9.5" fontWeight="560" fill="#94a3b8">{quadrantExamples[1]}</text> : null}
-        <text x="34" y="296" fontSize="11.5" fontWeight="680" fill="#334155">{quadrantLabels[2]}</text>
-        {quadrantExamples ? <text x="34" y="312" fontSize="9.5" fontWeight="560" fill="#94a3b8">{quadrantExamples[2]}</text> : null}
-        <text x="466" y="296" textAnchor="end" fontSize="11.5" fontWeight="680" fill="#334155">{quadrantLabels[3]}</text>
-        {quadrantExamples ? <text x="466" y="312" textAnchor="end" fontSize="9.5" fontWeight="560" fill="#94a3b8">{quadrantExamples[3]}</text> : null}
+        <QuadrantLabel x={34} y={38} label={quadrantLabels[0]} example={quadrantExamples?.[0]} />
+        <QuadrantLabel x={288} y={38} align="right" label={quadrantLabels[1]} example={quadrantExamples?.[1]} />
+        <QuadrantLabel x={34} y={284} label={quadrantLabels[2]} example={quadrantExamples?.[2]} />
+        <QuadrantLabel x={288} y={284} align="right" label={quadrantLabels[3]} example={quadrantExamples?.[3]} />
         <text x={CX} y="349" textAnchor="middle" fontSize="11" fontWeight="650" fill="#64748b">{xAxisLabel}</text>
-        <text x="36" y="152" fontSize="10.5" fontWeight="650" fill="#64748b">세로축</text>
-        <text x="36" y="166" fontSize="10.5" fontWeight="650" fill="#64748b">{yAxisLabel.split("  ")[0]}</text>
-        <text x="36" y="180" fontSize="10.5" fontWeight="650" fill="#64748b">{yAxisLabel.split("  ")[1] ?? ""}</text>
+        <text x="34" y="154" fontSize="10" fontWeight="650" fill="#64748b">{yAxisLabel.split("  ")[0]}</text>
+        <text x="34" y="168" fontSize="10" fontWeight="650" fill="#64748b">{yAxisLabel.split("  ")[1] ?? ""}</text>
         <line x1={arrowStart.x} y1={arrowStart.y} x2={arrowEnd.x} y2={arrowEnd.y} stroke="#2f8f86" strokeWidth="2" strokeLinecap="round" markerEnd={`url(#${markerId})`} />
         <circle cx={ax} cy={ay} r="15.5" fill="none" stroke="#334155" strokeWidth=".8" opacity=".14" />
         <circle cx={ax} cy={ay} r="10.5" fill="#fff" stroke="#334155" strokeWidth="1.6" />

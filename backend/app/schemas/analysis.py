@@ -98,6 +98,26 @@ class AlignmentMapConflictOut(BaseModel):
     severity: str
 
 
+class AlignmentAxisOut(BaseModel):
+    domain_id: str
+    domain_name: str
+    left_label: str
+    right_label: str
+    philosophy_label: str
+    philosophy_note: str | None
+    actual_label: str
+    policy_direction: str
+    alignment_percent: int
+    status_label: str
+    philosophy_position: float
+    actual_position: float
+    tension: float
+    tension_level: str
+    headline: str
+    evidence: list[str]
+    business_risk: str | None
+
+
 class AlignmentMapOut(BaseModel):
     alignment_score: int
     alignment_level: str
@@ -107,6 +127,7 @@ class AlignmentMapOut(BaseModel):
     headline: str
     summary: str
     vectors: list[AlignmentMapVectorOut]
+    axes: list[AlignmentAxisOut]
     conflicts: list[AlignmentMapConflictOut]
 
 

@@ -23,7 +23,7 @@ export function Rail({ phase = "diagnose", subtitle }: RailProps) {
   );
 
   return (
-    <aside className="rail flex min-h-screen flex-col border-r border-slate-200 bg-[#fbfcfd] px-[18px] py-[22px] print:hidden">
+    <aside className="rail hidden min-h-screen flex-col border-r border-slate-200 bg-[#fbfcfd] px-[18px] py-[22px] print:hidden lg:flex">
       <div className="mb-[18px] border-b border-slate-200 px-2 pb-[18px] pt-0">
         <BrandMark subtitle={subtitle} />
       </div>

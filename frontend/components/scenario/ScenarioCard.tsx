@@ -8,11 +8,12 @@ interface ScenarioCardProps {
   gain?: string;
   cost?: string;
   reference?: string;
+  statusLabel?: string;
   selected: boolean;
   onSelect: (id: string) => void;
 }
 
-export function ScenarioCard({ id, name, subtitle, description, gain, cost, reference, selected, onSelect }: ScenarioCardProps) {
+export function ScenarioCard({ id, name, subtitle, description, gain, cost, reference, statusLabel, selected, onSelect }: ScenarioCardProps) {
   return (
     <button
       type="button"
@@ -28,7 +29,7 @@ export function ScenarioCard({ id, name, subtitle, description, gain, cost, refe
         <span className={`rounded-full border px-[8px] py-[3px] text-[11px] font-[680] ${
           selected ? "border-teal-line bg-white text-teal-deep" : "border-slate-200 bg-slate-50 text-slate-400"
         }`}>
-          {selected ? "선택됨" : "선택"}
+          {statusLabel ?? (selected ? "선택됨" : "비교 후보")}
         </span>
       </div>
       <h3 className="m-0 mt-3 text-[18px] font-[690] text-slate-900">{name}</h3>

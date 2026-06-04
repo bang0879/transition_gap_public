@@ -132,6 +132,13 @@ function priorityLabel(impact: number, index: number): string {
   return index === 0 ? "확인 필요" : "유지";
 }
 
+function priorityBadgeClass(label: string): string {
+  if (label === "우선 전환") return "border-coral/30 bg-coral-soft text-coral";
+  if (label === "보완 필요") return "border-amber/30 bg-amber-soft text-amber";
+  if (label === "유지") return "border-teal-line bg-teal-soft text-teal-deep";
+  return "border-slate-200 bg-white text-slate-500";
+}
+
 export function AsIsToBePanel({ breakdown }: AsIsToBePanelProps) {
   const rows = [...breakdown]
     .filter((item) => item.factor !== "기본 점수" && item.factor !== "최종 점수")
@@ -169,7 +176,7 @@ export function AsIsToBePanel({ breakdown }: AsIsToBePanelProps) {
                 </span>
                 <strong className="text-[13px] font-[690] text-slate-900">{item.factor}</strong>
               </div>
-              <span className="rounded-full border border-slate-200 bg-white px-[9px] py-[4px] text-[11px] font-[650] text-slate-500">
+              <span className={`rounded-full border px-[9px] py-[4px] text-[11px] font-[650] ${priorityBadgeClass(priorityLabel(item.impact, index))}`}>
                 {priorityLabel(item.impact, index)}
               </span>
             </div>

@@ -21,29 +21,30 @@ export function LandingHero() {
     useResponsesStore.getState().clear();
     useSessionStore.getState().clearSession();
     initSession(trimmedCompanyName);
-    router.push("/diagnose/context");
+    router.push("/diagnose/philosophy");
   };
 
   return (
-    <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[1fr_360px]">
+    <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[minmax(0,1fr)_300px]">
       <div>
         <div className="mb-[18px] inline-flex min-h-7 max-w-full items-center rounded-full border border-slate-200 bg-white px-[10px] py-1 text-[11px] font-[680] leading-[1.35] text-slate-500">
           인사제도 정합성 진단 · Transition Gap
         </div>
         <h2 className="m-0 max-w-[760px] text-[30px] font-[700] leading-[1.18] text-slate-900 sm:text-[42px]">
-          좋다는 인사제도는 다 모았는데,
+          좋다는 인사제도는 많은데,
           <br />
           왜 우리 조직은 구글이나 넷플릭스처럼
           <br />
           일하지 않을까요?
         </h2>
         <p className="mt-5 max-w-[620px] text-[14px] leading-[1.75] text-slate-600 sm:text-[15px] sm:leading-[1.8]">
-          좋다는 유명 기업의 제도들을 조합해 쓴다 해도 압도적인 성과가 나지는 않습니다.{" "}
+          좋다는 선진 기업의 제도들을 조합한다고 해도 의도한 성과가 나오지는 않습니다.{" "}
           <strong className="font-[760] text-teal-deep">
-            인사제도의 본질은 정답의 조합이 아니라, 하나의 경영 철학 아래 채용·평가·보상이 엇박자 없이 정렬되는 것입니다.
+            인사제도는 모범답안의 조합이 아니라, 하나의 경영 철학 아래 채용 · 평가 · 보상이
+            엇박자 없이 정렬되는 구조입니다.
           </strong>{" "}
-          본 진단은 회사가 원하는 조직의 미래 방향과 현재 제도의 충돌을 정밀 진단하여,
-          귀사가 실행 가능한 단계적 전환 플랜을 제시합니다.
+          본 진단은 회사가 지향하는 조직의 미래 방향과 현재 제도의 충돌 지점을 진단하고,
+          그 간극을 실행 가능한 단계적 전환 로드맵으로 제시합니다.
         </p>
         <form
           className="mt-7 flex flex-col items-stretch gap-3 sm:mt-[34px] sm:flex-row sm:flex-wrap sm:items-center"

@@ -25,16 +25,16 @@ export function SegmentedScale({ value, onChange, options }: SegmentedScaleProps
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`min-h-[92px] rounded-[10px] border p-3 text-left transition-colors ${
+            className={`min-h-[76px] rounded-[10px] border p-3 text-left transition-colors ${
               selected
-                ? "border-teal-line bg-teal-soft text-slate-900 shadow-[inset_0_0_0_1px_rgba(47,143,134,0.18)]"
+                ? "border-teal-line bg-white text-slate-900 shadow-[inset_0_0_0_1px_rgba(47,143,134,0.18)]"
                 : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
             }`}
           >
             <span className={`text-[13px] font-[720] ${selected ? "text-teal-deep" : "text-slate-900"}`}>
               {option.label}
             </span>
-            <span className="mt-2 block text-[12px] leading-[1.55] text-slate-500">{option.description}</span>
+            <span className="mt-1.5 block text-[11px] leading-[1.45] text-slate-500">{option.description}</span>
           </button>
         );
       })}

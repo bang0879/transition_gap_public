@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { GapBarList } from "@/components/visualization/GapBarList";
 import { InsightCard } from "@/components/result/InsightCard";
 import { CompanyContextBar } from "@/components/result/CompanyContextBar";
+import { BenchmarkHelp } from "@/components/result/BenchmarkHelp";
 import { MemoBlock } from "@/components/result/MemoBlock";
 import { MetricCard } from "@/components/result/MetricCard";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -12,25 +13,40 @@ import { RadarChart } from "@/components/visualization/RadarChart";
 import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
-import { AlignmentMap } from "@/components/visualization/AlignmentMap";
+import { AlignmentTensionMap } from "@/components/visualization/AlignmentTensionMap";
 import { logEvent } from "@/lib/api/events";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
+import { useDiagnosisHistoryStore } from "@/lib/store/diagnosisHistory";
 
 export default function ResultPage() {
   const router = useRouter();
   const sessionId = useSessionStore((state) => state.sessionId);
   const companyName = useSessionStore((state) => state.companyName);
   const responses = useResponsesStore((state) => state.responses);
+  const snapshots = useDiagnosisHistoryStore((state) => state.snapshots);
+  const upsertSnapshot = useDiagnosisHistoryStore((state) => state.upsertSnapshot);
   const { data, isLoading, error, isWaitingForResponses } = useDiagnosis();
   usePageTracking("/result");
 
   useEffect(() => {
     if (!sessionId || !data) return;
     const avgScore = Math.round(data.areas.reduce((sum, area) => sum + area.score, 0) / data.areas.length);
+    const axes = data.alignment_map?.axes ?? [];
+    const maxTensionAxis = [...axes].sort((a, b) => b.tension - a.tension)[0];
+    const topGapArea = [...data.areas].sort((a, b) => b.gap - a.gap)[0];
+    upsertSnapshot({
+      sessionId,
+      companyName: companyName || "이름 없는 진단",
+      capturedAt: new Date().toISOString(),
+      visibilityScore: Math.round(data.visibility.score),
+      alignmentScore: Math.round(data.alignment_map?.alignment_score ?? data.alignment.score ?? avgScore),
+      topGapArea: topGapArea?.area_name ?? "핵심 영역",
+      topGap: topGapArea?.gap ?? 0,
+    });
     logEvent({
       session_id: sessionId,
       event_type: "result_view",
@@ -41,10 +57,12 @@ export default function ResultPage() {
         alignment_map_score: data.alignment_map?.alignment_score,
         alignment_map_level: data.alignment_map?.alignment_level,
         alignment_map_dispersion: data.alignment_map?.dispersion,
+        max_tension_domain: maxTensionAxis?.domain_id,
+        misaligned_count: axes.filter((axis) => axis.tension_level === "misaligned").length,
       },
       timestamp: new Date().toISOString(),
     });
-  }, [data, sessionId]);
+  }, [companyName, data, sessionId, upsertSnapshot]);
 
   const handlePrint = () => {
     if (sessionId) {
@@ -66,7 +84,7 @@ export default function ResultPage() {
         title="결과 리포트는 입력 완료 후 생성됩니다."
         body="조직 컨텍스트와 제도 운영 상태를 먼저 입력하면, 인사제도 정합성 지수와 영역별 논의 우선순위를 확인할 수 있습니다."
       >
-        <Button onClick={() => router.push("/diagnose/context")}>진단 시작하기</Button>
+        <Button onClick={() => router.push("/diagnose/philosophy")}>진단 시작하기</Button>
       </AnalysisNotice>
     );
   }
@@ -82,7 +100,7 @@ export default function ResultPage() {
         title="진단 결과를 불러오지 못했습니다."
         body={error instanceof Error ? error.message : "백엔드 서버 연결을 확인한 뒤 다시 시도해 주세요."}
       >
-        <Button onClick={() => router.push("/diagnose/context")}>진단 입력으로</Button>
+        <Button onClick={() => router.push("/diagnose/philosophy")}>진단 입력으로</Button>
         <Button variant="primary" onClick={() => window.location.reload()}>다시 시도</Button>
       </AnalysisNotice>
     );
@@ -91,7 +109,7 @@ export default function ResultPage() {
   const { areas, visibility, insights, alignment, alignment_map } = data;
   const avgScore = Math.round(areas.reduce((sum, area) => sum + area.score, 0) / areas.length);
   const alignmentScore = alignment?.score ?? avgScore;
-  const alignmentMap = alignment_map ?? buildFallbackAlignmentMap(responses, areas);
+  const alignmentMap = alignment_map?.axes?.length ? alignment_map : buildFallbackAlignmentMap(responses, areas);
   const topConflicts = alignment?.conflicts?.slice(0, 2) ?? [];
   const topicAreas = areas.filter((area) => area.gap >= 10).sort((a, b) => b.gap - a.gap);
   const topicCount = topicAreas.length;
@@ -128,6 +146,17 @@ export default function ResultPage() {
       body: "원인을 확인한 뒤, 얻는 것과 감수할 것을 비교합니다.",
     },
   ];
+  const previousSnapshot = snapshots.find((snapshot) => snapshot.sessionId !== sessionId);
+  const latestSnapshot = snapshots.find((snapshot) => snapshot.sessionId === sessionId);
+  const alignmentDelta = latestSnapshot && previousSnapshot ? latestSnapshot.alignmentScore - previousSnapshot.alignmentScore : null;
+  const visibilityDelta = latestSnapshot && previousSnapshot ? latestSnapshot.visibilityScore - previousSnapshot.visibilityScore : null;
+
+  const formatDelta = (delta: number | null) => {
+    if (delta === null) return "첫 기록";
+    if (delta > 0) return `+${delta}점`;
+    if (delta < 0) return `${delta}점`;
+    return "변화 없음";
+  };
 
   return (
     <>
@@ -149,17 +178,16 @@ export default function ResultPage() {
 
       <CompanyContextBar companyName={companyName} responses={responses} />
 
-      <AlignmentMap map={alignmentMap} />
+      <AlignmentTensionMap map={alignmentMap} />
 
       <MemoBlock
         title={`${topicNames} 영역을 먼저 논의해야 합니다.`}
         body="현재 점수와 이 회사 조건에서 필요한 운영 기준의 차이가 큰 영역부터 보면, 제도 개선 논의가 일반론으로 흐르지 않고 실제 의사결정 순서로 정리됩니다."
       />
 
-      <MemoBlock
-        title="필요 기준은 외부 모범답안이 아니라, 이 회사 조건에서 필요한 최소 운영 기준입니다."
-        body="회사 규모, 성장 기조, 입력한 인재 기준을 반영해 영역별 필요 기준을 다르게 잡습니다. 따라서 차이는 점수 부족이 아니라 먼저 논의해야 할 운영 차이입니다."
-      />
+      <div className="mb-[18px]">
+        <BenchmarkHelp />
+      </div>
 
       <section className="mb-[18px] overflow-hidden rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
         <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-[1fr_1fr_1fr_260px] lg:divide-x lg:divide-y-0">
@@ -167,11 +195,7 @@ export default function ResultPage() {
             <div key={card.label} className="p-4">
               <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">{card.label}</p>
               <strong className="mt-2 block text-[15px] font-[680] leading-[1.45] text-slate-900">{card.title}</strong>
-              <div className={`mt-3 inline-flex max-w-full rounded-[7px] border px-2.5 py-1 text-[11px] font-[720] ${
-                card.label === "가장 먼저 볼 영역"
-                  ? "border-coral/20 bg-coral-soft text-coral"
-                  : "border-teal/20 bg-teal-soft text-teal-deep"
-              }`}>
+              <div className="mt-3 inline-flex max-w-full rounded-[7px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-[720] text-slate-700">
                 {card.value}
               </div>
               <p className="m-0 mt-3 text-[12px] leading-[1.65] text-slate-500">{card.body}</p>
@@ -220,11 +244,37 @@ export default function ResultPage() {
         />
       </div>
 
+      <section className="mb-[18px] rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="m-0 text-[14px] font-[690] text-slate-900">반복 진단 변화 추적</p>
+            <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
+              같은 브라우저에서 저장된 최근 진단과 비교해 정합성, 가시성, 최우선 논의 영역 변화를 확인합니다.
+            </p>
+          </div>
+          <Badge variant="slate">{previousSnapshot ? "최근 기록 비교" : "첫 진단 기록"}</Badge>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="m-0 text-[11px] font-[760] text-slate-400">정합성 변화</p>
+            <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(alignmentDelta)}</strong>
+          </div>
+          <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="m-0 text-[11px] font-[760] text-slate-400">가시성 변화</p>
+            <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(visibilityDelta)}</strong>
+          </div>
+          <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="m-0 text-[11px] font-[760] text-slate-400">최근 우선 영역</p>
+            <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{previousSnapshot?.topGapArea ?? topGapArea?.area_name ?? "저장 대기"}</strong>
+          </div>
+        </div>
+      </section>
+
       {topConflicts.length > 0 ? (
-        <section className="mb-4 grid gap-3 rounded-[10px] border border-amber/25 bg-[#fffdf8] p-4 print:break-inside-avoid lg:grid-cols-2">
+        <section className="mb-4 grid gap-3 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid lg:grid-cols-2">
           {topConflicts.map((conflict) => (
             <article key={conflict.id}>
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-amber">
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">
                 운영 충돌, -{conflict.penalty}점
               </p>
               <h3 className="m-0 mt-2 text-[14px] font-[690] leading-[1.45] text-slate-900">
@@ -256,7 +306,7 @@ export default function ResultPage() {
             <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-2 py-1">
               <span className="h-0.5 w-4 border-t border-dashed border-slate-400" />필요 기준
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-amber/25 bg-amber-soft px-2 py-1 text-amber">
+            <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-2 py-1">
               차이 = 논의 우선도
             </span>
           </div>
@@ -279,7 +329,7 @@ export default function ResultPage() {
         <div className="rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-[12px] leading-[1.65] text-slate-500 xl:col-span-2">
           <strong className="font-[680] text-slate-800">읽는 방법:</strong>{" "}
           점선은 필요 기준, 초록색 영역은 현재 상태입니다. 우측 우선순위는{" "}
-          <span className="font-[680] text-coral">필요 기준 - 현재 점수</span>를 기준으로 정렬한 논의 순서입니다.
+          <span className="font-[680] text-slate-800">필요 기준 - 현재 점수</span>를 기준으로 정렬한 논의 순서입니다.
           필요 기준은 회사 규모, 성장 기조, 입력한 인재 기준을 반영해 영역별로 다르게 설정됩니다.
         </div>
       </div>

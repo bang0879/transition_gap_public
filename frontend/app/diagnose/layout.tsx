@@ -8,9 +8,9 @@ function DiagnoseShell({ children }: { children: React.ReactNode }) {
   useScrollReset();
 
   return (
-    <div className="app-shell grid min-h-screen grid-cols-[246px_minmax(0,1fr)] bg-surface">
+    <div className="app-shell grid min-h-screen grid-cols-1 bg-surface lg:grid-cols-[246px_minmax(0,1fr)]">
       <Rail phase="diagnose" subtitle="스타트업 인사제도 정합성 진단" />
-      <section className="min-w-0 overflow-x-hidden p-6 sm:p-9">{children}</section>
+      <section className="min-w-0 overflow-x-hidden p-4 sm:p-6 lg:p-9">{children}</section>
     </div>
   );
 }

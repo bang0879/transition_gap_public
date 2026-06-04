@@ -12,18 +12,6 @@ import { usePageTracking } from "@/lib/hooks/usePageTracking";
 import { useResponsesStore } from "@/lib/store/responses";
 
 const options = {
-  "L0-1": [
-    "상위 고성과자 10%에게 업계 최고 수준의 파격적 보상을 집중한다",
-    "개인의 파격 차등보다는, 협업과 팀 기여도 중심의 성과급 설계를 통해 조직 전체의 평균 보상 만족도를 높인다.",
-  ],
-  "L0-2": [
-    "명확한 목표 대비 성과 추적과 저성과 영역에 대한 솔직한 피드백",
-    "구성원과의 정기 1:1 대면 면담 (1on1)을 통한 고충 청취와 심리적 안전감 확보",
-  ],
-  "L0-3": [
-    "외부에서 검증된 최고의 S급 인재를 높은 비용을 치르더라도 영입하여 즉시 전력으로 활용한다",
-    "우리 회사의 비전에 깊이 공감하고 문화를 잘 아는 내부 주니어를 오랜 시간 공들여 핵심 인재로 육성한다",
-  ],
   "L1-1": [
     "무임승차자(저성과자) 방치로 인한 핵심 인재의 의욕 저하 및 이탈",
     "기존 멤버와 신규 합류 멤버(고연봉자) 간의 보상 역전 및 갈등",
@@ -69,27 +57,21 @@ export default function ContextPage() {
   return (
     <>
       <PageHeader
-        eyebrow="01. 조직 컨텍스트"
-        title="성장 상황과 인사제도 정합성을 파악합니다."
-        lead="대표님의 경영 철학, 조직 규모, 성장 속도, 현재 페인포인트를 함께 보며 이후 진단의 기준점을 설정합니다."
+        eyebrow="02. 조직 컨텍스트"
+        title="성장 상황과 현재 페인포인트를 정리합니다."
+        lead="이제 회사 규모, 성장 속도, 현재 가장 아픈 문제를 확인합니다. 앞 단계의 대표 철학과 함께 이후 진단의 기준점으로 사용됩니다."
         actions={
-          <Button variant="primary" onClick={() => router.push("/diagnose/workforce")}>
-            다음: 인력 · 채용
-          </Button>
+          <>
+            <Button onClick={() => router.push("/diagnose/philosophy")}>이전</Button>
+            <Button variant="primary" onClick={() => router.push("/diagnose/workforce")}>
+              다음: 인력 · 채용
+            </Button>
+          </>
         }
       />
 
       <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
         <div className="grid gap-5">
-          <QuestionBlock title="회사가 크게 성장했을 때, 이상적인 보상 분배 방식은?" badge={{ label: "철학 입력", variant: "slate" }}>
-            <OptionGrid options={options["L0-1"]} value={responses["L0-1"] as string | undefined} onChange={(value) => setResponse("L0-1", value)} columns={1} />
-          </QuestionBlock>
-          <QuestionBlock title="리더가 성과를 만드는 방식은 무엇에 가까워야 합니까?" badge={{ label: "철학 입력", variant: "slate" }}>
-            <OptionGrid options={options["L0-2"]} value={responses["L0-2"] as string | undefined} onChange={(value) => setResponse("L0-2", value)} columns={1} />
-          </QuestionBlock>
-          <QuestionBlock title="장기적 관점에서, 우리 조직을 이끌어갈 핵심 인재 그룹은 어떻게 구성되기를 원하십니까?" badge={{ label: "철학 입력", variant: "slate" }}>
-            <OptionGrid options={options["L0-3"]} value={responses["L0-3"] as string | undefined} onChange={(value) => setResponse("L0-3", value)} columns={1} />
-          </QuestionBlock>
           <QuestionBlock title="현재 가장 시급한 HR 페인포인트는 무엇입니까? (최대 2개 선택)" badge={{ label: "핵심 페인", variant: "coral" }}>
             <MultiOptionGrid options={options["L1-1"]} value={responses["L1-1"] as string[] | undefined} onChange={(value) => setResponse("L1-1", value)} maxSelect={2} />
           </QuestionBlock>
@@ -108,15 +90,15 @@ export default function ContextPage() {
         </div>
         <ContextPanel
           title="왜 먼저 묻나요?"
-          description="같은 제도라도 회사의 규모와 성장 속도에 따라 맞을 수도, 엇박자를 만들 수도 있습니다. 이 화면의 답변은 이후 결과 해석의 기준점이 됩니다."
+          description="같은 제도라도 회사의 규모와 성장 속도에 따라 맞을 수도, 엇박자를 만들 수도 있습니다. 이 화면의 답변은 앞 단계의 대표 철학과 함께 결과 해석의 맥락이 됩니다."
           stats={[
-            { label: "입력 항목", value: "8개" },
-            { label: "활용 위치", value: "기준점 설정" },
+            { label: "입력 항목", value: "5개" },
+            { label: "활용 위치", value: "맥락 설정" },
             { label: "다음 단계", value: "인력 · 채용" },
           ]}
         />
       </div>
-      <BottomNav nextPath="/diagnose/workforce" nextLabel="다음: 인력 · 채용" />
+      <BottomNav prevPath="/diagnose/philosophy" nextPath="/diagnose/workforce" nextLabel="다음: 인력 · 채용" />
     </>
   );
 }

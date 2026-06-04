@@ -30,8 +30,8 @@ export function CompanyContextBar({ companyName, responses }: CompanyContextBarP
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant="slate">{headcount}</Badge>
-          <Badge variant="teal">{industry}</Badge>
-          <Badge variant="amber">{hiring}</Badge>
+          <Badge variant="slate">{industry}</Badge>
+          <Badge variant="slate">{hiring}</Badge>
         </div>
       </div>
     </section>

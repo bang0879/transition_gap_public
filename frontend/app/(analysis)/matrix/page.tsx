@@ -75,7 +75,7 @@ export default function MatrixPage() {
         title="트레이드오프 분석은 진단 결과를 기준으로 생성됩니다."
         body="현재 운영 위치와 회사가 선택한 방향을 비교하려면 먼저 진단 입력을 완료해야 합니다."
       >
-        <Button onClick={() => router.push("/diagnose/context")}>진단 입력으로</Button>
+        <Button onClick={() => router.push("/diagnose/philosophy")}>진단 입력으로</Button>
       </AnalysisNotice>
     );
   }

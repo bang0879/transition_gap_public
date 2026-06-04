@@ -8,9 +8,9 @@ function AnalysisShell({ children }: { children: React.ReactNode }) {
   useScrollReset();
 
   return (
-    <div className="app-shell grid min-h-screen grid-cols-[246px_minmax(0,1fr)] bg-surface print:grid-cols-1">
+    <div className="app-shell grid min-h-screen grid-cols-1 bg-surface print:grid-cols-1 lg:grid-cols-[246px_minmax(0,1fr)]">
       <Rail phase="result" subtitle="인사제도 정합성 진단" />
-      <section className="min-w-0 overflow-x-hidden p-6 sm:p-9">{children}</section>
+      <section className="min-w-0 overflow-x-hidden p-4 sm:p-6 lg:p-9">{children}</section>
     </div>
   );
 }

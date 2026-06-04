@@ -40,7 +40,7 @@ export function BreakdownTable({ breakdown }: BreakdownTableProps) {
           <tr className="text-[11px] font-[760] uppercase tracking-[0.04em] text-slate-500">
             <th className="w-[22%] px-4 py-3">감점 요인</th>
             <th className="w-[24%] px-4 py-3">현재 응답</th>
-            <th className="w-[12%] px-4 py-3">정합성 훼손도</th>
+            <th className="w-[12%] px-4 py-3">운영 충돌 위험</th>
             <th className="px-4 py-3">해석</th>
           </tr>
         </thead>

@@ -8,9 +8,10 @@ interface BottomNavProps {
   prevLabel?: string;
   nextPath: string;
   nextLabel: string;
+  nextDisabled?: boolean;
 }
 
-export function BottomNav({ prevPath, prevLabel, nextPath, nextLabel }: BottomNavProps) {
+export function BottomNav({ prevPath, prevLabel, nextPath, nextLabel, nextDisabled = false }: BottomNavProps) {
   const router = useRouter();
 
   return (
@@ -20,7 +21,7 @@ export function BottomNav({ prevPath, prevLabel, nextPath, nextLabel }: BottomNa
       ) : (
         <div />
       )}
-      <Button variant="primary" onClick={() => router.push(nextPath)}>
+      <Button variant="primary" disabled={nextDisabled} onClick={() => router.push(nextPath)}>
         {nextLabel}
       </Button>
     </div>

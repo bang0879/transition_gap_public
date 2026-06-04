@@ -13,6 +13,7 @@ from app.core.analysis_engine import analyze_all_areas, get_cross_domain_insight
 from app.core.trade_off import calc_to_be_coordinates, calculate_coordinates
 from app.core.visibility_index import calculate_visibility_index
 from app.schemas.analysis import (
+    AlignmentAxisOut,
     AlignmentConflictOut,
     AlignmentMapConflictOut,
     AlignmentMapOut,
@@ -163,6 +164,28 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
             )
             for vector in alignment_map.vectors
         ],
+        axes=[
+            AlignmentAxisOut(
+                domain_id=axis.domain_id,
+                domain_name=axis.domain_name,
+                left_label=axis.left_label,
+                right_label=axis.right_label,
+                philosophy_label=axis.philosophy_label,
+                philosophy_note=axis.philosophy_note,
+                actual_label=axis.actual_label,
+                policy_direction=axis.policy_direction,
+                alignment_percent=axis.alignment_percent,
+                status_label=axis.status_label,
+                philosophy_position=axis.philosophy_position,
+                actual_position=axis.actual_position,
+                tension=axis.tension,
+                tension_level=axis.tension_level,
+                headline=axis.headline,
+                evidence=axis.evidence,
+                business_risk=axis.business_risk,
+            )
+            for axis in alignment_map.axes
+        ],
         conflicts=[
             AlignmentMapConflictOut(
                 id=conflict.id,
@@ -188,18 +211,18 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
 def _matrix_a_quadrant(x: float, y: float) -> str:
     """Return Matrix A quadrant label for To-Be coordinates."""
     if x >= 0.5 and y >= 0.5:
-        return "Q1: 단기 성과형 협업조직"
+        return "Q1: 단기 성과형 작업조직"
     if x < 0.5 and y < 0.5:
         return "Q2: 장기 비전형 공동체 조직"
     if x >= 0.5 and y < 0.5:
-        return "Q3: 평균형 안정형"
-    return "Q4: 소수정예 중심형"
+        return "Q3: 평준형 안정 조직"
+    return "Q4: 소수정예 중심 조직"
 
 
 def _matrix_b_quadrant(x: float, y: float) -> str:
     """Return Matrix B quadrant label for To-Be coordinates."""
     if x < 0.5 and y < 0.5:
-        return "Q1: 개인플레이어 중심형"
+        return "Q1: 개인 플레이어 중심형"
     if x < 0.5 and y >= 0.5:
         return "Q2: 가족형 자율 조직"
     if x >= 0.5 and y < 0.5:

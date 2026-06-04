@@ -21,7 +21,7 @@ const options = {
   "2-3-3": ["20% 미만", "20~35%", "35~50%", "50% 초과", "모름 / 측정 안 함"],
   "2-3-4": ["10% 미만", "10~25%", "25~50%", "50% 초과", "모름 / 측정 안 함"],
   "2-3-5": ["하위", "중위", "상위", "모름 / 측정 안 함"],
-  "2-3-6": ["상", "중", "하"],
+  "2-3-6": ["동종업계보다 높은 편", "비슷한 편", "낮은 편", "모르겠음"],
 };
 
 export default function RewardsPage() {
@@ -35,7 +35,7 @@ export default function RewardsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="03. 총보상"
+        eyebrow="04. 총보상"
         title="보상은 비용이면서 동시에 채용 메시지입니다."
         lead="현재 보상 구조가 어떤 인재를 끌어당기고, 어떤 인재를 밀어내는지 확인합니다. 정확한 숫자가 없으면 가장 가까운 구간을 선택해도 됩니다."
         actions={
@@ -62,8 +62,8 @@ export default function RewardsPage() {
           <QuestionBlock title="시장 대비 보상 위치는? (자가 진단)" badge={{ label: "가시성 항목", variant: "teal" }}>
             <OptionGrid options={options["2-3-5"]} value={responses["2-3-5"] as string | undefined} onChange={(value) => setResponse("2-3-5", value)} mutedOption="모름 / 측정 안 함" />
           </QuestionBlock>
-          <QuestionBlock title="복리후생(휴가·간식·교육비 등) 및 직급/호칭 체계의 수준은 동종업계 대비 어떻습니까?" badge={{ label: "보상 보조", variant: "slate" }}>
-            <OptionGrid options={options["2-3-6"]} value={responses["2-3-6"] as string | undefined} onChange={(value) => setResponse("2-3-6", value)} columns={3} />
+          <QuestionBlock title="복리후생(휴가·간식·교육비 등)의 수준은 동종업계 대비 어떻습니까?" badge={{ label: "보상 보조", variant: "slate" }}>
+            <OptionGrid options={options["2-3-6"]} value={responses["2-3-6"] as string | undefined} onChange={(value) => setResponse("2-3-6", value)} columns={2} mutedOption="모르겠음" />
           </QuestionBlock>
         </div>
         <ContextPanel

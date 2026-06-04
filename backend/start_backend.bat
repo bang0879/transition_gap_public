@@ -2,24 +2,26 @@
 setlocal
 
 cd /d "%~dp0"
-set "ROOT=%~dp0.."
 if "%BACKEND_PORT%"=="" set "BACKEND_PORT=8010"
-set "LOCAL_PYTHON=%ROOT%\.uv-python\cpython-3.12.13-windows-x86_64-none\python.exe"
-set "BACKEND_SITE_PACKAGES=%~dp0.venv\Lib\site-packages"
+if "%TRANSITION_GAP_BACKEND_VENV%"=="" set "TRANSITION_GAP_BACKEND_VENV=%LOCALAPPDATA%\TransitionGap\backend-venv"
+set "BACKEND_PYTHON=%TRANSITION_GAP_BACKEND_VENV%\Scripts\python.exe"
 
-if exist "%LOCAL_PYTHON%" (
-  echo Starting backend with project-local Python on port %BACKEND_PORT%...
-  set "PYTHONPATH=%BACKEND_SITE_PACKAGES%"
-  "%LOCAL_PYTHON%" -m uvicorn app.main:app --reload --host 127.0.0.1 --port %BACKEND_PORT%
-  exit /b %errorlevel%
+if not exist "%BACKEND_PYTHON%" (
+  echo Backend virtualenv is missing.
+  echo Run backend\setup_backend.bat from the project root, then run start.bat again.
+  echo Expected location: %TRANSITION_GAP_BACKEND_VENV%
+  exit /b 1
 )
 
-if exist ".venv\Scripts\python.exe" (
-  echo Starting backend with backend virtualenv Python on port %BACKEND_PORT%...
-  ".venv\Scripts\python.exe" -m uvicorn app.main:app --reload --host 127.0.0.1 --port %BACKEND_PORT%
-  exit /b %errorlevel%
+echo Checking backend Python environment...
+"%BACKEND_PYTHON%" -c "from fastapi import FastAPI; import uvicorn" >nul 2>nul
+if errorlevel 1 (
+  echo Backend virtualenv is incomplete or corrupted.
+  echo Run backend\setup_backend.bat from the project root, then run start.bat again.
+  echo Expected location: %TRANSITION_GAP_BACKEND_VENV%
+  exit /b 1
 )
 
-echo Starting backend with PATH uvicorn on port %BACKEND_PORT%...
-uvicorn app.main:app --reload --host 127.0.0.1 --port %BACKEND_PORT%
+echo Starting backend on port %BACKEND_PORT%...
+"%BACKEND_PYTHON%" -m uvicorn app.main:app --reload --host 127.0.0.1 --port %BACKEND_PORT%
 exit /b %errorlevel%

@@ -26,7 +26,7 @@ export default function DetailPage() {
         title="영역별 상세 분석은 결과 생성 후 확인할 수 있습니다."
         body="먼저 조직 컨텍스트와 제도 운영 상태를 입력하면, 각 영역의 As-Is와 To-Be 전환 근거가 생성됩니다."
       >
-        <Button onClick={() => router.push("/diagnose/context")}>진단 입력으로</Button>
+        <Button onClick={() => router.push("/diagnose/philosophy")}>진단 입력으로</Button>
       </AnalysisNotice>
     );
   }

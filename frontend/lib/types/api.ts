@@ -92,6 +92,26 @@ export interface AlignmentMapConflictOut {
   severity: string;
 }
 
+export interface AlignmentAxisOut {
+  domain_id: string;
+  domain_name: string;
+  left_label: string;
+  right_label: string;
+  philosophy_label: string;
+  philosophy_note: string | null;
+  actual_label: string;
+  policy_direction: string;
+  alignment_percent: number;
+  status_label: "일치" | "주의" | "심각";
+  philosophy_position: number;
+  actual_position: number;
+  tension: number;
+  tension_level: "aligned" | "watch" | "misaligned";
+  headline: string;
+  evidence: string[];
+  business_risk: string | null;
+}
+
 export interface AlignmentMapOut {
   alignment_score: number;
   alignment_level: string;
@@ -101,6 +121,7 @@ export interface AlignmentMapOut {
   headline: string;
   summary: string;
   vectors: AlignmentMapVectorOut[];
+  axes?: AlignmentAxisOut[];
   conflicts: AlignmentMapConflictOut[];
 }
 

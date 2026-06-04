@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { BenchmarkHelp } from "@/components/result/BenchmarkHelp";
 import { fetchOptions } from "@/lib/api/content";
 import { useResponsesStore } from "@/lib/store/responses";
 
@@ -40,6 +41,9 @@ export function BenchmarkRow({ areaId }: BenchmarkRowProps) {
     <section className="rounded-[10px] border border-slate-200 bg-white p-5 print:break-inside-avoid">
       <h3 className="m-0 text-[14px] font-[680] text-slate-900">{title}</h3>
       <p className="mt-2 text-[12px] leading-[1.65] text-slate-500">{benchmark.intro}</p>
+      <div className="mt-3">
+        <BenchmarkHelp compact />
+      </div>
       <div className="mt-4 grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 lg:grid-cols-3">
         {benchmark.items.slice(0, 3).map((item) => (
           <div key={item.label} className="lg:border-l lg:border-slate-100 lg:pl-4 lg:first:border-l-0 lg:first:pl-0">

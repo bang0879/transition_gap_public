@@ -14,6 +14,7 @@ def contradictory_responses() -> dict[str, object]:
         "L0-1": "상위 고성과자 10%에게 업계 최고 수준의 파격적 보상을 집중한다",
         "L0-2": "구성원과의 정기 1:1 대면 면담 (1on1)을 통한 고충 청취와 심리적 안전감 확보",
         "L0-3": "우리 회사의 비전에 깊이 공감하고 문화를 잘 아는 내부 주니어를 오랜 시간 공들여 핵심 인재로 육성한다",
+        "L0-4": "내부 불만이 다소 생기더라도 당장의 비즈니스 공백과 리스크를 막는 것이 우선이므로, 예외를 인정하고 파격적으로 잡는다.",
         "L1-2": "50~100인",
         "L1-4": "공격적 확장 (30%+ 인원 증가)",
         "L1-5": "B2B SaaS",
@@ -40,6 +41,7 @@ def aligned_responses() -> dict[str, object]:
         "L0-1": "개인의 파격 차등보다는, 협업과 팀 기여도 중심의 성과급 설계를 통해 조직 전체의 평균 보상 만족도를 높인다.",
         "L0-2": "구성원과의 정기 1:1 대면 면담 (1on1)을 통한 고충 청취와 심리적 안전감 확보",
         "L0-3": "우리 회사의 비전에 깊이 공감하고 문화를 잘 아는 내부 주니어를 오랜 시간 공들여 핵심 인재로 육성한다",
+        "L0-4": "내부 불만이 다소 생기더라도 당장의 비즈니스 공백과 리스크를 막는 것이 우선이므로, 예외를 인정하고 파격적으로 잡는다.",
         "L1-2": "20~50인",
         "L1-4": "결원 보충 및 유지 (10% 미만)",
         "L1-5": "B2B SaaS",
@@ -85,6 +87,83 @@ def test_alignment_map_returns_five_domain_vectors():
         assert vector.evidence
 
 
+def test_alignment_map_returns_five_domain_axes():
+    responses = contradictory_responses()
+    areas = analyze_all_areas(responses)
+
+    result = analyze_alignment_map(responses, areas)
+
+    assert len(result.axes) == 5
+    assert {axis.domain_id for axis in result.axes} == {
+        "compensation",
+        "evaluation",
+        "recruitment",
+        "retention",
+        "leadership",
+    }
+    for axis in result.axes:
+        assert -1 <= axis.philosophy_position <= 1
+        assert -1 <= axis.actual_position <= 1
+        assert 0 <= axis.tension <= 2
+        assert axis.tension_level in {"aligned", "watch", "misaligned"}
+        assert axis.left_label
+        assert axis.right_label
+        assert axis.headline
+        assert axis.evidence
+
+
+def test_alignment_axes_include_card_contract_fields():
+    responses = contradictory_responses()
+    result = analyze_alignment_map(responses, analyze_all_areas(responses))
+
+    for axis in result.axes:
+        assert axis.philosophy_label
+        assert axis.actual_label
+        assert axis.policy_direction in {"성과주의", "공동체"}
+        assert axis.status_label in {"일치", "주의", "심각"}
+        assert 0 <= axis.alignment_percent <= 100
+
+    evaluation = next(axis for axis in result.axes if axis.domain_id == "evaluation")
+
+    assert "평가" in evaluation.actual_label
+    assert evaluation.philosophy_note
+    assert evaluation.alignment_percent == round((1 - evaluation.tension / 2) * 100)
+
+
+def test_alignment_map_marks_large_tensions_with_business_risk_only():
+    result = analyze_alignment_map(
+        contradictory_responses(),
+        analyze_all_areas(contradictory_responses()),
+    )
+
+    misaligned_axes = [axis for axis in result.axes if axis.tension >= 0.75]
+    calmer_axes = [axis for axis in result.axes if axis.tension < 0.75]
+
+    assert misaligned_axes
+    assert all(axis.business_risk for axis in misaligned_axes)
+    assert all(axis.business_risk is None for axis in calmer_axes)
+
+
+def test_alignment_map_uses_l0_4_for_retention_philosophy_axis():
+    release_responses = {
+        **contradictory_responses(),
+        "L0-4": "조직 전체의 형평성과 보상 원칙이 무너지는 것이 더 위험하므로, 타격이 있더라도 예외 없이 원칙대로 내보낸다.",
+    }
+    protect_responses = {
+        **contradictory_responses(),
+        "L0-4": "내부 불만이 다소 생기더라도 당장의 비즈니스 공백과 리스크를 막는 것이 우선이므로, 예외를 인정하고 파격적으로 잡는다.",
+    }
+
+    release_result = analyze_alignment_map(release_responses, analyze_all_areas(release_responses))
+    protect_result = analyze_alignment_map(protect_responses, analyze_all_areas(protect_responses))
+
+    release_retention = next(axis for axis in release_result.axes if axis.domain_id == "retention")
+    protect_retention = next(axis for axis in protect_result.axes if axis.domain_id == "retention")
+
+    assert release_retention.philosophy_position < 0
+    assert protect_retention.philosophy_position > 0
+
+
 def test_alignment_map_detects_higher_dispersion_for_contradictory_case():
     contradictory = analyze_alignment_map(
         contradictory_responses(),
@@ -119,3 +198,7 @@ def test_diagnose_response_includes_alignment_map():
 
     assert result.alignment_map.alignment_score <= 100
     assert len(result.alignment_map.vectors) == 5
+    assert len(result.alignment_map.axes) == 5
+    assert result.alignment_map.axes[0].philosophy_label
+    assert result.alignment_map.axes[0].actual_label
+    assert result.alignment_map.axes[0].alignment_percent >= 0

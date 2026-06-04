@@ -30,6 +30,12 @@ const OPERATING_IMAGES: Record<string, { reference: string; fit: string }> = {
   },
 };
 
+const FIT_TONE: Record<string, string> = {
+  performance: "border-coral/30 bg-white text-coral",
+  community: "border-teal-line bg-white text-teal-deep",
+  elite: "border-amber/30 bg-white text-amber",
+};
+
 function operatingImageFor(id: string): { reference: string; fit: string } {
   return OPERATING_IMAGES[id] ?? {
     reference: "성장 단계 스타트업의 혼합 운영 이미지",
@@ -87,7 +93,7 @@ export function ScenarioFitTable({ scenarios, selectedId, onSelect }: ScenarioFi
                 참고 예시: <span className="font-[680] text-slate-700">{image.reference}</span>
               </span>
               <span className={`w-fit rounded-full border px-[8px] py-[3px] font-[680] ${
-                selected ? "border-teal-line bg-white text-teal-deep" : "border-slate-200 bg-slate-50 text-slate-500"
+                selected ? FIT_TONE[scenario.id] ?? "border-slate-200 bg-white text-slate-700" : "border-slate-200 bg-slate-50 text-slate-500"
               }`}>
                 {image.fit}
               </span>

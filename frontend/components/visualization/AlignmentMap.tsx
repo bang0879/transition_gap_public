@@ -86,7 +86,7 @@ export function AlignmentMap({ map }: AlignmentMapProps) {
     <section className="mb-[18px] w-full max-w-[calc(100vw-32px)] overflow-hidden rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid sm:max-w-full">
       <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">정합성 맵 · Aha Moment</p>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">정합성 괴리 맵</p>
           <h2 className="m-0 mt-2 text-[20px] font-[720] leading-[1.35] text-slate-900">
             {map.headline}
           </h2>
@@ -108,7 +108,7 @@ export function AlignmentMap({ map }: AlignmentMapProps) {
           읽는 법: 화살표가 한곳으로 모이면 정합, 서로 다른 방향으로 흩어지면 엇박자입니다.
         </p>
         <p className="m-0 text-[11px] font-[700] text-slate-500">
-          보상 · 평가 · 채용 · 인력 · 리더십
+          보상 · 평가 · 채용 · 인력운영 · 리더십
         </p>
       </div>
 

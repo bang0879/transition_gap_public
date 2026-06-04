@@ -62,6 +62,32 @@ if (Test-BackendReady) {
     Write-Host "Backend is already running."
 }
 else {
+    $backendVenv = if ($env:TRANSITION_GAP_BACKEND_VENV) {
+        $env:TRANSITION_GAP_BACKEND_VENV
+    }
+    else {
+        Join-Path $env:LOCALAPPDATA "TransitionGap\backend-venv"
+    }
+    $backendPython = Join-Path $backendVenv "Scripts\python.exe"
+    $backendHealthy = $false
+    if (Test-Path $backendPython) {
+        Push-Location (Join-Path $Root "backend")
+        try {
+            & $backendPython -c "from fastapi import FastAPI; import uvicorn" *> $null
+            $backendHealthy = $LASTEXITCODE -eq 0
+        }
+        finally {
+            Pop-Location
+        }
+    }
+
+    if (-not $backendHealthy) {
+        Write-Host "Backend Python environment is missing or corrupted."
+        Write-Host "Run backend\setup_backend.bat once, then run start.bat again."
+        Write-Host "Expected location: $backendVenv"
+        exit 1
+    }
+
     Write-Host "Starting backend..."
     $backendJob = Start-Job -ScriptBlock {
         param($RootPath, $Port)

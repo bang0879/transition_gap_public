@@ -33,8 +33,15 @@ Thumbs.db
 # Streamlit
 .streamlit/secrets.toml
 logs/
+.server-logs/
 
 # 빌드
 build/
 dist/
 *.egg-info/
+
+# Next.js frontend
+frontend/.env.local
+frontend/node_modules/
+frontend/.next/
+frontend/*.tsbuildinfo

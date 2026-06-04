@@ -46,8 +46,8 @@ export function RadarChart({ areas }: RadarChartProps) {
         const [x, y] = pointAt(index, 1.07);
         return <line key={index} x1={CX} y1={CY} x2={x} y2={y} stroke="#eef2f7" />;
       })}
-      <polygon points={polygon(benchmarkRatios)} fill="rgba(203,213,225,.16)" stroke="#cbd5e1" strokeDasharray="5 4" strokeWidth="1.5" />
-      <polygon points={polygon(scoreRatios)} fill="rgba(47,143,134,.16)" stroke="#2f8f86" strokeWidth="2.5" filter="url(#radar-shadow)" />
+      <polygon points={polygon(benchmarkRatios)} fill="rgba(216,224,234,.12)" stroke="#d8e0ea" strokeDasharray="5 4" strokeWidth="1.2" />
+      <polygon points={polygon(scoreRatios)} fill="rgba(47,143,134,.12)" stroke="#2f8f86" strokeWidth="2" filter="url(#radar-shadow)" />
       {scoreRatios.map((ratio, index) => {
         const [x, y] = pointAt(index, ratio);
         return <circle key={index} cx={x} cy={y} r="4" fill="#2f8f86" />;

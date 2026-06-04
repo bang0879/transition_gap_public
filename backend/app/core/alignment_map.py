@@ -31,6 +31,29 @@ class AlignmentMapConflict:
 
 
 @dataclass(frozen=True)
+class AlignmentAxis:
+    """A domain-specific tension axis between CEO philosophy and actual system."""
+
+    domain_id: str
+    domain_name: str
+    left_label: str
+    right_label: str
+    philosophy_label: str
+    philosophy_note: str | None
+    actual_label: str
+    policy_direction: str
+    alignment_percent: int
+    status_label: str
+    philosophy_position: float
+    actual_position: float
+    tension: float
+    tension_level: str
+    headline: str
+    evidence: list[str]
+    business_risk: str | None
+
+
+@dataclass(frozen=True)
 class AlignmentMapAnalysis:
     """Alignment map payload for visualization."""
 
@@ -42,6 +65,7 @@ class AlignmentMapAnalysis:
     headline: str
     summary: str
     vectors: list[AlignmentMapVector]
+    axes: list[AlignmentAxis]
     conflicts: list[AlignmentMapConflict]
 
 
@@ -85,8 +109,472 @@ def analyze_alignment_map(responses: dict[str, Any], areas: list[Any]) -> Alignm
             "조직 철학을 향하는지 확인하는 화면입니다."
         ),
         vectors=vectors,
+        axes=_build_axes(responses),
         conflicts=_build_conflicts(vectors),
     )
+
+
+def _build_axes(responses: dict[str, Any]) -> list[AlignmentAxis]:
+    axes = [
+        _compensation_axis(responses),
+        _evaluation_axis(responses),
+        _recruitment_axis(responses),
+        _retention_axis(responses),
+        _leadership_axis(responses),
+    ]
+    return [
+        AlignmentAxis(
+            domain_id=axis.domain_id,
+            domain_name=axis.domain_name,
+            left_label=axis.left_label,
+            right_label=axis.right_label,
+            philosophy_label=axis.philosophy_label,
+            philosophy_note=axis.philosophy_note,
+            actual_label=axis.actual_label,
+            policy_direction=axis.policy_direction,
+            alignment_percent=axis.alignment_percent,
+            status_label=axis.status_label,
+            philosophy_position=axis.philosophy_position,
+            actual_position=axis.actual_position,
+            tension=axis.tension,
+            tension_level=axis.tension_level,
+            headline=axis.headline,
+            evidence=axis.evidence,
+            business_risk=_business_risk_for_axis(axis),
+        )
+        for axis in axes
+    ]
+
+
+def _compensation_axis(responses: dict[str, Any]) -> AlignmentAxis:
+    philosophy = _choice_position(
+        responses.get("L0-1"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("파격", "상위 고성과자"),
+        b_keywords=("협업", "평균 보상", "팀 기여"),
+    )
+    reward_philosophy = _as_int(responses.get("2-3-1"), 3)
+    structure = _text(responses.get("2-3-2"))
+    eval_link = _as_int(responses.get("2-4-2"), 3)
+
+    actual = -_score_to_axis(reward_philosophy)
+    if "단기 성과형" in structure or "인센티브" in structure:
+        actual -= 0.25
+    if "현금 안정형" in structure or "기본급" in structure:
+        actual += 0.2
+    if eval_link >= 4:
+        actual -= 0.15
+    elif eval_link <= 2:
+        actual += 0.15
+
+    return _axis(
+        domain_id="compensation",
+        domain_name="보상",
+        left_label="차등/파격",
+        right_label="균등/안정",
+        philosophy_label=_side_label(philosophy, "차등/파격 보상", "균등/안정 보상"),
+        philosophy_note="L0-1 보상 분배 철학에서 도출했습니다.",
+        actual_label=_compensation_actual_label(structure, actual),
+        policy_direction=_policy_direction(actual),
+        philosophy_position=philosophy,
+        actual_position=actual,
+        evidence=[
+            _philosophy_evidence("보상 철학", responses.get("L0-1")),
+            f"보상 구조: {structure}",
+            f"평가-보상 연동: {eval_link}점",
+        ],
+    )
+
+
+def _evaluation_axis(responses: dict[str, Any]) -> AlignmentAxis:
+    reward_philosophy = _choice_position(
+        responses.get("L0-1"),
+        option_a=-0.75,
+        option_b=0.45,
+        a_keywords=("파격", "상위 고성과자"),
+        b_keywords=("협업", "평균 보상", "팀 기여"),
+    )
+    leadership_philosophy = _choice_position(
+        responses.get("L0-2"),
+        option_a=-0.65,
+        option_b=0.55,
+        a_keywords=("성과 추적", "솔직한 피드백", "저성과"),
+        b_keywords=("1:1", "고충", "심리적 안전"),
+    )
+    philosophy = (reward_philosophy + leadership_philosophy) / 2
+    philosophy_label = _side_label(philosophy, "정교/엄격한 평가", "관대/유연한 평가")
+
+    cycle = _text(responses.get("2-4-1a"))
+    eval_link = _as_int(responses.get("2-4-2"), 3)
+    ceo_fair = _as_int(responses.get("2-4-3-ceo"), 5)
+    employee_fair = _as_int(responses.get("2-4-3-employee"), 5)
+    eval_data = _text(responses.get("2-4-5"))
+    active = cycle not in ("운영하지 않음", "없음", "비정기", "미입력")
+
+    actual = -_score_to_axis(eval_link)
+    if not active:
+        actual += 0.45
+    if eval_data in ("모름 / 측정 안 함", "미입력"):
+        actual += 0.3
+    if max(0, ceo_fair - employee_fair) >= 3:
+        actual += 0.15
+    if cycle in ("분기 1회", "월 1회", "상시"):
+        actual -= 0.15
+
+    return _axis(
+        domain_id="evaluation",
+        domain_name="평가",
+        left_label="정교/엄격",
+        right_label="관대/유연",
+        philosophy_label=philosophy_label,
+        philosophy_note=_evaluation_philosophy_note(responses),
+        actual_label=_evaluation_actual_label(cycle, eval_data, actual),
+        policy_direction=_policy_direction(actual),
+        philosophy_position=philosophy,
+        actual_position=actual,
+        evidence=[
+            _philosophy_evidence("성과/피드백 철학", responses.get("L0-2")),
+            f"평가 주기: {cycle}",
+            f"평가 운영 데이터: {eval_data}",
+        ],
+    )
+
+
+def _recruitment_axis(responses: dict[str, Any]) -> AlignmentAxis:
+    philosophy = _choice_position(
+        responses.get("L0-3"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("외부", "S급", "즉시 전력"),
+        b_keywords=("내부", "주니어", "육성"),
+    )
+    hiring_plan = _text(responses.get("L1-4"))
+    duration = _text(responses.get("2-2-1"))
+    offer_issue = _text(responses.get("2-2-3"))
+    market = _text(responses.get("2-3-5"))
+    branding = _text(responses.get("2-2-4"))
+    onboarding = _text(responses.get("2-2-5"))
+
+    actual = 0.15
+    if hiring_plan.startswith("공격적"):
+        actual -= 0.4
+    if duration in ("1개월 미만", "1~2개월"):
+        actual -= 0.15
+    elif duration in ("4~6개월", "6개월 초과", "4개월 초과"):
+        actual += 0.2
+    if market == "상위":
+        actual -= 0.15
+    elif market == "하위":
+        actual += 0.15
+    if "자주" in offer_issue or "높음" in offer_issue:
+        actual += 0.1
+    if branding == "채용 페이지/컬처덱/인터뷰 자료가 있음":
+        actual -= 0.1
+    elif branding == "거의 없음":
+        actual += 0.12
+    if onboarding == "정기적으로 추적함":
+        actual += 0.08
+    elif onboarding == "추적하지 않음":
+        actual -= 0.08
+
+    return _axis(
+        domain_id="recruitment",
+        domain_name="채용",
+        left_label="외부 수혈/속도",
+        right_label="내부 육성/적합성",
+        philosophy_label=_side_label(philosophy, "외부 영입/속도 중심", "내부 육성/적합성 중심"),
+        philosophy_note="L0-3 채용 철학에서 도출했습니다.",
+        actual_label=_recruitment_actual_label(hiring_plan, duration, actual),
+        policy_direction=_policy_direction(actual),
+        philosophy_position=philosophy,
+        actual_position=actual,
+        evidence=[
+            _philosophy_evidence("채용 철학", responses.get("L0-3")),
+            f"채용 기조: {hiring_plan}",
+            f"채용 소요 기간: {duration}",
+            f"채용 브랜딩: {branding}",
+        ],
+    )
+
+
+def _retention_axis(responses: dict[str, Any]) -> AlignmentAxis:
+    philosophy = _choice_position(
+        responses.get("L0-4"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("형평성", "보상 원칙", "원칙대로 내보낸다"),
+        b_keywords=("비즈니스 공백", "예외를 인정", "파격적으로 잡는다"),
+    )
+    turnover = _text(responses.get("2-1-1"))
+    core_loss = _text(responses.get("2-1-2"))
+    early_quit = _text(responses.get("2-1-3"))
+    talent_criteria = _text(responses.get("2-1-4"))
+    succession = _text(responses.get("2-1-5"))
+
+    actual = 0.35
+    if core_loss in ("2~3명", "4명 이상"):
+        actual -= 0.45
+    if turnover in ("20% 초과", "20% 이상"):
+        actual -= 0.25
+    if early_quit in ("20% 이상", "30% 이상"):
+        actual -= 0.15
+    if turnover == "모름 / 측정 안 함" or early_quit == "모름 / 측정 안 함":
+        actual -= 0.15
+    if talent_criteria == "별도 기준 없음":
+        actual -= 0.12
+    elif talent_criteria == "명확한 기준과 명단이 있음":
+        actual += 0.08
+    if succession == "거의 없음":
+        actual -= 0.12
+    elif succession == "후임/백업 후보가 정해져 있음":
+        actual += 0.08
+
+    return _axis(
+        domain_id="retention",
+        domain_name="인력운영",
+        left_label="자연 교체 허용",
+        right_label="안정 최우선",
+        philosophy_label=_side_label(philosophy, "자연 교체 허용", "핵심 인재 보존"),
+        philosophy_note="L0-4 핵심 인력 의사결정 철학에서 도출했습니다.",
+        actual_label=_retention_actual_label(turnover, core_loss, actual),
+        policy_direction=_policy_direction(actual),
+        philosophy_position=philosophy,
+        actual_position=actual,
+        evidence=[
+            _philosophy_evidence("핵심 인력 철학", responses.get("L0-4")),
+            f"자발적 이직률: {turnover}",
+            f"핵심 인재 이탈: {core_loss}",
+            f"핵심 인재 기준: {talent_criteria}",
+        ],
+    )
+
+
+def _leadership_axis(responses: dict[str, Any]) -> AlignmentAxis:
+    philosophy = _choice_position(
+        responses.get("L0-2"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("성과 추적", "솔직한 피드백", "저성과"),
+        b_keywords=("1:1", "고충", "심리적 안전"),
+    )
+    feedback = _text(responses.get("2-5-1"))
+    one_on_one = _text(responses.get("2-5-2"))
+    release_decision = _text(responses.get("2-5-5"))
+    core_values = _text(responses.get("2-5-6"))
+
+    actual = 0.1
+    if "객관적으로" in feedback or core_values == "명확한 기준으로 작동함":
+        actual -= 0.35
+    if one_on_one == "운영함":
+        actual += 0.25
+    if "대표인 내가 직접" in feedback or release_decision == "CEO 최종 승인 필요":
+        actual -= 0.2
+    if core_values == "문서로만 존재함":
+        actual += 0.15
+
+    return _axis(
+        domain_id="leadership",
+        domain_name="리더십",
+        left_label="성과 추적/단호함",
+        right_label="관계 관리/심리적 안전",
+        philosophy_label=_side_label(philosophy, "성과 추적/단호함", "관계 관리/심리적 안전"),
+        philosophy_note="L0-2 리더십 철학에서 도출했습니다.",
+        actual_label=_leadership_actual_label(feedback, one_on_one, core_values, actual),
+        policy_direction=_policy_direction(actual),
+        philosophy_position=philosophy,
+        actual_position=actual,
+        evidence=[
+            _philosophy_evidence("리더십 철학", responses.get("L0-2")),
+            f"리더 피드백: {feedback}",
+            f"핵심가치 작동: {core_values}",
+        ],
+    )
+
+
+def _axis(
+    *,
+    domain_id: str,
+    domain_name: str,
+    left_label: str,
+    right_label: str,
+    philosophy_label: str,
+    philosophy_note: str | None,
+    actual_label: str,
+    policy_direction: str,
+    philosophy_position: float,
+    actual_position: float,
+    evidence: list[str],
+) -> AlignmentAxis:
+    philosophy = round(_clamp(philosophy_position), 3)
+    actual = round(_clamp(actual_position), 3)
+    tension = round(abs(actual - philosophy), 3)
+    alignment_percent = _alignment_percent(tension)
+    return AlignmentAxis(
+        domain_id=domain_id,
+        domain_name=domain_name,
+        left_label=left_label,
+        right_label=right_label,
+        philosophy_label=philosophy_label,
+        philosophy_note=philosophy_note,
+        actual_label=actual_label,
+        policy_direction=policy_direction,
+        alignment_percent=alignment_percent,
+        status_label=_status_label(alignment_percent),
+        philosophy_position=philosophy,
+        actual_position=actual,
+        tension=tension,
+        tension_level=_tension_level(tension),
+        headline=_axis_headline(domain_name, philosophy, actual, left_label, right_label),
+        evidence=evidence,
+        business_risk=None,
+    )
+
+
+def _choice_position(
+    value: Any,
+    *,
+    option_a: float,
+    option_b: float,
+    a_keywords: tuple[str, ...],
+    b_keywords: tuple[str, ...],
+) -> float:
+    text = _text(value)
+    if text == "A" or any(keyword in text for keyword in a_keywords):
+        return option_a
+    if text == "B" or any(keyword in text for keyword in b_keywords):
+        return option_b
+    return 0.0
+
+
+def _philosophy_evidence(label: str, value: Any) -> str:
+    text = _text(value)
+    if text == "A":
+        return f"{label}: A안"
+    if text == "B":
+        return f"{label}: B안"
+    return f"{label}: {text}"
+
+
+def _side_label(position: float, left_label: str, right_label: str) -> str:
+    if position < -0.15:
+        return left_label
+    if position > 0.15:
+        return right_label
+    return "혼합형"
+
+
+def _policy_direction(actual_position: float) -> str:
+    return "성과주의" if actual_position < 0 else "공동체"
+
+
+def _alignment_percent(tension: float) -> int:
+    return max(0, min(100, round((1 - tension / 2) * 100)))
+
+
+def _status_label(alignment_percent: int) -> str:
+    if alignment_percent >= 80:
+        return "일치"
+    if alignment_percent >= 50:
+        return "주의"
+    return "심각"
+
+
+def _tension_level(tension: float) -> str:
+    if tension >= 0.75:
+        return "misaligned"
+    if tension >= 0.35:
+        return "watch"
+    return "aligned"
+
+
+def _axis_headline(
+    domain_name: str,
+    philosophy_position: float,
+    actual_position: float,
+    left_label: str,
+    right_label: str,
+) -> str:
+    philosophy_label = left_label if philosophy_position < 0 else right_label if philosophy_position > 0 else "중앙"
+    actual_label = left_label if actual_position < 0 else right_label if actual_position > 0 else "중앙"
+    return f"{domain_name}: 대표 철학은 {philosophy_label}, 실제 제도는 {actual_label}에 가깝습니다."
+
+
+def _evaluation_philosophy_note(responses: dict[str, Any]) -> str:
+    reward = _choice_position(
+        responses.get("L0-1"),
+        option_a=-0.75,
+        option_b=0.45,
+        a_keywords=("파격", "상위 고성과자"),
+        b_keywords=("협업", "평균 보상", "팀 기여"),
+    )
+    leadership = _choice_position(
+        responses.get("L0-2"),
+        option_a=-0.65,
+        option_b=0.55,
+        a_keywords=("성과 추적", "솔직한 피드백", "저성과"),
+        b_keywords=("1:1", "고충", "심리적 안전"),
+    )
+    if reward < 0 and leadership > 0:
+        return "차등 보상을 하려면 정교한 평가가 필요합니다."
+    if reward > 0 and leadership < 0:
+        return "균등 보상 철학에서는 엄격한 평가는 불필요한 긴장을 만들 수 있습니다."
+    return "L0-1 보상 철학과 L0-2 리더십 철학을 함께 반영했습니다."
+
+
+def _compensation_actual_label(structure: str, actual_position: float) -> str:
+    if "단기 성과형" in structure or "인센티브" in structure:
+        return "성과급 중심 보상"
+    if "현금 안정형" in structure or "기본급" in structure:
+        return "기본급 안정형"
+    return _side_label(actual_position, "차등 보상 운영", "균등 보상 운영")
+
+
+def _evaluation_actual_label(cycle: str, eval_data: str, actual_position: float) -> str:
+    if cycle in ("운영하지 않음", "없음", "비정기", "미입력"):
+        return "평가 미운영"
+    if eval_data in ("모름 / 측정 안 함", "미입력"):
+        return "근거 데이터 약한 평가"
+    return _side_label(actual_position, "정교한 성과 평가", "관대한 유연 평가")
+
+
+def _recruitment_actual_label(hiring_plan: str, duration: str, actual_position: float) -> str:
+    if hiring_plan.startswith("공격적") and duration in ("1개월 미만", "1~2개월"):
+        return "속도 중심 채용"
+    if duration in ("4~6개월", "6개월 초과", "4개월 초과"):
+        return "신중한 장기 채용"
+    return _side_label(actual_position, "외부 수혈형 채용", "내부 적합성 채용")
+
+
+def _retention_actual_label(turnover: str, core_loss: str, actual_position: float) -> str:
+    if core_loss in ("2~3명", "4명 이상"):
+        return "핵심 인재 이탈 압력"
+    if turnover in ("20% 초과", "20% 이상"):
+        return "높은 교체 흐름"
+    return _side_label(actual_position, "자연 교체 허용", "핵심 인재 보존")
+
+
+def _leadership_actual_label(feedback: str, one_on_one: str, core_values: str, actual_position: float) -> str:
+    if "대표인 내가 직접" in feedback:
+        return "대표 병목형 리더십"
+    if one_on_one == "운영함":
+        return "관계 관리형 리더십"
+    if core_values == "명확한 기준으로 작동함":
+        return "기준 중심 리더십"
+    return _side_label(actual_position, "성과 추적형 리더십", "관계 관리형 리더십")
+
+
+def _business_risk_for_axis(axis: AlignmentAxis) -> str | None:
+    if axis.tension < 0.75:
+        return None
+    risks = {
+        "compensation": "차등 보상 철학과 실제 균등 운영이 벌어지면, 고성과자는 보상 신호를 믿지 못하고 외부 제안에 더 빨리 반응합니다.",
+        "evaluation": "엄격한 성과 철학과 관대한 평가 운영이 벌어지면, 고성과자는 불공정을 느끼고 저성과자는 개선 압력을 받지 않습니다.",
+        "recruitment": "외부 수혈 철학과 내부 적합성 중심 운영이 벌어지면, 성장 속도에 필요한 역량 확보가 늦어집니다.",
+        "retention": "안정성 철학과 교체 허용 운영이 벌어지면, 핵심 역할의 공백 비용이 반복적으로 커집니다.",
+        "leadership": "단호한 성과 추적 철학과 관계 중심 운영이 벌어지면, 의사결정 지연과 책임 회피가 리더십 신호로 굳어집니다.",
+    }
+    return risks.get(axis.domain_id)
 
 
 def _compensation_vector(responses: dict[str, Any]) -> AlignmentMapVector:
@@ -215,7 +703,7 @@ def _retention_vector(responses: dict[str, Any]) -> AlignmentMapVector:
     clamped_y = _clamp(y)
     return AlignmentMapVector(
         domain_id="retention",
-        domain_name="인력",
+        domain_name="인력운영",
         x=clamped_x,
         y=clamped_y,
         magnitude=min(1.0, 0.5 + abs(clamped_x) * 0.25 + abs(clamped_y) * 0.25),
@@ -350,6 +838,8 @@ def _score_to_axis(value: int, midpoint: int = 3) -> float:
 
 
 def _text(value: Any) -> str:
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value if item not in (None, ""))
     return str(value) if value not in (None, "") else "미입력"
 
 

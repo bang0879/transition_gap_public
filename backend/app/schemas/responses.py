@@ -32,6 +32,8 @@ _L0_CHOICE_MAP = {
     "구성원과의 정기 1:1 대면 면담 (1on1)을 통한 고충 청취와 심리적 안전감 확보": "B",
     "외부에서 검증된 최고의 S급 인재를 높은 비용을 치르더라도 영입하여 즉시 전력으로 활용한다": "A",
     "우리 회사의 비전에 깊이 공감하고 문화를 잘 아는 내부 주니어를 오랜 시간 공들여 핵심 인재로 육성한다": "B",
+    "조직 전체의 형평성과 보상 원칙이 무너지는 것이 더 위험하므로, 타격이 있더라도 예외 없이 원칙대로 내보낸다.": "A",
+    "내부 불만이 다소 생기더라도 당장의 비즈니스 공백과 리스크를 막는 것이 우선이므로, 예외를 인정하고 파격적으로 잡는다.": "B",
 }
 
 
@@ -43,7 +45,7 @@ class DiagnoseRequest(BaseModel):
     @model_validator(mode="after")
     def normalize_response_types(self) -> "DiagnoseRequest":
         """Normalize simple frontend type drift without rejecting the request."""
-        for var_id in ("L0-1", "L0-2", "L0-3"):
+        for var_id in ("L0-1", "L0-2", "L0-3", "L0-4"):
             value = self.responses.get(var_id)
             if isinstance(value, str) and value in _L0_CHOICE_MAP:
                 self.responses[var_id] = _L0_CHOICE_MAP[value]

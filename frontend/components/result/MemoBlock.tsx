@@ -7,10 +7,9 @@ interface MemoBlockProps {
 export function MemoBlock({ icon = "!", title, body }: MemoBlockProps) {
   return (
     <div
-      className="mb-[22px] grid w-full max-w-[calc(100vw-48px)] grid-cols-[24px_minmax(0,1fr)] items-start gap-[14px] overflow-hidden rounded-[10px] border border-[#e8dcc7] p-[18px] print:break-inside-avoid sm:max-w-full"
-      style={{ background: "linear-gradient(180deg, #fffaf0, #fffdf8)" }}
+      className="mb-[18px] grid w-full max-w-[calc(100vw-48px)] grid-cols-[24px_minmax(0,1fr)] items-start gap-[14px] overflow-hidden rounded-[10px] border border-slate-200 bg-white p-[16px] print:break-inside-avoid sm:max-w-full"
     >
-      <div className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-amber-soft text-[13px] font-[800] text-amber">
+      <div className="flex h-6 w-6 items-center justify-center rounded-[7px] bg-slate-100 text-[13px] font-[800] text-slate-500">
         {icon}
       </div>
       <div className="min-w-0">

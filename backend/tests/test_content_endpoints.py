@@ -15,8 +15,9 @@ def test_get_schema(client):
     assert "L2" in data["layers"]
 
     l0_vars = data["layers"]["L0"]["variables"]
-    assert len(l0_vars) == 3
+    assert len(l0_vars) == 4
     assert l0_vars[0]["id"] == "L0-1"
+    assert l0_vars[-1]["id"] == "L0-4"
 
     l1_vars = data["layers"]["L1"]["variables"]
     assert len(l1_vars) == 5
@@ -28,7 +29,7 @@ def test_get_schema(client):
     assert len(data["pain_points"]) == 8
 
     assert "visibility" in data
-    assert len(data["visibility"]["base_items"]) == 8
+    assert len(data["visibility"]["base_items"]) == 10
 
 
 def test_get_scenarios(client):

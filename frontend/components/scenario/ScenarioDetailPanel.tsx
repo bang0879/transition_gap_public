@@ -164,7 +164,7 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
               <div key={`${item.item}-${item.amount}`} className="py-2 first:pt-0 last:pb-0">
                 <p className={`m-0 text-[12px] font-[650] ${financialTone(item.color_intent)}`}>{item.item}: {item.amount}</p>
                 <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-500">
-                  <GlossaryText text={item.rationale ?? item.note ?? "현재 인건비 대비 연간 추정 기준입니다."} />
+                  <GlossaryText text={item.note ?? "현재 입력값 기준의 추정 범위입니다."} />
                 </p>
               </div>
             ))}

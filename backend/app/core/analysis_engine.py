@@ -553,6 +553,8 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
     duration = _text(responses.get("2-2-1"))
     channels = _text(responses.get("2-2-2"))
     rejection = _text(responses.get("2-2-3"))
+    branding = _text(responses.get("2-2-4"))
+    onboarding = _text(responses.get("2-2-5"))
 
     status = (
         f"귀사의 핵심 포지션 평균 채용 소요 기간은 '{duration}'이며, "
@@ -562,6 +564,10 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
         status += "최종 면접 후 입사 거절 경험이 있어 오퍼 경쟁력 또는 후보자 경험에 개선 여지가 있습니다."
     else:
         status += "오퍼 수락 흐름은 비교적 안정적인 편입니다."
+    if branding and branding != "미입력":
+        status += f" 채용 브랜딩 자산은 '{branding}' 상태입니다."
+    if onboarding and onboarding != "미입력":
+        status += f" 온보딩 적응 추적은 '{onboarding}'입니다."
 
     tags: list[str] = []
     if _is_long_hiring_duration(duration):
@@ -570,6 +576,10 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
         tags.append("채널 집중 리스크")
     if _has_offer_rejection(rejection):
         tags.append("오퍼 거절 경험")
+    if branding == "거의 없음":
+        tags.append("채용 브랜딩 취약")
+    if onboarding == "추적하지 않음":
+        tags.append("온보딩 추적 부재")
 
     issues: list[Issue] = []
     if _is_long_hiring_duration(duration):
@@ -614,6 +624,24 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
             Issue(
                 "채용 브랜딩 부재",
                 "채용 채널이 좁고 소요 기간이 길어 중장기 후보자 파이프라인이 약한 상태입니다.",
+                "medium",
+            )
+        )
+
+    if branding == "거의 없음":
+        issues.append(
+            Issue(
+                "채용 브랜딩 부재",
+                "후보자가 회사를 선택해야 할 이유가 채용 과정에서 충분히 전달되지 않습니다.",
+                "medium",
+            )
+        )
+
+    if onboarding == "추적하지 않음":
+        issues.append(
+            Issue(
+                "온보딩 추적 부재",
+                "입사 후 3개월 적응 상태를 보지 않으면 채용 실패 원인이 반복될 수 있습니다.",
                 "medium",
             )
         )
@@ -688,6 +716,28 @@ def _calc_recruitment_score(responses: dict[str, Any]) -> tuple[int, list[dict[s
         score -= 15
         breakdown.append(_score_item("오퍼 거절 빈도", rejection, -15, "오퍼 경쟁력 취약"))
 
+    branding = responses.get("2-2-4", "")
+    if branding == "채용 페이지/컬처덱/인터뷰 자료가 있음":
+        score += 8
+        breakdown.append(_score_item("채용 브랜딩 자산", branding, 8, "후보자 설득 자료 확보"))
+    elif branding == "공고문 외 일부 자료만 있음":
+        score += 3
+        breakdown.append(_score_item("채용 브랜딩 자산", branding, 3, "기본 자료는 있으나 일관성 보완 필요"))
+    elif branding == "거의 없음":
+        score -= 8
+        breakdown.append(_score_item("채용 브랜딩 자산", branding, -8, "후보자 설득 메시지 부족"))
+
+    onboarding = responses.get("2-2-5", "")
+    if onboarding == "정기적으로 추적함":
+        score += 8
+        breakdown.append(_score_item("온보딩 적응 추적", onboarding, 8, "입사 후 적응 상태 관리"))
+    elif onboarding == "문제 발생 시에만 확인함":
+        score += 2
+        breakdown.append(_score_item("온보딩 적응 추적", onboarding, 2, "사후 대응 중심"))
+    elif onboarding == "추적하지 않음":
+        score -= 8
+        breakdown.append(_score_item("온보딩 적응 추적", onboarding, -8, "초기 적응 실패 반복 가능"))
+
     return _finalize_score(score, breakdown)
 
 
@@ -699,6 +749,8 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
     turnover = _text(responses.get("2-1-1"))
     core_loss = _text(responses.get("2-1-2"))
     early_quit = _text(responses.get("2-1-3"))
+    talent_criteria = _text(responses.get("2-1-4"))
+    succession = _text(responses.get("2-1-5"))
 
     status = (
         f"귀사의 직전 12개월 자발적 이직률은 '{turnover}'이며, "
@@ -708,6 +760,10 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
         status += "신규 입사자 조기 퇴사율을 측정하지 않아 온보딩 효과를 파악하기 어렵습니다."
     else:
         status += f"신규 입사자 1년 내 조기 퇴사율은 '{early_quit}'입니다."
+    if talent_criteria and talent_criteria != "미입력":
+        status += f" 핵심 인재 식별은 '{talent_criteria}' 상태입니다."
+    if succession and succession != "미입력":
+        status += f" 핵심 포스트 대체 계획은 '{succession}'입니다."
 
     tags: list[str] = []
     if _core_loss_count(core_loss) >= 2:
@@ -716,6 +772,10 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
         tags.append("자발적 이직률 위험")
     if early_quit == "30% 초과":
         tags.append("온보딩 실패")
+    if talent_criteria == "별도 기준 없음":
+        tags.append("핵심 인재 기준 부재")
+    if succession == "거의 없음":
+        tags.append("대체 계획 부족")
 
     issues: list[Issue] = []
     if _core_loss_count(core_loss) >= 2 or calculate_core_talent_loss_severity(responses) >= 0.8:
@@ -760,6 +820,24 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
                 "보상-리텐션 디커플링",
                 "이직률이 높은데 보상 경쟁력도 낮아 핵심 인재 유지가 구조적으로 어렵습니다.",
                 "high",
+            )
+        )
+
+    if talent_criteria == "별도 기준 없음":
+        issues.append(
+            Issue(
+                "핵심 인재 기준 부재",
+                "누가 핵심 인재인지 기준이 없으면 리텐션 투자와 예외 보상 판단이 흔들립니다.",
+                "medium",
+            )
+        )
+
+    if succession == "거의 없음":
+        issues.append(
+            Issue(
+                "핵심 포스트 대체 계획 부족",
+                "핵심 역할 공백이 생겼을 때 후임이나 백업이 없어 사업 지연 위험이 커집니다.",
+                "medium",
             )
         )
 
@@ -838,6 +916,28 @@ def _calc_retention_score(responses: dict[str, Any]) -> tuple[int, list[dict[str
     elif early_quit == "모름 / 측정 안 함":
         score -= 5
         breakdown.append(_score_item("신규 입사자 조기 퇴사율", early_quit, -5, "가시성 부족"))
+
+    talent_criteria = responses.get("2-1-4", "")
+    if talent_criteria == "명확한 기준과 명단이 있음":
+        score += 8
+        breakdown.append(_score_item("핵심 인재 식별 기준", talent_criteria, 8, "관리 기준 확보"))
+    elif talent_criteria == "리더별로 암묵적으로 알고 있음":
+        score += 3
+        breakdown.append(_score_item("핵심 인재 식별 기준", talent_criteria, 3, "암묵지 의존"))
+    elif talent_criteria == "별도 기준 없음":
+        score -= 8
+        breakdown.append(_score_item("핵심 인재 식별 기준", talent_criteria, -8, "리텐션 판단 기준 부족"))
+
+    succession = responses.get("2-1-5", "")
+    if succession == "후임/백업 후보가 정해져 있음":
+        score += 8
+        breakdown.append(_score_item("핵심 포스트 대체 계획", succession, 8, "역할 공백 대응 가능"))
+    elif succession == "일부 포지션만 있음":
+        score += 3
+        breakdown.append(_score_item("핵심 포스트 대체 계획", succession, 3, "부분적 대체 계획"))
+    elif succession == "거의 없음":
+        score -= 8
+        breakdown.append(_score_item("핵심 포스트 대체 계획", succession, -8, "핵심 역할 공백 위험"))
 
     return _finalize_score(score, breakdown)
 
@@ -996,6 +1096,8 @@ def _calc_leadership_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
 
 
 def _text(value: Any) -> str:
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value if item not in (None, ""))
     return str(value) if value not in (None, "") else "미입력"
 
 

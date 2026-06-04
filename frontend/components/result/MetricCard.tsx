@@ -12,8 +12,8 @@ interface MetricCardProps {
 }
 
 const bottomBar: Record<MetricVariant, string> = {
-  teal: "bg-teal",
-  amber: "bg-amber",
+  teal: "bg-slate-200",
+  amber: "bg-slate-200",
   coral: "bg-coral",
 };
 
