@@ -37,11 +37,11 @@ function RoadmapContent() {
       <PageHeader
         eyebrow={`실행 로드맵 · ${scenario.name}`}
         title="12개월 동안 무엇을 먼저 바꾸고, 무엇을 확인할지 정합니다."
-        lead="이 화면은 정답안 발표 자료가 아니라 회사가 실행 여부를 판단하기 위한 최종 산출물입니다. 선택한 시나리오를 선행과제, 파일럿 도입, 세부 제도 도입, 제도 안정화, 성과 검증의 순서로 나눠 무엇을 준비하고 무엇을 확인할지 정리합니다."
+        lead="이 화면은 정답안이 아니라 실행 판단표입니다. 선택한 시나리오를 선행과제, 파일럿 도입, 세부 제도 도입, 제도 안정화, 성과 검증의 순서로 나눠 준비할 일과 확인할 지표를 정리합니다."
         actions={
           <>
             <Button onClick={() => router.push("/scenarios")}>시나리오 비교</Button>
-            <Button variant="primary" onClick={() => window.print()}>리포트 초안 생성</Button>
+            <Button variant="primary" onClick={() => window.print()}>인쇄/PDF 저장</Button>
           </>
         }
       />
@@ -49,12 +49,12 @@ function RoadmapContent() {
       <RoadmapTimeline scenario={scenario} />
       <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
-          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 내부 공유용 초안을 출력합니다.</p>
-          <p className="m-0 mt-1 text-[12px] text-slate-500">PDF 디자인은 별도 작업으로 분리하고, 지금은 현재 화면 기준으로 인쇄합니다.</p>
+          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 현재 화면을 내부 공유용으로 저장합니다.</p>
+          <p className="m-0 mt-1 text-[12px] text-slate-500">정식 PDF 디자인은 별도 작업으로 두고, 지금은 브라우저 인쇄/PDF 저장을 사용합니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => router.push(`/scenarios?scenario=${scenarioId}`)}>시나리오 비교</Button>
-          <Button variant="primary" onClick={() => window.print()}>리포트 초안 생성</Button>
+          <Button variant="primary" onClick={() => window.print()}>인쇄/PDF 저장</Button>
         </div>
       </section>
     </>

@@ -345,7 +345,7 @@ def _calc_compensation_score(responses: dict[str, Any]) -> tuple[int, list[dict[
         4: "강한 연동",
         5: "완전 연동",
     }.get(eval_link, f"{eval_link}점")
-    breakdown.append(_score_item("평가-보상 연동", link_text, link_impact, "5점 척도 기반"))
+    breakdown.append(_score_item("평가-보상 연동", link_text, link_impact, "평가 결과가 보상 결정에 반영되는 정도"))
 
     cost = responses.get("2-3-3", "")
     if cost in ("20% 미만", "20~35%"):
@@ -377,18 +377,26 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     fairness_not_operated = ceo_fair == 0 or emp_fair == 0
 
     if _is_evaluation_active(eval_cycle) and not fairness_not_operated:
+        link_status = {
+            1: "거의 연동하지 않는 상태",
+            2: "약하게 연동되는 상태",
+            3: "일부 연동되는 상태",
+            4: "강하게 연동되는 상태",
+            5: "매우 강하게 연동되는 상태",
+        }.get(eval_link, "일부 연동되는 상태")
+        fairness_status = _score_band_label((ceo_fair + emp_fair) / 2, low=4.5, high=7.0)
+        gap_status = _gap_band_label(fairness_gap)
         status = (
             f"귀사는 현재 '{eval_cycle}' 주기로 '{eval_method}' 방식의 평가를 운영하고 있습니다. "
-            f"평가와 보상의 연동 수준은 {eval_link}점/5점이며, CEO가 인식하는 "
-            f"평가 공정성은 {ceo_fair}점/10점, 직원이 느낄 것으로 예상되는 공정성은 "
-            f"{emp_fair}점/10점입니다."
+            f"평가와 보상은 {link_status}이며, 평가 공정성 신뢰는 '{fairness_status}'으로 읽힙니다. "
+            f"경영진과 직원 사이의 공정성 인식 차이는 '{gap_status}'입니다."
         )
         if fairness_gap >= 3:
-            status += " 대표와 직원 간 공정성 인식 차이가 3점 이상으로 평가 신뢰 회복을 위한 즉시 대응이 필요합니다."
+            status += " 평가 신뢰 회복을 위한 즉시 대응이 필요합니다."
         elif fairness_gap >= 2:
-            status += " 대표와 직원 간 공정성 인식 차이가 2점 이상으로 위험 신호가 감지됩니다."
+            status += " 평가 결과 설명 방식과 이의제기 기준을 먼저 점검해야 합니다."
         elif fairness_gap >= 1:
-            status += " 대표와 직원 간 공정성 인식에 차이가 있어 수용성 관리가 필요합니다."
+            status += " 평가 수용성 관리를 시작해야 합니다."
     elif _is_evaluation_active(eval_cycle) and fairness_not_operated:
         status = (
             f"귀사는 현재 '{eval_cycle}' 주기로 평가를 운영한다고 응답했지만, 평가 공정성을 "
@@ -418,7 +426,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         issues.append(
             Issue(
                 "대표-직원 공정성 인식 차이 심각",
-                f"대표 인식({ceo_fair}점)과 직원 예상({emp_fair}점)의 차이가 {fairness_gap}점입니다.",
+                "경영진과 직원 사이의 평가 공정성 인식 차이가 커서 결과 설명만으로는 방어하기 어렵습니다.",
                 "high",
             )
         )
@@ -426,7 +434,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         issues.append(
             Issue(
                 "대표-직원 공정성 인식 차이 위험",
-                f"대표 인식({ceo_fair}점)과 직원 예상({emp_fair}점)의 차이가 {fairness_gap}점입니다.",
+                "경영진이 보는 공정성과 직원이 느끼는 공정성 사이에 위험 신호가 있습니다.",
                 "high",
             )
         )
@@ -434,7 +442,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         issues.append(
             Issue(
                 "대표-직원 공정성 인식 차이 주의",
-                f"대표 인식({ceo_fair}점)과 직원 예상({emp_fair}점)의 차이가 1점입니다.",
+                "평가 공정성에 대한 관점 차이가 있어 수용성 관리가 필요합니다.",
                 "medium",
             )
         )
@@ -525,7 +533,14 @@ def _calc_evaluation_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
     eval_link = _as_int(responses.get("2-4-2"), 3)
     link_impact = (eval_link - 3) * 5
     score += link_impact
-    breakdown.append(_score_item("평가-보상 연동", f"{eval_link}점/5점", link_impact, "5점 척도 기반"))
+    link_text = {
+        1: "거의 연동하지 않음",
+        2: "약하게 연동",
+        3: "일부 연동",
+        4: "강하게 연동",
+        5: "매우 강하게 연동",
+    }.get(eval_link, "일부 연동")
+    breakdown.append(_score_item("평가-보상 연동", link_text, link_impact, "평가 결과가 보상 결정에 반영되는 정도"))
 
     ceo_fair = _as_int(responses.get("2-4-3-ceo"), 5)
     emp_fair = _as_int(responses.get("2-4-3-employee"), 5)
@@ -535,10 +550,10 @@ def _calc_evaluation_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
     gap_impact = 0 if fairness_not_operated else -(max(0, ceo_fair - emp_fair) * 4)
     score += fairness_impact
     score += gap_impact
-    fairness_value = "운영하지 않음" if fairness_not_operated else f"{avg_fair:.1f}점/10점"
-    gap_value = "판단 기준 없음" if fairness_not_operated else f"{ceo_fair - emp_fair}점"
-    fairness_note = "평가 공정성을 판단할 공식 운영 기준 없음" if fairness_not_operated else "CEO/직원 예상 평균"
-    gap_note = "공정성 판단 기준 부재 시 인식 차이 계산 보류" if fairness_not_operated else "CEO 인식이 직원 예상보다 높을 때 감점"
+    fairness_value = "운영하지 않음" if fairness_not_operated else _score_band_label(avg_fair, low=4.5, high=7.0)
+    gap_value = "판단 기준 없음" if fairness_not_operated else _gap_band_label(ceo_fair - emp_fair)
+    fairness_note = "평가 공정성을 판단할 공식 운영 기준 없음" if fairness_not_operated else "평가 공정성 신뢰 수준"
+    gap_note = "공정성 판단 기준 부재 시 인식 차이 계산 보류" if fairness_not_operated else "경영진과 직원 사이의 공정성 인식 차이"
     breakdown.append(_score_item("평가 공정성 평균", fairness_value, fairness_impact, fairness_note))
     breakdown.append(_score_item("공정성 인식 차이", gap_value, gap_impact, gap_note))
 
@@ -897,9 +912,9 @@ def _calc_retention_score(responses: dict[str, Any]) -> tuple[int, list[dict[str
     breakdown.append(
         _score_item(
             "핵심 인재 이탈 심각도",
-            f"{core_loss_severity:.2f}",
+            _severity_band_label(core_loss_severity),
             core_loss_impact,
-            "인원 규모와 이탈 인원 교차 계산",
+            "조직 규모와 핵심 인재 이탈 규모를 함께 본 위험도",
         )
     )
 
@@ -1082,7 +1097,7 @@ def _calc_leadership_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
 
     if _has_ceo_bottleneck(responses.get("2-5-4", ""), responses.get("2-5-5", "")):
         score -= 12
-        breakdown.append(_score_item("의사결정 구조", "CEO 집중", -12, "채용/배포 승인 병목"))
+        breakdown.append(_score_item("의사결정 구조", "경영진 집중", -12, "채용/배포 승인 병목"))
 
     core_values = responses.get("2-5-6", "")
     if core_values == "명확한 기준으로 작동함":
@@ -1099,6 +1114,35 @@ def _text(value: Any) -> str:
     if isinstance(value, list):
         return ", ".join(str(item) for item in value if item not in (None, ""))
     return str(value) if value not in (None, "") else "미입력"
+
+
+def _severity_band_label(value: float) -> str:
+    """내부 위험도 값을 대표 화면용 레이블로 변환한다."""
+    if value >= 0.75:
+        return "높은 위험"
+    if value >= 0.35:
+        return "주의 필요"
+    return "낮은 위험"
+
+
+def _score_band_label(value: float, low: float, high: float) -> str:
+    """점수 원값 대신 판단 가능한 수준 레이블을 반환한다."""
+    if value >= high:
+        return "높은 신뢰"
+    if value >= low:
+        return "보통 수준"
+    return "낮은 신뢰"
+
+
+def _gap_band_label(value: int) -> str:
+    """인식 차이 점수를 화면용 수준 레이블로 변환한다."""
+    if value >= 3:
+        return "큰 차이"
+    if value >= 1:
+        return "주의할 차이"
+    if value == 0:
+        return "차이 거의 없음"
+    return "직원 예상이 더 긍정적"
 
 
 def _score_item(

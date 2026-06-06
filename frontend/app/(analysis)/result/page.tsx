@@ -173,7 +173,7 @@ export default function ResultPage() {
         lead="이 화면은 잘한 점수를 보여주는 대시보드가 아니라, 회사가 어디부터 제도를 정렬할지 결정하기 위한 첫 장입니다."
         actions={
           <>
-            <Button onClick={handlePrint}>리포트 저장</Button>
+            <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
             <Button variant="primary" onClick={() => router.push("/result/detail")}>상세 분석 보기</Button>
           </>
         }
@@ -206,30 +206,6 @@ export default function ResultPage() {
 
       <AlignmentOperatingRisk map={alignmentMap} />
 
-      <section className="hidden">
-        <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-[1fr_1fr_1fr_260px] lg:divide-x lg:divide-y-0">
-          {decisionCards.map((card) => (
-            <div key={card.label} className="p-4">
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">{card.label}</p>
-              <strong className="mt-2 block text-[15px] font-[680] leading-[1.45] text-slate-900">{card.title}</strong>
-              <div className="mt-3 inline-flex max-w-full rounded-[7px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-[720] text-slate-700">
-                {card.value}
-              </div>
-              <p className="m-0 mt-3 text-[12px] leading-[1.65] text-slate-500">{card.body}</p>
-            </div>
-          ))}
-          <div className="bg-slate-50/70 p-4">
-            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">데이터 신뢰도</p>
-            <div className="mt-3 flex items-baseline gap-1.5">
-              <strong className="text-[34px] font-[680] leading-none text-slate-900">{Math.round(visibility.score)}</strong>
-              <span className="text-[14px] font-[650] text-slate-400">%</span>
-            </div>
-            <Badge variant={visibilityVariant}>{visTierText}</Badge>
-            <p className="m-0 mt-3 text-[12px] leading-[1.65] text-slate-500">{visibilityCopy}</p>
-          </div>
-        </div>
-      </section>
-
       <div className="mb-[18px] grid grid-cols-1 gap-[14px] xl:grid-cols-3">
         <MetricCard
           variant={visibilityVariant}
@@ -247,7 +223,7 @@ export default function ResultPage() {
           unit="/100"
           copy={
             topConflicts.length > 0
-              ? `영역 평균 ${alignment.base_score}점에서 제도 간 충돌 ${alignment.total_penalty}점을 반영했습니다.`
+              ? "일부 제도 기준이 서로 다른 방향으로 작동합니다. 아래 정합성 괴리와 상세 분석에서 엇박자 요인을 확인하세요."
               : "보상, 채용, 평가, 리더십 기준이 같은 방향으로 작동하는지 평가한 전사 운영 점수입니다."
           }
         />
@@ -286,24 +262,6 @@ export default function ResultPage() {
           </div>
         </div>
       </section>
-
-      {false ? (
-        <section className="mb-4 grid gap-3 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid lg:grid-cols-2">
-          {topConflicts.map((conflict) => (
-            <article key={conflict.id}>
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">
-                운영 충돌, -{conflict.penalty}점
-              </p>
-              <h3 className="m-0 mt-2 text-[14px] font-[690] leading-[1.45] text-slate-900">
-                {conflict.title}
-              </h3>
-              <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-600">
-                {conflict.detail}
-              </p>
-            </article>
-          ))}
-        </section>
-      ) : null}
 
       <div className="mb-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
@@ -394,7 +352,7 @@ export default function ResultPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={handlePrint}>리포트 저장</Button>
+          <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
           <Button variant="primary" onClick={() => router.push("/result/detail")}>상세 분석 보기</Button>
         </div>
       </section>

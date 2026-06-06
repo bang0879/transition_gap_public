@@ -14,11 +14,30 @@ function displayValue(value: string): string {
     .replace(/,\s*/g, " · ");
 }
 
-function formatDisplayValue(value: string): string {
-  const displayed = displayValue(value);
+function stripDecimalNoise(value: string): string {
+  return value
+    .replace(/(\d+)\.0+(?=점|%|\/|$)/g, "$1")
+    .replace(/(\d+\.\d)0+(?=점|%|\/|$)/g, "$1");
+}
+
+function severityLabel(numeric: number): string {
+  if (numeric >= 0.75) return "높은 위험";
+  if (numeric >= 0.35) return "주의 필요";
+  return "낮은 위험";
+}
+
+function formatDisplayValue(item: ScoreBreakdownItem): string {
+  const displayed = stripDecimalNoise(displayValue(item.value));
   const numeric = Number(displayed);
-  if (Number.isFinite(numeric) && numeric >= 0 && numeric <= 10) {
-    return `${Number.isInteger(numeric) ? numeric : numeric.toFixed(1)}점`;
+
+  if (item.factor.includes("심각도") && Number.isFinite(numeric)) {
+    return severityLabel(numeric);
+  }
+  if (/^\d+(\.\d+)?$/.test(displayed) && Number.isFinite(numeric) && numeric >= 0 && numeric <= 1) {
+    return severityLabel(numeric);
+  }
+  if (/^\d+(\.\d+)?$/.test(displayed) && Number.isFinite(numeric) && numeric > 1 && numeric <= 10) {
+    return `${Math.round(numeric)}점`;
   }
   return displayed;
 }
@@ -57,7 +76,7 @@ export function BreakdownTable({ breakdown }: BreakdownTableProps) {
           {rows.map((item) => (
             <tr key={`${item.factor}-${item.value}`} className="border-t border-slate-100 align-top">
               <td className="px-4 py-3 text-[12px] font-[650] text-slate-800">{item.factor}</td>
-              <td className="px-4 py-3 text-[12px] leading-[1.55] text-slate-600">{formatDisplayValue(item.value)}</td>
+              <td className="px-4 py-3 text-[12px] leading-[1.55] text-slate-600">{formatDisplayValue(item)}</td>
               <td className="px-4 py-3">
                 <ImpactBadge impact={item.impact} />
               </td>

@@ -54,7 +54,7 @@ function axisHeadline(
 ): string {
   const philosophyLabel = sideLabel(philosophy, leftLabel, rightLabel);
   const actualLabel = sideLabel(actual, leftLabel, rightLabel);
-  return `${domainName}: 대표님의 철학은 ${philosophyLabel}, 현행 제도는 ${actualLabel}에 가깝습니다.`;
+  return `${domainName}: 회사의 인사 철학은 ${philosophyLabel}, 현행 제도는 ${actualLabel}에 가깝습니다.`;
 }
 
 function alignmentPercent(tension: number): number {

@@ -51,8 +51,8 @@ function ScenariosContent() {
     <>
       <PageHeader
         eyebrow="시나리오 비교"
-        title={<>좋은 시나리오는 비용이 없는 선택지가 아니라,<br className="hidden sm:block" /> 감수할 비용이 명확한 선택지입니다.</>}
-        lead="각 시나리오는 추천 순위가 아니라 제도 패키지입니다. 회사가 얻을 효과, 감수할 비용, 당장 검토할 제도를 함께 비교합니다."
+        title={<>좋은 시나리오는 비용이 없는 선택지가 아니라,<br className="hidden sm:block" /> 부담과 효과가 분명한 선택지입니다.</>}
+        lead="각 시나리오는 추천 순위가 아니라 제도 패키지입니다. 회사가 얻을 효과, 추가로 관리할 부담, 당장 검토할 제도를 함께 비교합니다."
         actions={
           <>
             <Button onClick={() => router.push("/matrix")}>트레이드오프 분석으로</Button>

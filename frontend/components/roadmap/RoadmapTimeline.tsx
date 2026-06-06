@@ -45,7 +45,7 @@ interface RoadmapPhase {
   goal: string;
   policy: string;
   communication: string;
-  hedge: string;
+  riskControl: string;
   metric: string;
   evidence: string;
   decision: string;
@@ -80,9 +80,9 @@ const EXECUTION_FOCUS: Record<string, string> = {
 };
 
 const FINAL_DECISION_QUESTIONS: Record<string, string> = {
-  performance: "성과 차등으로 얻은 동기부여가 평가 갈등과 인건비 증가를 넘어섰습니까?",
-  community: "조직 안정성 개선이 고성과자 동기 저하 비용보다 컸습니까?",
-  elite: "핵심 인재 집중 효과가 내부 형평성 하락과 운영 기반 약화를 상쇄했습니까?",
+  performance: "성과 차등으로 얻은 동기부여가 평가 갈등과 인건비 증가보다 컸습니까?",
+  community: "조직 안정성 개선 효과가 고성과자 동기 저하보다 컸습니까?",
+  elite: "핵심 인재 집중 효과가 내부 형평성 논란과 운영 부담보다 컸습니까?",
 };
 
 function joinActions(items: ScenarioPackageItem[], fallback: string): string {
@@ -132,7 +132,7 @@ function buildPhases(scenario: Scenario): RoadmapPhase[] {
       goal: `${scenario.name} 실행 전에 데이터, 의사결정 권한, 리더 운영 기준을 한 장으로 맞춥니다.`,
       policy: "평가 기준, 보상 기준, 핵심 인재/리텐션 지표, 채용 기준을 현재값 중심으로 정리합니다.",
       communication: "경영진과 리더가 이번 전환의 이유, 바꾸지 않을 것, 12개월 실행 순서를 먼저 합의합니다.",
-      hedge: warnings[0] ?? "제도 변경 전에 구성원 수용성과 리더 실행 역량을 점검합니다.",
+      riskControl: warnings[0] ?? "제도 변경 전에 구성원 수용성과 리더 실행 역량을 점검합니다.",
       metric: "현재값: 이직률, 평가 수용성, 보상 시장 위치, 채용 소요 기간",
       evidence: "진단 응답과 보유 데이터를 대조해 현재 조건에서 필요한 기준과의 차이를 재확인합니다.",
       decision: "파일럿에 올릴 제도와 아직 보류할 제도를 구분합니다.",
@@ -144,7 +144,7 @@ function buildPhases(scenario: Scenario): RoadmapPhase[] {
       goal: "전사 도입 전에 한두 개 조직에서 운영 난이도와 메시지 반응을 검증합니다.",
       policy: joinActions(firstPolicies, "평가/보상 파일럿 기준과 리더 피드백 운영안을 설계합니다."),
       communication: "파일럿 대상 리더에게 운영 원칙과 예외 처리 기준을 설명하고, 구성원에게 실험 범위를 명확히 알립니다.",
-      hedge: warnings[1] ?? "파일럿 결과를 보상에 즉시 강하게 연결하지 않고 수용성 데이터를 먼저 봅니다.",
+      riskControl: warnings[1] ?? "파일럿 결과를 보상에 즉시 강하게 연결하지 않고 수용성 데이터를 먼저 봅니다.",
       metric: primaryMetric,
       evidence: "파일럿 회고, 리더 피드백 로그, 구성원 문의 유형을 함께 기록합니다.",
       decision: "전사 확대 전, 메시지 오해와 리더별 편차가 감당 가능한 수준인지 판단합니다.",
@@ -156,7 +156,7 @@ function buildPhases(scenario: Scenario): RoadmapPhase[] {
       goal: "파일럿에서 확인된 기준을 바탕으로 평가, 보상, 채용, 리텐션 제도를 연결합니다.",
       policy: joinActions(laterPolicies, "평가-보상 연동 기준과 채용/리텐션 운영 기준을 세부 문서로 전환합니다."),
       communication: "리더에게 판단 기준을, 구성원에게 기대 행동과 보상 원리를 분리해서 설명합니다.",
-      hedge: warnings[2] ?? "과도한 속도전으로 보이지 않도록 기존 보상과 신규 기준의 전환 기간을 둡니다.",
+      riskControl: warnings[2] ?? "과도한 속도전으로 보이지 않도록 기존 보상과 신규 기준의 전환 기간을 둡니다.",
       metric: secondaryMetric,
       evidence: "제도별 적용률, 평가 피드백 완료율, 오퍼 수락률 또는 이탈 위험군 변화를 월별로 봅니다.",
       decision: "제도별 전사 확대 여부와 예외 승인 기준을 확정합니다.",
@@ -168,7 +168,7 @@ function buildPhases(scenario: Scenario): RoadmapPhase[] {
       goal: "제도가 문서가 아니라 리더의 반복 운영으로 작동하는지 확인합니다.",
       policy: `${scenario.name} 실행 방식을 월간 리더 회의, 분기 리뷰, 보상 의사결정 회의에 넣어 정기적으로 운영합니다.`,
       communication: "리더별 편차를 줄이기 위해 사례 기반 캘리브레이션과 구성원 FAQ를 갱신합니다.",
-      hedge: warnings[3] ?? warnings[0] ?? "조직별 예외가 누적되지 않도록 승인 권한과 예외 기준을 분리합니다.",
+      riskControl: warnings[3] ?? warnings[0] ?? "조직별 예외가 누적되지 않도록 승인 권한과 예외 기준을 분리합니다.",
       metric: costSignal,
       evidence: "인건비 영향, 평가 분포, 리더별 피드백 품질, 구성원 이의제기 패턴을 같이 봅니다.",
       decision: "비용 신호가 허용 범위인지, 운영 부담이 특정 리더에게 몰리는지 판단합니다.",
@@ -177,14 +177,14 @@ function buildPhases(scenario: Scenario): RoadmapPhase[] {
     {
       ...PHASE_LABELS[4],
       intent: "유지 또는 조정 판단",
-      goal: "12개월 실행 결과가 유지할 제도와 되돌릴 제도를 판단할 만큼 충분한지 검증합니다.",
+      goal: "12개월 실행 결과를 보고 유지할 제도와 조정할 제도를 나눕니다.",
       policy: "성과가 확인된 제도는 표준 운영안으로 확산하고, 부작용이 큰 제도는 다음 사이클에서 조정합니다.",
       communication: "경영진 메시지로 전환 결과, 배운 점, 다음 6개월 조정 방향을 공유합니다.",
-      hedge: "수치 개선만 보고 확산하지 않고 수용성, 리더 부담, 비용 증가를 함께 봅니다.",
+      riskControl: "수치 개선만 보고 확산하지 않고 수용성, 리더 부담, 비용 증가를 함께 봅니다.",
       metric: tertiaryMetric,
       evidence: "시작 전 현재값 대비 12개월 결과와 리더/구성원 인터뷰를 묶어 최종 의사결정 메모로 남깁니다.",
       decision: finalDecisionQuestion(scenario),
-      deliverable: nextSteps[3]?.action ?? "12개월 실행 회고와 다음 사이클 의사결정 메모",
+      deliverable: nextSteps[3]?.action ?? "12개월 실행 회고와 다음 6개월 실행 메모",
     },
   ];
 }
@@ -226,7 +226,7 @@ export function RoadmapTimeline({ scenario }: RoadmapTimelineProps) {
         <div>
           <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">실행 원칙</p>
           <p className="m-0 mt-2 text-[13px] leading-[1.65] text-slate-700">
-            제도는 한 번에 확정하지 않고, 각 단계 끝에서 확대·보류·수정 여부를 판단합니다. 로드맵의 목적은 완성된 정답을 밀어붙이는 것이 아니라, 회사가 감수할 비용과 기대효과를 같은 표에서 보게 하는 것입니다.
+            제도는 한 번에 확정하지 않고, 각 단계 끝에서 확대·보류·수정 여부를 판단합니다. 로드맵의 목적은 하나의 안을 그대로 실행하는 것이 아니라, 회사가 부담할 비용과 기대효과를 같은 표에서 보게 하는 것입니다.
           </p>
         </div>
       </div>
@@ -261,7 +261,7 @@ export function RoadmapTimeline({ scenario }: RoadmapTimelineProps) {
                     <RoadmapField label="중점 목표" value={phase.intent} />
                     <RoadmapField label="준비할 제도" value={phase.policy} />
                     <RoadmapField label="리더/직원 커뮤니케이션" value={phase.communication} />
-                    <RoadmapField label="리스크 헷징" value={phase.hedge} />
+                    <RoadmapField label="리스크 줄이기" value={phase.riskControl} />
                     <RoadmapField label="검증 지표" value={phase.metric} />
                     <RoadmapField label="기대효과 확인 방식" value={phase.evidence} />
                   </div>

@@ -27,9 +27,9 @@ interface Scenario {
 }
 
 const OPERATING_REFERENCES: Record<string, string> = {
-  performance: "Netflix식 고성과, 고책임 운영 이미지",
-  community: "Google식 심리적 안전감, 협업 운영 이미지",
-  elite: "초기 토스식 소수정예, 빠른 실행 이미지",
+  performance: "Netflix식 고성과·고책임 운영처럼 성과 기준과 보상 메시지가 선명한 이미지",
+  community: "Google식 공동체 기반 협업 조직처럼 심리적 안전감과 장기 몰입을 중시하는 이미지",
+  elite: "초기 토스식 소수정예 실행 조직처럼 적은 인원이 빠르게 의사결정하는 이미지",
 };
 
 function referenceForScenario(id: string): string {
@@ -110,8 +110,8 @@ export default function MatrixPage() {
     <>
       <PageHeader
         eyebrow="트레이드오프 분석 · 매트릭스 A/B"
-        title="어느 제도를 도입할지가 아니라, 어느 모순을 감수할지 선택합니다."
-        lead="As-Is는 현재 운영 데이터로 자동 배치하고, To-Be는 회사가 선택한 인재 운영 방향으로 도출합니다. 두 점 사이의 거리가 클수록 제도 변경에 따른 조직의 운영 부담이 커집니다."
+        title="어느 제도를 먼저 바꾸고, 어떤 부담을 감당할지 비교합니다."
+        lead="As-Is는 현재 운영 데이터로 자동 배치하고, To-Be는 회사가 선택한 인재 운영 방향으로 도출합니다. 두 점 사이의 거리가 클수록 제도 변경에 따른 실행 부담이 커집니다."
         actions={
           <>
             <Button onClick={() => router.push("/result/detail")}>상세 분석으로</Button>
@@ -120,8 +120,8 @@ export default function MatrixPage() {
         }
       />
       <MemoBlock
-        title="인사제도 선택은 결국 감수할 비용을 정하는 일입니다."
-        body="아래 매트릭스는 회사가 선택한 방향(To-Be)과 현재 제도가 실제로 작동하는 위치(As-Is)의 거리를 보여줍니다. 이 거리가 곧 실행 부담이며, 어떤 방향이든 반드시 포기해야 할 것이 있습니다."
+        title="인사제도 선택은 실행 부담을 함께 보는 일입니다."
+        body="아래 매트릭스는 회사가 선택한 방향(To-Be)과 현재 제도가 실제로 작동하는 위치(As-Is)의 거리를 보여줍니다. 이 거리가 곧 실행 부담이며, 어떤 방향이든 추가로 관리해야 할 비용이 있습니다."
       />
       <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
         <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
@@ -138,7 +138,7 @@ export default function MatrixPage() {
             </p>
           </div>
           <div className="py-3 lg:px-4 lg:py-2">
-            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">감수할 것</p>
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">부담</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
               반대로 인건비, 평가 갈등, 리더 운영 부담이 커질 수 있습니다.
             </p>
@@ -156,8 +156,13 @@ export default function MatrixPage() {
           title="매트릭스 A"
           markerId="matrix-a-arrow"
           subtitle="보상 구조와 성과 운영의 방향"
-          quadrantLabels={["Q2 장기 비전형 공동체", "Q1 단기 성과형 용병조직", "Q3 평균의 함정형", "Q4 소수정예 중심형"]}
-          quadrantExamples={["Google식 협업", "Netflix식 고성과", "평균 안정형", "토스식 소수정예"]}
+          quadrantLabels={["Q2 장기 비전형 공동체", "Q1 단기 성과 집중형", "Q3 평균 기준형", "Q4 소수정예 중심형"]}
+          quadrantExamples={[
+            "Google식 공동체 기반 협업 조직",
+            "Netflix식 고성과·고책임 보상 조직",
+            "차등도 안정감도 약한 평균형 운영",
+            "초기 토스식 소수정예 실행 조직",
+          ]}
           xAxisLabel="지분/비전 ← → 현금/인센티브"
           yAxisLabel="팀 시너지 ↑  개인 압도적 성과 ↓"
           asIs={{ x: data.matrix.a_x_as_is, y: data.matrix.a_y_as_is }}
@@ -170,7 +175,12 @@ export default function MatrixPage() {
           markerId="matrix-b-arrow"
           subtitle="의사결정 통제와 컬처핏 운영의 방향"
           quadrantLabels={["Q2 가족형 자율 조직", "Q4 대기업 공채 시스템형", "Q1 개인플레이어 중심형", "Q3 에이전시형 분업 조직"]}
-          quadrantExamples={["Google식 자율", "대기업 공채식", "개인 성과형", "에이전시식 분업"]}
+          quadrantExamples={[
+            "Google식 자율과 신뢰 기반 운영",
+            "삼성식 공채/직무순환 시스템",
+            "개인 성과 중심의 독립 실행 조직",
+            "역할별 납품 책임이 강한 에이전시형 조직",
+          ]}
           xAxisLabel="자율과 속도 ← → 통제와 절차"
           yAxisLabel="조직 적합성 ↑  즉시 전력 ↓"
           asIs={{ x: data.matrix.b_x_as_is, y: data.matrix.b_y_as_is }}

@@ -103,12 +103,22 @@ function financialTone(colorIntent?: string): string {
   return "text-slate-800";
 }
 
+function financialExplanation(item: FinancialImpact): string {
+  const basis = item.note ?? item.rationale;
+  if (basis) return `산출 관점: ${basis}와 현재 조직 상태를 함께 반영한 추정 범위입니다.`;
+  return "산출 관점: 현재 입력값과 일반적인 스타트업 운영 범위를 함께 본 추정치입니다.";
+}
+
 export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
   const mainFinancial = scenario.financial_impact?.slice(0, 3) ?? [];
   const mainImpacts = scenario.impact?.slice(0, 3) ?? [];
   const mainPackages = scenario.package?.slice(0, 4) ?? [];
   const operatingImage = OPERATING_IMAGE[scenario.id];
   const [decisions, setDecisions] = useState<Record<string, PackageDecision>>({});
+  const decisionValues = Object.values(decisions);
+  const adoptedCount = decisionValues.filter((decision) => decision === "도입").length;
+  const heldCount = decisionValues.filter((decision) => decision === "보류").length;
+  const alternativeCount = decisionValues.filter((decision) => decision === "대체 검토").length;
 
   useEffect(() => {
     setDecisions({});
@@ -186,6 +196,9 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
                 <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-500">
                   <GlossaryText text={item.note ?? "현재 입력값 기준의 추정 범위입니다."} />
                 </p>
+                <p className="m-0 mt-1 text-[10.5px] leading-[1.45] text-slate-400">
+                  <GlossaryText text={financialExplanation(item)} />
+                </p>
               </div>
             ))}
           </div>
@@ -226,6 +239,21 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
             <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-600">
               <GlossaryText text={REVIEW_PERSPECTIVE[scenario.id] ?? scenario.description} />
             </p>
+          </div>
+        </div>
+        <div className="mt-4 rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="m-0 text-[12px] font-[700] text-slate-900">제도별 선택 결과</p>
+              <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-500">
+                바로 도입할 제도, 보류할 제도, 더 낮은 부담의 대체안을 구분합니다.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-[11px] font-[720]">
+              <span className="rounded-full border border-teal-line bg-white px-2.5 py-1 text-teal-deep">도입 {adoptedCount}</span>
+              <span className="rounded-full border border-coral/25 bg-white px-2.5 py-1 text-coral">보류 {heldCount}</span>
+              <span className="rounded-full border border-amber/30 bg-white px-2.5 py-1 text-amber">대체 {alternativeCount}</span>
+            </div>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-3">

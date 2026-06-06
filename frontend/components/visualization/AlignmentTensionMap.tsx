@@ -80,7 +80,7 @@ function conflictFallback(axis: AlignmentAxisOut): AlignmentMapConflictOut {
     title: `${displayDomainName(axis.domain_name)} 제도의 정합성 괴리가 큽니다.`,
     detail:
       axis.business_risk ??
-      `${displayDomainName(axis.domain_name)}에서 대표님의 인사 철학과 실제 운영 방식이 서로 다른 신호를 보내고 있습니다.`,
+      `${displayDomainName(axis.domain_name)}에서 회사의 인사 철학과 실제 운영 방식이 서로 다른 신호를 보내고 있습니다.`,
     domains: [axis.domain_id],
     severity: axis.tension_level,
   };
@@ -195,7 +195,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
             정합성 괴리 분석
           </p>
           <h2 className="m-0 mt-2 text-[20px] font-[720] leading-[1.35] text-slate-900">
-            대표님의 인사 철학과 실제 제도가 같은 방향을 보고 있는지 확인합니다.
+            회사의 인사 철학과 실제 제도가 같은 방향을 보고 있는지 확인합니다.
           </h2>
           <p className="m-0 mt-2 max-w-[860px] text-[12px] leading-[1.7] text-slate-600">
             인사 철학과 실제 운영 제도 사이의 거리가 <strong className="font-[760] text-slate-800">정합성 괴리</strong>입니다.

@@ -42,6 +42,10 @@ const FIRST_ACTION_BY_FACTOR: Record<string, string> = {
   "1on1 운영": "1on1에서 반드시 남겨야 할 이슈 유형과 후속 조치는 무엇인가요?",
   "의사결정 구조": "어떤 의사결정은 리더에게 넘기고, 어떤 의사결정만 경영진이 잡아야 하나요?",
   "핵심가치 작동성": "핵심가치에 맞지 않는 행동을 채용·평가에서 실제로 걸러낼 수 있나요?",
+  "핵심 인재 식별 기준": "리텐션 예산과 예외 보상을 누구에게 우선 쓸지 판단 기준이 있나요?",
+  "핵심 포스트 대체 계획": "이 역할이 갑자기 비면 2주 안에 누가 임시로 맡을 수 있나요?",
+  "채용 브랜딩 자산": "후보자가 이 회사를 선택해야 하는 이유를 면접관마다 같은 문장으로 설명할 수 있나요?",
+  "온보딩 적응 추적": "신규 입사자가 기대 역할과 실제 업무가 다르다고 느끼는 시점을 어디서 잡을 수 있나요?",
 };
 
 function toBeFor(item: ScoreBreakdownItem): string {
@@ -59,71 +63,98 @@ function displayValue(value: string): string {
     .replace(/,\s*/g, " · ");
 }
 
-function normalizeAnswerValue(value: string): string {
+function stripDecimalNoise(value: string): string {
+  return value
+    .replace(/(\d+)\.0+(?=점|%|\/|$)/g, "$1")
+    .replace(/(\d+\.\d)0+(?=점|%|\/|$)/g, "$1");
+}
+
+function severityLabel(numeric: number): string {
+  if (numeric >= 0.75) return "높은 위험";
+  if (numeric >= 0.35) return "주의 필요";
+  return "낮은 위험";
+}
+
+function normalizeAnswerValue(item: ScoreBreakdownItem): string {
+  const value = item.value;
   const cleaned = displayValue(value);
   const numeric = Number(cleaned);
 
+  if (!Number.isNaN(numeric) && item.factor.includes("심각도")) {
+    return severityLabel(numeric);
+  }
   if (!Number.isNaN(numeric)) {
+    if (numeric >= 0 && numeric <= 1) return severityLabel(numeric);
     if (numeric <= 10) return `${Math.round(numeric)}점`;
     return `${Math.round(numeric)}%`;
   }
 
-  return cleaned
-    .replace(/(\d+)\.0점/g, "$1점")
-    .replace(/(\d+)\.0%/g, "$1%");
+  return stripDecimalNoise(cleaned);
 }
 
 function interpretValue(item: ScoreBreakdownItem): string {
-  const value = normalizeAnswerValue(item.value);
+  const value = normalizeAnswerValue(item);
   const factor = item.factor;
 
   if (factor.includes("이직률")) {
-    return `${value}: 핵심 인력 유지와 리더십 신뢰를 먼저 확인해야 하는 신호`;
+    return `${value}입니다. 핵심 인력 유지와 리더십 신뢰를 먼저 확인해야 하는 신호입니다.`;
   }
   if (factor.includes("핵심 인재 이탈")) {
-    return `${value}: 대체 난이도와 역할 공백을 별도 관리해야 하는 신호`;
+    return `${value}입니다. 대체 난이도와 역할 공백을 별도 관리해야 하는 신호입니다.`;
   }
   if (factor.includes("조기")) {
-    return `${value}: 온보딩, 역할 기대치, 채용 메시지가 맞물려 있는지 점검해야 하는 신호`;
+    return `${value}입니다. 온보딩, 역할 기대치, 채용 메시지가 맞물려 있는지 점검해야 하는 신호입니다.`;
   }
   if (factor.includes("채용 소요")) {
-    return `${value}: 후보자 경험과 의사결정 속도에 병목이 있을 가능성`;
+    return `${value}입니다. 후보자 경험과 의사결정 속도에 병목이 있을 가능성이 있습니다.`;
   }
   if (factor.includes("채용 채널")) {
-    return `${value}: 특정 채널 의존도가 높아 후보자 풀이 좁아질 가능성`;
+    return `${value}입니다. 특정 채널 의존도가 높아 후보자 풀이 좁아질 가능성이 있습니다.`;
   }
   if (factor.includes("오퍼 거절")) {
-    return `${value}: 보상, 역할 매력도, 프로세스 속도 중 하나가 약해진 신호`;
+    return `${value}입니다. 보상, 역할 매력도, 프로세스 속도 중 하나가 약해진 신호입니다.`;
+  }
+  if (factor.includes("채용 브랜딩")) {
+    return `${value}입니다. 후보자가 회사를 선택해야 할 이유가 일관되게 전달되는지 확인해야 합니다.`;
+  }
+  if (factor.includes("온보딩 적응")) {
+    return `${value}입니다. 입사 초기에 생기는 역할 기대치 차이를 제때 발견하기 어려울 수 있습니다.`;
   }
   if (factor.includes("인건비")) {
-    return `${value}: 성장률과 비용 구조를 함께 봐야 하는 재무 압력 신호`;
+    return `${value}입니다. 성장률과 비용 구조를 함께 봐야 하는 재무 압력 신호입니다.`;
   }
   if (factor.includes("시장 보상")) {
-    return `${value}: 핵심 직무별 보상 포지션을 다시 정해야 하는 신호`;
+    return `${value}입니다. 핵심 직무별 보상 포지션을 다시 정해야 하는 신호입니다.`;
   }
   if (factor.includes("보상 구조")) {
-    return `${value}: 채용 메시지와 리텐션 메시지가 흔들릴 수 있는 신호`;
+    return `${value}입니다. 채용 메시지와 리텐션 메시지가 흔들릴 수 있는 신호입니다.`;
   }
   if (factor.includes("공정성")) {
-    return `${value}: 평가 기준과 결과 설명 방식의 신뢰를 점검해야 하는 신호`;
+    return `${value}입니다. 평가 기준과 결과 설명 방식의 신뢰를 점검해야 하는 신호입니다.`;
   }
   if (factor.includes("평가")) {
-    return `${value}: 성과 기준, 피드백, 보상 연결이 흐려질 수 있는 신호`;
+    return `${value}입니다. 성과 기준, 피드백, 보상 연결이 흐려질 수 있는 신호입니다.`;
   }
   if (factor.includes("피드백")) {
-    return `${value}: 리더별 관리 품질 차이가 커질 수 있는 신호`;
+    return `${value}입니다. 리더별 관리 품질 차이가 커질 수 있는 신호입니다.`;
   }
   if (factor.includes("1on1")) {
-    return `${value}: 리더십 운영이 개인 역량에 의존할 가능성`;
+    return `${value}입니다. 리더십 운영이 개인 역량에 의존할 가능성이 있습니다.`;
   }
   if (factor.includes("의사결정")) {
-    return `${value}: 승인 병목과 책임 경계가 흐려질 수 있는 신호`;
+    return `${value}입니다. 승인 병목과 책임 경계가 흐려질 수 있는 신호입니다.`;
   }
   if (factor.includes("핵심가치")) {
-    return `${value}: 채용, 평가, 보상이 같은 행동 기준을 공유하지 못할 가능성`;
+    return `${value}입니다. 채용, 평가, 보상이 같은 행동 기준을 공유하지 못할 가능성이 있습니다.`;
+  }
+  if (factor.includes("핵심 인재 식별")) {
+    return `${value}입니다. 리텐션 투자와 예외 보상 판단이 사람마다 달라질 수 있습니다.`;
+  }
+  if (factor.includes("핵심 포스트 대체")) {
+    return `${value}입니다. 핵심 역할 공백이 생겼을 때 사업 지연 위험이 커질 수 있습니다.`;
   }
 
-  return `${value}: 현재 운영 기준을 더 명확히 정의해야 하는 신호`;
+  return `${value}입니다. 현재 운영 기준을 더 명확히 정의해야 하는 신호입니다.`;
 }
 
 function priorityLabel(impact: number, index: number): string {

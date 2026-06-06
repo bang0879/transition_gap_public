@@ -112,13 +112,13 @@ function buildConsistentInterpretation(answers: Record<PhilosophySummaryItem["id
 
   if (rewardLeadershipDirection && hiringRetentionDirection) {
     return {
-      title: "대표님의 철학은 큰 방향에서 일관되어 있습니다.",
+      title: "회사의 인사 철학은 큰 방향에서 일관되어 있습니다.",
       body: `${rewardLeadershipDirection}에 가깝고, 채용·인력운영은 ${hiringRetentionDirection}에 가깝습니다. 이제 다음 단계에서는 현행 제도가 이 방향을 실제로 받쳐주고 있는지 확인합니다.`,
     };
   }
 
   return {
-    title: "대표님의 철학은 아직 한 문장으로 요약하기 어렵습니다.",
+    title: "회사의 인사 철학은 아직 한 문장으로 요약하기 어렵습니다.",
     body: "일부 항목이 비어 있거나 서로 다른 방향을 함께 담고 있습니다. 네 가지 기준을 모두 선택하면 보상·리더십과 채용·인력운영의 방향을 함께 해석합니다.",
   };
 }
