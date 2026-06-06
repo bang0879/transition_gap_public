@@ -42,7 +42,7 @@ export default function DetailPage() {
         title="상세 분석을 불러오지 못했습니다."
         body={error instanceof Error ? error.message : "진단 결과를 다시 생성해 주세요."}
       >
-        <Button onClick={() => router.push("/result")}>요약으로</Button>
+        <Button onClick={() => router.push("/result")}>진단결과 요약으로</Button>
         <Button variant="primary" onClick={() => window.location.reload()}>다시 시도</Button>
       </AnalysisNotice>
     );
@@ -60,7 +60,7 @@ export default function DetailPage() {
         lead="현재 제도가 어떤 방식으로 작동하고 있으며, 어떤 운영 기준으로 바뀌어야 하는지 영역별로 확인합니다."
         actions={
           <>
-            <Button onClick={() => router.push("/result")}>요약으로</Button>
+            <Button onClick={() => router.push("/result")}>진단결과 요약으로</Button>
             <Button variant="teal" onClick={() => router.push("/matrix")}>트레이드오프 분석</Button>
           </>
         }

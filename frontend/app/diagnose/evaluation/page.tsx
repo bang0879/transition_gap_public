@@ -106,14 +106,9 @@ const visionDecisionOptions = [
 
 const fairnessAgreementOptions = [
   {
-    label: "전혀 아니다",
-    value: 1,
-    description: "공정하다고 보기 어렵고, 불만이 표면화될 가능성이 큽니다.",
-  },
-  {
     label: "아니다",
-    value: 3,
-    description: "일부 기준은 있으나 납득 가능한 수준으로 작동하지 않습니다.",
+    value: 2,
+    description: "공정하다고 보기 어렵고, 불만이 표면화될 가능성이 큽니다.",
   },
   {
     label: "보통이다",
@@ -122,7 +117,7 @@ const fairnessAgreementOptions = [
   },
   {
     label: "그렇다",
-    value: 7,
+    value: 8,
     description: "대체로 공정하게 받아들여질 만한 운영 기준이 있습니다.",
   },
   {

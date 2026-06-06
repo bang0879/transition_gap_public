@@ -5,10 +5,13 @@ import { useEffect } from "react";
 import { GapBarList } from "@/components/visualization/GapBarList";
 import { InsightCard } from "@/components/result/InsightCard";
 import { CompanyContextBar } from "@/components/result/CompanyContextBar";
+import { AlignmentOperatingRisk } from "@/components/result/AlignmentOperatingRisk";
 import { BenchmarkHelp } from "@/components/result/BenchmarkHelp";
 import { MemoBlock } from "@/components/result/MemoBlock";
 import { MetricCard } from "@/components/result/MetricCard";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ResultReadingFlow } from "@/components/result/ResultReadingFlow";
+import { ResultStepHeader } from "@/components/result/ResultStepHeader";
 import { RadarChart } from "@/components/visualization/RadarChart";
 import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Badge } from "@/components/shared/Badge";
@@ -176,10 +179,22 @@ export default function ResultPage() {
         }
       />
 
+      <ResultReadingFlow />
+
+      <ResultStepHeader
+        step="STEP 01 · 철학-제도 정합성"
+        title="회사의 인사철학과 현재 제도가 같은 방향을 보고 있습니까?"
+        body="이 단계는 철학과 제도의 방향을 비교합니다. 아래의 필요 기준/벤치마크와는 다른 비교이며, 먼저 회사가 내는 인사 메시지가 일관적인지 확인합니다."
+      />
       <CompanyContextBar companyName={companyName} responses={responses} />
 
-      <AlignmentTensionMap map={alignmentMap} />
+      <AlignmentTensionMap map={alignmentMap} showConflicts={false} />
 
+      <ResultStepHeader
+        step="STEP 02 · 운영 리스크와 전체 조감"
+        title="정합성이 어긋나면 어디서 실제 문제가 생깁니까?"
+        body="여기서는 회사 규모, 성장 기조, 입력한 인재 기준을 반영한 운영 필요 기준과 현재 상태의 차이를 봅니다. 정합성 비교와 달리, 실제로 어디부터 손봐야 하는지 판단하기 위한 영역별 조감입니다."
+      />
       <MemoBlock
         title={`${topicNames} 영역을 먼저 논의해야 합니다.`}
         body="현재 점수와 이 회사 조건에서 필요한 운영 기준의 차이가 큰 영역부터 보면, 제도 개선 논의가 일반론으로 흐르지 않고 실제 의사결정 순서로 정리됩니다."
@@ -189,7 +204,9 @@ export default function ResultPage() {
         <BenchmarkHelp />
       </div>
 
-      <section className="mb-[18px] overflow-hidden rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
+      <AlignmentOperatingRisk map={alignmentMap} />
+
+      <section className="hidden">
         <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-[1fr_1fr_1fr_260px] lg:divide-x lg:divide-y-0">
           {decisionCards.map((card) => (
             <div key={card.label} className="p-4">
@@ -270,7 +287,7 @@ export default function ResultPage() {
         </div>
       </section>
 
-      {topConflicts.length > 0 ? (
+      {false ? (
         <section className="mb-4 grid gap-3 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid lg:grid-cols-2">
           {topConflicts.map((conflict) => (
             <article key={conflict.id}>
@@ -339,6 +356,35 @@ export default function ResultPage() {
           <InsightCard key={`${insight.headline}-${index}`} source={insight.source} headline={insight.headline} detail={insight.detail} />
         ))}
       </div>
+
+      <ResultStepHeader
+        step="STEP 03 · 다음 단계 안내"
+        title="이제 무엇을 확인해야 합니까?"
+        body="요약에서 방향과 우선순위를 확인했다면, 상세 분석에서는 근거를 더 깊게 보고 트레이드오프 분석에서는 선택에 따른 비용을 비교합니다."
+      />
+      <section className="mb-[18px] overflow-hidden rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
+        <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-[1fr_1fr_1fr_260px] lg:divide-x lg:divide-y-0">
+          {decisionCards.map((card) => (
+            <div key={card.label} className="p-4">
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">{card.label}</p>
+              <strong className="mt-2 block text-[15px] font-[680] leading-[1.45] text-slate-900">{card.title}</strong>
+              <div className="mt-3 inline-flex max-w-full rounded-[7px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-[720] text-slate-700">
+                {card.value}
+              </div>
+              <p className="m-0 mt-3 text-[12px] leading-[1.65] text-slate-500">{card.body}</p>
+            </div>
+          ))}
+          <div className="bg-slate-50/70 p-4">
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">데이터 신뢰도</p>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <strong className="text-[34px] font-[680] leading-none text-slate-900">{Math.round(visibility.score)}</strong>
+              <span className="text-[14px] font-[650] text-slate-400">%</span>
+            </div>
+            <Badge variant={visibilityVariant}>{visTierText}</Badge>
+            <p className="m-0 mt-3 text-[12px] leading-[1.65] text-slate-500">{visibilityCopy}</p>
+          </div>
+        </div>
+      </section>
 
       <section className="mt-4 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 print:hidden sm:flex-row sm:items-center sm:justify-between">
         <div>

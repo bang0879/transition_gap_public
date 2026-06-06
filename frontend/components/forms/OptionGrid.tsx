@@ -40,6 +40,7 @@ export function OptionGrid({
         const optionDescription = typeof option === "string" ? null : option.description;
         const selected = value === optionValue;
         const muted = mutedOption === optionValue;
+        const labelWeight = optionDescription ? "font-[680]" : selected ? "font-[620]" : "font-[540]";
         return (
           <button
             key={optionValue}
@@ -47,13 +48,13 @@ export function OptionGrid({
             onClick={() => onChange(optionValue)}
             className={`min-h-16 rounded-[10px] border p-3 text-left text-[13px] leading-[1.45] transition-all ${
               selected
-                ? "border-teal-line bg-white font-[650] text-slate-900 shadow-[inset_0_0_0_1px_rgba(47,143,134,0.16)]"
+                ? "border-teal-line bg-white text-slate-900 shadow-[inset_0_0_0_1px_rgba(47,143,134,0.16)]"
                 : muted
                   ? "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300"
                   : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
             }`}
           >
-            <span className="block text-[13px] font-[680] leading-[1.35]">
+            <span className={`block text-[13px] ${labelWeight} leading-[1.35]`}>
               <GlossaryText text={optionLabel} />
             </span>
             {optionDescription ? (

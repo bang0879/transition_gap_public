@@ -55,7 +55,7 @@ function ScenariosContent() {
         lead="각 시나리오는 추천 순위가 아니라 제도 패키지입니다. 회사가 얻을 효과, 감수할 비용, 당장 검토할 제도를 함께 비교합니다."
         actions={
           <>
-            <Button onClick={() => router.push("/matrix")}>매트릭스로</Button>
+            <Button onClick={() => router.push("/matrix")}>트레이드오프 분석으로</Button>
             <Button variant="primary" onClick={() => router.push(`/roadmap?scenario=${selectedId}`)}>실행 로드맵</Button>
           </>
         }
@@ -68,7 +68,7 @@ function ScenariosContent() {
           <p className="m-0 mt-1 text-[12px] text-slate-500">로드맵에서도 선택은 조정 가능하며, 제도별 도입 순서를 다시 봅니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => router.push("/matrix")}>매트릭스로</Button>
+          <Button onClick={() => router.push("/matrix")}>트레이드오프 분석으로</Button>
           <Button variant="primary" onClick={() => router.push(`/roadmap?scenario=${selectedId}`)}>실행 로드맵</Button>
         </div>
       </section>

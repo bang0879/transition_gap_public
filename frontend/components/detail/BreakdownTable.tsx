@@ -14,6 +14,15 @@ function displayValue(value: string): string {
     .replace(/,\s*/g, " · ");
 }
 
+function formatDisplayValue(value: string): string {
+  const displayed = displayValue(value);
+  const numeric = Number(displayed);
+  if (Number.isFinite(numeric) && numeric >= 0 && numeric <= 10) {
+    return `${Number.isInteger(numeric) ? numeric : numeric.toFixed(1)}점`;
+  }
+  return displayed;
+}
+
 function ImpactBadge({ impact }: { impact: number }) {
   const badge = impact <= -10
     ? { label: "위험", cls: "bg-red-soft text-red border-red/20" }
@@ -48,7 +57,7 @@ export function BreakdownTable({ breakdown }: BreakdownTableProps) {
           {rows.map((item) => (
             <tr key={`${item.factor}-${item.value}`} className="border-t border-slate-100 align-top">
               <td className="px-4 py-3 text-[12px] font-[650] text-slate-800">{item.factor}</td>
-              <td className="px-4 py-3 text-[12px] leading-[1.55] text-slate-600">{displayValue(item.value)}</td>
+              <td className="px-4 py-3 text-[12px] leading-[1.55] text-slate-600">{formatDisplayValue(item.value)}</td>
               <td className="px-4 py-3">
                 <ImpactBadge impact={item.impact} />
               </td>

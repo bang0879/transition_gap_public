@@ -42,16 +42,16 @@ type PackageDecision = "도입" | "보류" | "대체 검토";
 
 const OPERATING_IMAGE: Record<string, { label: string; body: string }> = {
   performance: {
-    label: "Netflix식 고성과, 고책임 운영 이미지",
-    body: "평가 신뢰를 전제로 성과 차등과 보상 메시지를 강하게 연결합니다.",
+    label: "고성과, 고책임 운영 이미지",
+    body: "평가 기준 공개, 리더 간 기준 맞춤, 피드백 기록이 갖춰진 범위에서 성과 차등과 보상 메시지를 연결합니다.",
   },
   community: {
-    label: "Google식 심리적 안전감, 협업 운영 이미지",
-    body: "정기 1:1 면담, 온보딩, 팀 단위 보상을 통해 이탈과 불안을 먼저 낮춥니다.",
+    label: "심리적 안전감, 협업 운영 이미지",
+    body: "정기 1:1, 온보딩 체크인, 팀 단위 보상처럼 반복 가능한 루틴으로 이탈과 불안을 먼저 낮춥니다.",
   },
   elite: {
-    label: "초기 토스식 소수정예, 빠른 실행 이미지",
-    body: "핵심 인재군에 보상과 권한을 집중하고, 내부 형평성 비용을 의식적으로 감수합니다.",
+    label: "소수정예, 빠른 실행 이미지",
+    body: "핵심 인재 정의, 권한 위임 기준, 별도 보상 밴드를 함께 두고 내부 형평성 비용을 의식적으로 관리합니다.",
   },
 };
 
@@ -61,7 +61,26 @@ const REVIEW_PERSPECTIVE: Record<string, string> = {
   elite: "핵심 인재의 생산성과 의사결정 속도를 높이는 것이 가장 중요한 국면에서 검토할 방향입니다. 내부 형평성 메시지와 리스크 관리가 함께 필요합니다.",
 };
 
+const DETAILED_GAIN: Record<string, string> = {
+  performance:
+    "평가 기준과 보상 차등을 함께 선명하게 만들기 때문에, 고성과자가 어떤 행동을 해야 더 크게 보상받는지 이해하기 쉬워집니다. 채용에서도 성과 기준과 보상 메시지가 분명해져 설득력이 올라갑니다.",
+  community:
+    "리더의 1:1, 온보딩, 팀 단위 보상처럼 관계 기반 운영 장치를 먼저 강화하기 때문에 이탈 불안과 초기 적응 실패를 줄이는 효과를 기대할 수 있습니다. 조직 전체의 예측 가능성과 심리적 안정감이 높아집니다.",
+  elite:
+    "핵심 인재군을 좁게 정의하고 보상과 권한을 집중하기 때문에 중요한 역할의 의사결정 속도와 생산성을 빠르게 끌어올릴 수 있습니다. 특히 사업 공백을 막아야 하는 국면에서 효과가 큽니다.",
+};
+
+const DETAILED_COST: Record<string, string> = {
+  performance:
+    "성과 차등을 강하게 적용하려면 평가 기준의 납득 가능성이 먼저 필요합니다. 이 준비 없이 보상 차이를 키우면 평가 불신, 리더 피드백 부담, 인건비 증가가 동시에 커질 수 있습니다.",
+  community:
+    "안정과 수용성을 우선하면 조직 분위기는 좋아지지만, 고성과자에게 돌아가는 차등 보상 신호는 약해질 수 있습니다. 시장 보상이 낮은 상태라면 핵심 인재 이탈 리스크를 별도로 관리해야 합니다.",
+  elite:
+    "소수 핵심 인재에게 자원을 집중하는 만큼 내부 형평성 논란과 비핵심 인력의 이탈 가능성을 감수해야 합니다. 핵심/비핵심 구분 기준이 불명확하면 조직 신뢰가 빠르게 흔들릴 수 있습니다.",
+};
+
 function detailedGain(scenario: ScenarioDetail): string {
+  if (DETAILED_GAIN[scenario.id]) return DETAILED_GAIN[scenario.id];
   const impacts = scenario.impact?.slice(0, 3) ?? [];
   if (impacts.length === 0) return scenario.description;
   return impacts
@@ -70,6 +89,7 @@ function detailedGain(scenario: ScenarioDetail): string {
 }
 
 function detailedCost(scenario: ScenarioDetail): string {
+  if (DETAILED_COST[scenario.id]) return DETAILED_COST[scenario.id];
   const financial = scenario.financial_impact?.[0];
   const warning = scenario.warnings?.[0];
   if (financial && warning) return `${financial.item} ${financial.amount}. ${warning}`;

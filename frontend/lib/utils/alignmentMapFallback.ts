@@ -98,7 +98,7 @@ function axis(
     left_label,
     right_label,
     philosophy_label: sideLabel(philosophy_position, left_label, right_label),
-    philosophy_note: "입력한 인사 철학 기준으로 임시 계산했습니다.",
+    philosophy_note: "입력한 인사철학의 방향을 한 문장으로 요약했습니다.",
     actual_label: sideLabel(actual_position, left_label, right_label),
     policy_direction: policyDirection(actual_position),
     alignment_percent: percent,
@@ -315,7 +315,7 @@ export function buildFallbackAlignmentAxes(responses: Record<string, ResponseVal
       `채용 브랜딩: ${hiringBranding}`,
     ]),
     axis("retention", "인력운영", "조직 안정·원칙", "핵심 인재 예외·사업 공백", retentionPhilosophy, retentionActual, [
-      `핵심 인력 철학: ${asText(responses["L0-4"])}`,
+      `인력운영 철학: ${asText(responses["L0-4"])}`,
       `핵심 인재 기준: ${talentCriteria}`,
       `핵심 포스트 대체 계획: ${succession}`,
     ]),

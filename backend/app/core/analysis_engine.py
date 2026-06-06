@@ -1025,7 +1025,7 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"귀사의 리더십·거버넌스에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"귀사의 리더십에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "의사결정 병목":
@@ -1037,11 +1037,11 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
         else:
             recommendation += "핵심가치를 관찰 가능한 행동 기준으로 바꿔 채용과 평가에 연결하십시오."
     else:
-        recommendation = "리더십·거버넌스는 현재 개선 필요량이 작습니다. 위임 범위와 리더 운영 데이터를 정기 점검하십시오."
+        recommendation = "리더십은 현재 개선 필요량이 작습니다. 위임 범위와 리더 운영 데이터를 정기 점검하십시오."
 
     return AreaAnalysis(
         area_id="leadership",
-        area_name="리더십·거버넌스",
+        area_name="리더십",
         score=score,
         benchmark=benchmark,
         gap=gap,
@@ -1057,7 +1057,7 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
 
 def _calc_leadership_score(responses: dict[str, Any]) -> tuple[int, list[dict[str, Any]]]:
     score = 60
-    breakdown = [_score_item("기본 점수", "-", 60, "리더십·거버넌스 영역 시작점")]
+    breakdown = [_score_item("기본 점수", "-", 60, "리더십 영역 시작점")]
     feedback = responses.get("2-5-1", "")
     if feedback == "대부분 객관적으로 잘 수행함":
         score += 15

@@ -114,7 +114,7 @@ export default function MatrixPage() {
         lead="As-Is는 현재 운영 데이터로 자동 배치하고, To-Be는 회사가 선택한 인재 운영 방향으로 도출합니다. 두 점 사이의 거리가 클수록 제도 변경에 따른 조직의 운영 부담이 커집니다."
         actions={
           <>
-            <Button onClick={() => router.push("/result/detail")}>상세로</Button>
+            <Button onClick={() => router.push("/result/detail")}>상세 분석으로</Button>
             <Button variant="primary" onClick={() => router.push(`/scenarios?scenario=${selectedId}`)}>시나리오 비교</Button>
           </>
         }
@@ -134,13 +134,13 @@ export default function MatrixPage() {
           <div className="py-2 lg:px-4 lg:first:pl-0">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">얻는 것</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
-              선택한 방향이 강화하는 인재 메시지, 보상 원칙, 운영 속도.
+              선택한 방향은 인재 메시지, 보상 원칙, 의사결정 속도를 더 선명하게 만듭니다.
             </p>
           </div>
           <div className="py-3 lg:px-4 lg:py-2">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">감수할 것</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
-              인건비, 평가 갈등, 리더 운영 부담처럼 반대급부로 커지는 비용.
+              반대로 인건비, 평가 갈등, 리더 운영 부담이 커질 수 있습니다.
             </p>
           </div>
           <div className="py-3 lg:px-4 lg:py-2 lg:last:pr-0">

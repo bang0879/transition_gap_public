@@ -141,7 +141,7 @@ export default function PhilosophyProfilePage() {
 
           <section
             className={`rounded-[10px] border p-5 shadow-soft ${
-              hasConflicts ? "border-slate-200 bg-blue-soft" : "border-teal-line bg-teal-soft"
+              hasConflicts ? "border-slate-200 bg-slate-50" : "border-teal-line bg-teal-soft"
             }`}
           >
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -153,7 +153,7 @@ export default function PhilosophyProfilePage() {
                   {hasConflicts ? "실행 단계에서 부딪힐 수 있는 지점이 있습니다." : "대표님의 철학은 일관된 방향을 가리키고 있습니다."}
                 </h2>
               </div>
-              <Badge variant={hasConflicts ? "slate" : "teal"}>{hasConflicts ? "해석 필요" : "일치"}</Badge>
+              <Badge variant={hasConflicts ? "slate" : "teal"}>{hasConflicts ? "정렬 필요" : "일치"}</Badge>
             </div>
 
             {hasConflicts ? (

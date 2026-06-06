@@ -174,7 +174,7 @@ def _compensation_axis(responses: dict[str, Any]) -> AlignmentAxis:
         left_label="차등/파격",
         right_label="균등/안정",
         philosophy_label=_side_label(philosophy, "차등/파격 보상", "균등/안정 보상"),
-        philosophy_note="L0-1 보상 분배 철학에서 도출했습니다.",
+        philosophy_note=_compensation_philosophy_note(responses),
         actual_label=_compensation_actual_label(structure, actual),
         policy_direction=_policy_direction(actual),
         philosophy_position=philosophy,
@@ -284,7 +284,7 @@ def _recruitment_axis(responses: dict[str, Any]) -> AlignmentAxis:
         left_label="외부 수혈/속도",
         right_label="내부 육성/적합성",
         philosophy_label=_side_label(philosophy, "외부 영입/속도 중심", "내부 육성/적합성 중심"),
-        philosophy_note="L0-3 채용 철학에서 도출했습니다.",
+        philosophy_note=_recruitment_philosophy_note(responses),
         actual_label=_recruitment_actual_label(hiring_plan, duration, actual),
         policy_direction=_policy_direction(actual),
         philosophy_position=philosophy,
@@ -336,13 +336,13 @@ def _retention_axis(responses: dict[str, Any]) -> AlignmentAxis:
         left_label="자연 교체 허용",
         right_label="안정 최우선",
         philosophy_label=_side_label(philosophy, "자연 교체 허용", "핵심 인재 보존"),
-        philosophy_note="L0-4 핵심 인력 의사결정 철학에서 도출했습니다.",
+        philosophy_note=_retention_philosophy_note(responses),
         actual_label=_retention_actual_label(turnover, core_loss, actual),
         policy_direction=_policy_direction(actual),
         philosophy_position=philosophy,
         actual_position=actual,
         evidence=[
-            _philosophy_evidence("핵심 인력 철학", responses.get("L0-4")),
+            _philosophy_evidence("인력운영 철학", responses.get("L0-4")),
             f"자발적 이직률: {turnover}",
             f"핵심 인재 이탈: {core_loss}",
             f"핵심 인재 기준: {talent_criteria}",
@@ -379,7 +379,7 @@ def _leadership_axis(responses: dict[str, Any]) -> AlignmentAxis:
         left_label="성과 추적/단호함",
         right_label="관계 관리/심리적 안전",
         philosophy_label=_side_label(philosophy, "성과 추적/단호함", "관계 관리/심리적 안전"),
-        philosophy_note="L0-2 리더십 철학에서 도출했습니다.",
+        philosophy_note=_leadership_philosophy_note(responses),
         actual_label=_leadership_actual_label(feedback, one_on_one, core_values, actual),
         policy_direction=_policy_direction(actual),
         philosophy_position=philosophy,
@@ -519,7 +519,72 @@ def _evaluation_philosophy_note(responses: dict[str, Any]) -> str:
         return "차등 보상을 하려면 정교한 평가가 필요합니다."
     if reward > 0 and leadership < 0:
         return "균등 보상 철학에서는 엄격한 평가는 불필요한 긴장을 만들 수 있습니다."
-    return "L0-1 보상 철학과 L0-2 리더십 철학을 함께 반영했습니다."
+    combined = (reward + leadership) / 2
+    if combined < -0.15:
+        return "회사는 평가 기준을 명확히 세우고 성과 차이를 비교적 엄격하게 다루는 방향을 중시합니다."
+    if combined > 0.15:
+        return "회사는 평가를 통제보다 코칭과 수용성 관리의 장치로 쓰는 방향을 중시합니다."
+    return "회사는 평가의 엄격함과 구성원 수용성 사이의 균형을 중시합니다."
+
+
+def _compensation_philosophy_note(responses: dict[str, Any]) -> str:
+    position = _choice_position(
+        responses.get("L0-1"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("?뚭꺽", "?곸쐞 怨좎꽦怨쇱옄"),
+        b_keywords=("?묒뾽", "?됯퇏 蹂댁긽", "? 湲곗뿬"),
+    )
+    if position < -0.15:
+        return "회사는 핵심 고성과자에게 더 큰 보상을 주는 차등 배분을 중시합니다."
+    if position > 0.15:
+        return "회사는 소수 파격 보상보다 협업과 안정적인 보상 질서를 중시합니다."
+    return "회사는 보상 차등과 안정성 사이의 균형을 중시합니다."
+
+
+def _recruitment_philosophy_note(responses: dict[str, Any]) -> str:
+    position = _choice_position(
+        responses.get("L0-3"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("?몃?", "S湲?", "利됱떆 ?꾨젰"),
+        b_keywords=("?대?", "二쇰땲??", "?≪꽦"),
+    )
+    if position < -0.15:
+        return "회사는 검증된 외부 인재를 빠르게 영입해 성장 속도를 높이는 방향을 중시합니다."
+    if position > 0.15:
+        return "회사는 회사 맥락에 맞는 사람을 내부에서 오래 키우는 방향을 중시합니다."
+    return "회사는 외부 영입과 내부 육성의 균형을 중시합니다."
+
+
+def _retention_philosophy_note(responses: dict[str, Any]) -> str:
+    position = _choice_position(
+        responses.get("L0-4"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("?뺥룊??", "蹂댁긽 ?먯튃", "?먯튃?濡??대낫?몃떎"),
+        b_keywords=("鍮꾩쫰?덉뒪 怨듬갚", "?덉쇅瑜??몄젙", "?뚭꺽?곸쑝濡??〓뒗??"),
+    )
+    if position < -0.15:
+        return "회사는 핵심 인재 예외 보상보다 전체 보상 원칙과 형평성을 우선합니다."
+    if position > 0.15:
+        return "회사는 중요한 역할 공백을 막기 위해 핵심 인재 예외 조치도 감수합니다."
+    return "회사는 형평성과 핵심 인재 보존 사이의 균형을 중시합니다."
+
+
+def _leadership_philosophy_note(responses: dict[str, Any]) -> str:
+    position = _choice_position(
+        responses.get("L0-2"),
+        option_a=-0.75,
+        option_b=0.75,
+        a_keywords=("?깃낵 異붿쟻", "?붿쭅???쇰뱶諛?", "??깃낵"),
+        b_keywords=("1:1", "怨좎땐", "?щ━???덉쟾"),
+    )
+    if position < -0.15:
+        return "회사는 성과 부진을 빠르게 직면하고 기준에 따라 피드백하는 리더십을 중시합니다."
+    if position > 0.15:
+        return "회사는 관계와 심리적 안전을 지키며 구성원을 설득하는 리더십을 중시합니다."
+    return "회사는 성과 직면과 관계 관리의 균형을 중시합니다."
 
 
 def _compensation_actual_label(structure: str, actual_position: float) -> str:

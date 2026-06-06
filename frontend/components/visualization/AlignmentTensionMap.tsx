@@ -8,6 +8,7 @@ import type { AlignmentAxisOut, AlignmentMapConflictOut, AlignmentMapOut } from 
 
 interface AlignmentTensionMapProps {
   map: AlignmentMapOut;
+  showConflicts?: boolean;
 }
 
 type Tone = "teal" | "amber" | "coral" | "slate";
@@ -150,7 +151,14 @@ function axisEvidence(axis: AlignmentAxisOut): string[] {
   return [...summary, ...cleanEvidence].slice(0, 2);
 }
 
-export function AlignmentTensionMap({ map }: AlignmentTensionMapProps) {
+function actualSummary(axis: AlignmentAxisOut): string {
+  if (axis.business_risk && axis.tension_level === "misaligned") {
+    return axis.business_risk;
+  }
+  return `현재 제도는 ${axis.actual_label} 방향으로 작동하는 신호를 보입니다.`;
+}
+
+export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTensionMapProps) {
   const sessionId = useSessionStore((state) => state.sessionId);
   const axes = map.axes ?? [];
   const lowestAxis = useMemo(() => topGapAxes(axes)[0], [axes]);
@@ -233,6 +241,7 @@ export function AlignmentTensionMap({ map }: AlignmentTensionMapProps) {
                 <div>
                   <p className="m-0 text-[11px] font-[760] text-slate-400">현행 제도</p>
                   <p className="m-0 mt-0.5 font-[700] text-slate-800">{axis.actual_label}</p>
+                  <p className="m-0 mt-0.5 line-clamp-3 text-[11px] leading-[1.45] text-slate-500">{actualSummary(axis)}</p>
                 </div>
               </div>
 
@@ -261,7 +270,7 @@ export function AlignmentTensionMap({ map }: AlignmentTensionMapProps) {
         })}
       </div>
 
-      <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+      <div className={`mt-4 grid gap-3 ${showConflicts ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}`}>
         <section className="rounded-[10px] border border-slate-200 bg-white p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -287,6 +296,7 @@ export function AlignmentTensionMap({ map }: AlignmentTensionMapProps) {
           </div>
         </section>
 
+        {showConflicts ? (
         <section className="rounded-[10px] border border-slate-200 bg-white p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">
@@ -330,6 +340,7 @@ export function AlignmentTensionMap({ map }: AlignmentTensionMapProps) {
             )}
           </div>
         </section>
+        ) : null}
       </div>
     </section>
   );
