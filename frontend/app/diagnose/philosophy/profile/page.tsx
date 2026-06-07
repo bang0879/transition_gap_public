@@ -32,7 +32,7 @@ export default function PhilosophyProfilePage() {
     return (
       <AnalysisNotice
         eyebrow="철학 입력 필요"
-        title="대표님의 인사 철학 4개 항목을 먼저 선택해 주세요."
+        title="회사의 인사 철학 4개 항목을 먼저 선택해 주세요."
         body={`현재 ${profile.answeredCount}/4개 항목이 입력되었습니다. 네 가지 기준을 모두 선택하면 철학 간 충돌 여부를 바로 확인할 수 있습니다.`}
       >
         <Button variant="primary" onClick={() => router.push("/diagnose/philosophy")}>
@@ -52,7 +52,7 @@ export default function PhilosophyProfilePage() {
     <>
       <PageHeader
         eyebrow="01-1. 철학 프로필 피드백"
-        title="대표님의 인사 철학이 한 방향을 보고 있는지 먼저 확인합니다."
+        title="회사의 인사 철학이 한 방향을 보고 있는지 먼저 확인합니다."
         lead="이 화면은 답을 고치게 만드는 설문 검사가 아닙니다. 선택한 철학 사이에서 실행 단계에 부딪힐 수 있는 지점을 미리 확인하고, 그 인식 위에서 현행 제도 진단으로 넘어갑니다."
         actions={
           <>
@@ -64,7 +64,7 @@ export default function PhilosophyProfilePage() {
         }
       />
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-5">
           <section className="rounded-[10px] border border-slate-200 bg-white p-5 shadow-soft">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -101,7 +101,7 @@ export default function PhilosophyProfilePage() {
                         <p className={`m-0 text-[11px] font-[760] tracking-[0.08em] ${conflict ? "text-coral" : "text-slate-400"}`}>
                           {item.domain}
                         </p>
-                        {conflict ? <Badge variant="coral">충돌쌍</Badge> : <Badge variant="teal">정렬</Badge>}
+                        {conflict ? <Badge variant="coral">확인 필요</Badge> : <Badge variant="teal">일관</Badge>}
                       </div>
                       <h3 className="m-0 mt-2 text-[16px] font-[700] leading-[1.35] text-slate-900">{item.label}</h3>
                       <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-500">{item.note}</p>
@@ -150,7 +150,7 @@ export default function PhilosophyProfilePage() {
                   철학 간 충돌 확인
                 </p>
                 <h2 className="m-0 mt-2 text-[20px] font-[680] leading-[1.35] text-slate-900">
-                  {hasConflicts ? "실행 단계에서 부딪힐 수 있는 지점이 있습니다." : "대표님의 철학은 일관된 방향을 가리키고 있습니다."}
+                  {hasConflicts ? "실행 단계에서 부딪힐 수 있는 지점이 있습니다." : "회사의 철학은 일관된 방향을 가리키고 있습니다."}
                 </h2>
               </div>
               <Badge variant={hasConflicts ? "slate" : "teal"}>{hasConflicts ? "정렬 필요" : "일치"}</Badge>

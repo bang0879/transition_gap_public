@@ -76,7 +76,7 @@ const DETAILED_COST: Record<string, string> = {
   community:
     "안정과 수용성을 우선하면 조직 분위기는 좋아지지만, 고성과자에게 돌아가는 차등 보상 신호는 약해질 수 있습니다. 시장 보상이 낮은 상태라면 핵심 인재 이탈 리스크를 별도로 관리해야 합니다.",
   elite:
-    "소수 핵심 인재에게 자원을 집중하는 만큼 내부 형평성 논란과 비핵심 인력의 이탈 가능성을 감수해야 합니다. 핵심/비핵심 구분 기준이 불명확하면 조직 신뢰가 빠르게 흔들릴 수 있습니다.",
+    "소수 핵심 인재에게 자원을 집중하는 만큼 내부 형평성 논란과 비핵심 인력의 이탈 가능성을 관리해야 합니다. 핵심/비핵심 구분 기준이 불명확하면 조직 신뢰가 빠르게 흔들릴 수 있습니다.",
 };
 
 function detailedGain(scenario: ScenarioDetail): string {
@@ -166,7 +166,7 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           </p>
         </div>
         <div className="rounded-[10px] border border-[#f0d8cf] bg-[#fff7f4] p-4">
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">감수할 것</p>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">부담/주의점</p>
           <p className="m-0 mt-2 text-[13px] font-[650] leading-[1.65] text-slate-800">
             <GlossaryText text={detailedCost(scenario)} />
           </p>

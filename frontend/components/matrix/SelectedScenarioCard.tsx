@@ -1,3 +1,5 @@
+import { GlossaryText } from "@/components/shared/GlossaryText";
+
 interface ScenarioPackageItem {
   area: string;
   action: string;
@@ -19,21 +21,21 @@ export function SelectedScenarioCard({ name, philosophy, packageItems, gain, cos
     <aside className="rounded-[10px] border border-slate-200 bg-white p-5 print:break-inside-avoid">
       <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">현재 검토 중인 운영 방향</p>
       <h3 className="m-0 mt-2 text-[18px] font-[690] text-slate-900">{name}</h3>
-      <p className="mt-2 text-[12px] leading-[1.65] text-slate-600">{philosophy}</p>
+      <p className="mt-2 text-[12px] leading-[1.65] text-slate-600"><GlossaryText text={philosophy} /></p>
       {reference ? (
         <div className="mt-3 rounded-[9px] border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] leading-[1.55] text-slate-600">
-          참고 예시: <span className="font-[680] text-slate-800">{reference}</span>
+          참고 예시: <span className="font-[680] text-slate-800"><GlossaryText text={reference} /></span>
         </div>
       ) : null}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-[9px] border border-teal-line bg-teal-soft p-3 text-[12px]">
           <strong className="block text-[11px] font-[760] tracking-[0.08em] text-teal-deep">얻는 것</strong>
-          <span className="mt-2 block leading-[1.55] text-slate-700">{gain ?? "선택 방향의 핵심 효과"}</span>
+          <span className="mt-2 block leading-[1.55] text-slate-700"><GlossaryText text={gain ?? "선택 방향의 핵심 효과"} /></span>
         </div>
         <div className="rounded-[9px] border border-[#f0d8cf] bg-[#fff7f4] p-3 text-[12px]">
-          <strong className="block text-[11px] font-[760] tracking-[0.08em] text-coral">감수할 것</strong>
-          <span className="mt-2 block leading-[1.55] text-slate-700">{cost ?? warning ?? "운영 리스크와 비용"}</span>
+          <strong className="block text-[11px] font-[760] tracking-[0.08em] text-coral">부담/주의점</strong>
+          <span className="mt-2 block leading-[1.55] text-slate-700"><GlossaryText text={cost ?? warning ?? "운영 리스크와 비용"} /></span>
         </div>
       </div>
 
@@ -42,7 +44,7 @@ export function SelectedScenarioCard({ name, philosophy, packageItems, gain, cos
         {packageItems.slice(0, 5).map((item) => (
           <div key={`${item.area}-${item.action}`} className="grid grid-cols-[54px_1fr_56px] gap-3 border-t border-slate-100 pt-3 text-[11px] first:border-t-0 first:pt-0">
             <strong className="text-teal-deep">{item.area}</strong>
-            <span className="leading-[1.55] text-slate-600">{item.action}</span>
+            <span className="leading-[1.55] text-slate-600"><GlossaryText text={item.action} /></span>
             <span className="text-right text-slate-400">{item.timeline}</span>
           </div>
         ))}

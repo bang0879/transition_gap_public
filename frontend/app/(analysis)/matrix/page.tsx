@@ -124,11 +124,17 @@ export default function MatrixPage() {
         body="아래 매트릭스는 회사가 선택한 방향(To-Be)과 현재 제도가 실제로 작동하는 위치(As-Is)의 거리를 보여줍니다. 이 거리가 곧 실행 부담이며, 어떤 방향이든 추가로 관리해야 할 비용이 있습니다."
       />
       <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
-        <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+        <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
           <div className="py-2 lg:px-4 lg:first:pl-0">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">읽는 순서</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
               현재 위치를 먼저 보고, To-Be까지의 선 길이로 전환 비용을 봅니다.
+            </p>
+          </div>
+          <div className="py-3 lg:px-4 lg:py-2">
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">A/B 역할</p>
+            <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
+              A는 보상·성과 메시지, B는 의사결정·컬처핏 운영 부담을 나눠 봅니다.
             </p>
           </div>
           <div className="py-2 lg:px-4 lg:first:pl-0">
@@ -146,7 +152,7 @@ export default function MatrixPage() {
           <div className="py-3 lg:px-4 lg:py-2 lg:last:pr-0">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-amber">결정 질문</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
-              지금 이 조직이 가장 먼저 감당할 수 있는 비용은 무엇입니까?
+              다음 화면에서 어떤 실행안을 먼저 검토할지 정합니다.
             </p>
           </div>
         </div>
@@ -211,7 +217,7 @@ export default function MatrixPage() {
         ) : null}
       </div>
       <p className="m-0 mt-3 rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-[12px] leading-[1.65] text-slate-500">
-        매트릭스의 기업 예시는 이해를 돕기 위한 운영 이미지이며, 그대로 따라 하라는 뜻은 아닙니다.
+        매트릭스의 기업 예시는 이해를 돕기 위한 운영 이미지입니다. 이 화면에서는 방향별 부담을 비교하고, 다음 시나리오 화면에서 실제 도입·보류·대체 검토를 정합니다.
       </p>
       <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>

@@ -70,7 +70,7 @@ export default function ContextPage() {
         }
       />
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-5">
           <QuestionBlock title="현재 가장 시급한 HR 페인포인트는 무엇입니까? (최대 2개 선택)" badge={{ label: "핵심 페인", variant: "coral" }}>
             <MultiOptionGrid options={options["L1-1"]} value={responses["L1-1"] as string[] | undefined} onChange={(value) => setResponse("L1-1", value)} maxSelect={2} />

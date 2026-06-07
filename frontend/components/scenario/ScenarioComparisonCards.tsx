@@ -1,5 +1,7 @@
 "use client";
 
+import { GlossaryText } from "@/components/shared/GlossaryText";
+
 interface ScenarioImpact {
   metric: string;
   after: string;
@@ -68,13 +70,13 @@ export function ScenarioComparisonCards({ scenarios, selectedId, onSelect }: Sce
             </div>
             <div className="mt-4 grid gap-2">
               <p className="m-0 rounded-[8px] border border-teal-line bg-white/70 px-3 py-2 text-[12px] leading-[1.55] text-slate-700">
-                <span className="font-[700] text-teal-deep">얻는 것</span>: {impactText(scenario)}
+                <span className="font-[700] text-teal-deep">얻는 것</span>: <GlossaryText text={impactText(scenario)} />
               </p>
               <p className="m-0 rounded-[8px] border border-[#f0d8cf] bg-white/70 px-3 py-2 text-[12px] leading-[1.55] text-slate-700">
-                <span className="font-[700] text-coral">감수할 것</span>: {financialText(scenario)}
+                <span className="font-[700] text-coral">부담/주의점</span>: <GlossaryText text={financialText(scenario)} />
               </p>
               <p className="m-0 rounded-[8px] border border-amber/25 bg-white/70 px-3 py-2 text-[12px] leading-[1.55] text-slate-600">
-                {scenario.warnings?.[0] ?? "운영 리스크를 상세에서 확인합니다."}
+                <GlossaryText text={scenario.warnings?.[0] ?? "운영 리스크를 상세에서 확인합니다."} />
               </p>
             </div>
           </button>

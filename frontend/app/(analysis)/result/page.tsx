@@ -21,6 +21,7 @@ import { logEvent } from "@/lib/api/events";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
+import { buildPhilosophyProfile } from "@/lib/utils/philosophyProfile";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
 import { useDiagnosisHistoryStore } from "@/lib/store/diagnosisHistory";
@@ -113,6 +114,8 @@ export default function ResultPage() {
   const avgScore = Math.round(areas.reduce((sum, area) => sum + area.score, 0) / areas.length);
   const alignmentScore = alignment?.score ?? avgScore;
   const alignmentMap = alignment_map?.axes?.length ? alignment_map : buildFallbackAlignmentMap(responses, areas);
+  const philosophyProfile = buildPhilosophyProfile(responses);
+  const philosophyConflicts = philosophyProfile.conflicts.slice(0, 2);
   const topConflicts = alignment?.conflicts?.slice(0, 2) ?? [];
   const topicAreas = areas.filter((area) => area.gap >= 10).sort((a, b) => b.gap - a.gap);
   const topicCount = topicAreas.length;
@@ -146,7 +149,7 @@ export default function ResultPage() {
       label: "다음 화면에서 확인",
       title: "상세 근거와 트레이드오프",
       value: "상세 분석 → 트레이드오프 분석",
-      body: "원인을 확인한 뒤, 얻는 것과 감수할 것을 비교합니다.",
+      body: "원인을 확인한 뒤, 얻는 것과 부담/주의점을 비교합니다.",
     },
   ];
   const previousSnapshot = snapshots.find((snapshot) => snapshot.sessionId !== sessionId);
@@ -186,6 +189,30 @@ export default function ResultPage() {
         title="회사의 인사철학과 현재 제도가 같은 방향을 보고 있습니까?"
         body="이 단계는 철학과 제도의 방향을 비교합니다. 아래의 필요 기준/벤치마크와는 다른 비교이며, 먼저 회사가 내는 인사 메시지가 일관적인지 확인합니다."
       />
+      {philosophyConflicts.length > 0 ? (
+        <section className="mb-4 rounded-[10px] border border-amber/30 bg-[#fffaf0] p-4 print:break-inside-avoid">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-amber">철학 프로필 상기</p>
+              <h2 className="m-0 mt-2 text-[16px] font-[720] leading-[1.45] text-slate-900">
+                앞 단계에서 {philosophyProfile.conflicts.length}개의 철학 충돌 가능성이 확인되었습니다.
+              </h2>
+              <p className="m-0 mt-2 text-[12px] leading-[1.7] text-slate-600">
+                이 충돌은 답을 고치라는 신호가 아니라, 현행 제도가 어떤 기준을 더 강하게 따라야 하는지 해석하기 위한 기준점입니다.
+              </p>
+            </div>
+            <Badge variant="amber">수정 유도 아님</Badge>
+          </div>
+          <div className="mt-3 grid gap-2 lg:grid-cols-2">
+            {philosophyConflicts.map((conflict) => (
+              <div key={conflict.id} className="rounded-[8px] border border-amber/20 bg-white px-3 py-2">
+                <p className="m-0 text-[12px] font-[700] text-slate-900">{conflict.title}</p>
+                <p className="m-0 mt-1 text-[11px] leading-[1.6] text-slate-500">{conflict.implication}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
       <CompanyContextBar companyName={companyName} responses={responses} />
 
       <AlignmentTensionMap map={alignmentMap} showConflicts={false} />

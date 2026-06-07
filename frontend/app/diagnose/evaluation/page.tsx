@@ -153,7 +153,7 @@ export default function EvaluationPage() {
         }
       />
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-5">
           <SectionLabel
             title="평가 운영"

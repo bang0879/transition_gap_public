@@ -91,7 +91,7 @@ function labelFor(id: PhilosophySummaryItem["id"], answer: PhilosophyAnswer): Pi
   return answer === "A"
     ? { domain: "인력운영", label: "자연 교체 허용 / 원칙 유지", note: "한 사람에게 과도하게 의존하지 않는 조직 원칙을 중시합니다." }
     : answer === "B"
-      ? { domain: "인력운영", label: "핵심 인재 반드시 보존", note: "핵심 역할 공백을 막기 위해 예외적 조치도 감수하는 방향입니다." }
+      ? { domain: "인력운영", label: "핵심 인재 반드시 보존", note: "핵심 역할 공백을 막기 위해 예외적 조치도 검토하는 방향입니다." }
       : { domain: "인력운영", label: "미입력", note: "핵심 인력 운영 철학 선택이 필요합니다." };
 }
 

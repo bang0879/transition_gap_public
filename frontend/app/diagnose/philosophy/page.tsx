@@ -31,7 +31,7 @@ export default function PhilosophyPage() {
         }
       />
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-5">
           {PHILOSOPHY_QUESTIONS.map((question) => (
             <QuestionBlock key={question.id} title={question.title} badge={{ label: "철학 기준", variant: "slate" }}>

@@ -48,7 +48,7 @@ export default function RewardsPage() {
         }
       />
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-5">
           <QuestionBlock title="현재 우리 회사의 실제 보상 체계에 가장 가까운 모습은 무엇입니까?" help={QUESTION_HELP["2-3-2"]} badge={{ label: "가시성 항목", variant: "teal" }}>
             <OptionGrid options={options["2-3-2"]} value={responses["2-3-2"] as string | undefined} onChange={(value) => setResponse("2-3-2", value)} mutedOption="직군별로 섞여 있는 혼합형" />

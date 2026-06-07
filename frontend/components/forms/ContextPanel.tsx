@@ -10,7 +10,7 @@ export function ContextPanel({
   stats,
 }: ContextPanelProps) {
   return (
-    <aside className="h-fit rounded-card border border-slate-200 bg-white p-5 shadow-soft xl:sticky xl:top-9">
+    <aside className="h-fit self-start rounded-card border border-slate-200 bg-white p-5 shadow-soft lg:sticky lg:top-6">
       <h3 className="mb-2 text-[13px] font-[680] text-slate-900">{title}</h3>
       <p className="mb-4 text-[12px] leading-[1.6] text-slate-500">{description}</p>
       {stats ? (

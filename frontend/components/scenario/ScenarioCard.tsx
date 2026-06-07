@@ -1,5 +1,7 @@
 "use client";
 
+import { GlossaryText } from "@/components/shared/GlossaryText";
+
 interface ScenarioCardProps {
   id: string;
   name: string;
@@ -29,24 +31,24 @@ export function ScenarioCard({ id, name, subtitle, description, gain, cost, refe
         <span className={`rounded-full border px-[8px] py-[3px] text-[11px] font-[680] ${
           selected ? "border-teal-line bg-white text-teal-deep" : "border-slate-200 bg-slate-50 text-slate-400"
         }`}>
-          {statusLabel ?? (selected ? "선택됨" : "비교 후보")}
+          {statusLabel ?? (selected ? "검토 중" : "비교 후보")}
         </span>
       </div>
       <h3 className="m-0 mt-3 text-[18px] font-[690] text-slate-900">{name}</h3>
-      <p className="m-0 mt-3 text-[12px] leading-[1.7] text-slate-600">{description}</p>
+      <p className="m-0 mt-3 text-[12px] leading-[1.7] text-slate-600"><GlossaryText text={description} /></p>
       <div className="mt-4 grid gap-2 border-t border-slate-100 pt-3 text-[11px]">
-        <div className="grid grid-cols-[64px_1fr] gap-2">
+        <div className="grid grid-cols-[76px_1fr] gap-2">
           <strong className="text-teal-deep">얻는 것</strong>
-          <span className="leading-[1.55] text-slate-600">{gain ?? "핵심 효과를 상세에서 확인합니다."}</span>
+          <span className="leading-[1.55] text-slate-600"><GlossaryText text={gain ?? "핵심 효과를 상세에서 확인합니다."} /></span>
         </div>
-        <div className="grid grid-cols-[64px_1fr] gap-2">
-          <strong className="text-coral">감수할 것</strong>
-          <span className="leading-[1.55] text-slate-600">{cost ?? "운영 리스크를 상세에서 확인합니다."}</span>
+        <div className="grid grid-cols-[76px_1fr] gap-2">
+          <strong className="text-coral">부담/주의점</strong>
+          <span className="leading-[1.55] text-slate-600"><GlossaryText text={cost ?? "운영 리스크를 상세에서 확인합니다."} /></span>
         </div>
       </div>
       {reference ? (
         <div className="mt-3 rounded-[8px] border border-slate-200 bg-white px-3 py-2 text-[11px] leading-[1.5] text-slate-500">
-          참고 운영 이미지: <span className="font-[680] text-slate-700">{reference}</span>
+          참고 운영 이미지: <span className="font-[680] text-slate-700"><GlossaryText text={reference} /></span>
         </div>
       ) : null}
     </button>

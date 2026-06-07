@@ -150,7 +150,7 @@ export default function WorkforcePage() {
         }
       />
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_320px]">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-5">
           <SectionLabel
             title="인력운영 안정성"
