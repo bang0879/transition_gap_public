@@ -3,6 +3,15 @@
 import { useEffect, useMemo } from "react";
 import { Badge } from "@/components/shared/Badge";
 import { logEvent } from "@/lib/api/events";
+import {
+  alignmentPercent,
+  displayAhaDomainName,
+  getEntanglementMessage,
+  getMirrorSentence,
+  scoreTone,
+  statusLabel,
+  topGapAxis,
+} from "@/lib/constants/ahaMoment";
 import { useSessionStore } from "@/lib/store/session";
 import type { AlignmentAxisOut, AlignmentMapConflictOut, AlignmentMapOut } from "@/lib/types/api";
 
@@ -12,6 +21,7 @@ interface AlignmentTensionMapProps {
 }
 
 type Tone = "teal" | "amber" | "coral" | "slate";
+type DirectionGroup = "성과주의" | "공동체";
 
 const STATUS_META: Record<
   AlignmentAxisOut["status_label"],
@@ -37,37 +47,10 @@ const STATUS_META: Record<
   },
 };
 
-function displayDomainName(name: string): string {
-  if (name === "인력") return "인력운영";
-  if (name === "인재") return "채용";
-  return name;
-}
-
 function cleanText(value: string | null | undefined): string | null {
   if (!value) return null;
   if (value.includes("�") || /[占챙챠챘챗]/.test(value)) return null;
   return value;
-}
-
-function alignmentPercent(axis: AlignmentAxisOut): number {
-  if (typeof axis.alignment_percent === "number") {
-    return Math.max(0, Math.min(100, Math.round(axis.alignment_percent)));
-  }
-  return Math.max(0, Math.min(100, Math.round((1 - axis.tension / 2) * 100)));
-}
-
-function statusLabel(axis: AlignmentAxisOut): AlignmentAxisOut["status_label"] {
-  if (axis.status_label) return axis.status_label;
-  const percent = alignmentPercent(axis);
-  if (percent >= 80) return "일치";
-  if (percent >= 50) return "주의";
-  return "심각";
-}
-
-function scoreVariant(score: number): Tone {
-  if (score >= 80) return "teal";
-  if (score >= 55) return "amber";
-  return "coral";
 }
 
 function topGapAxes(axes: AlignmentAxisOut[]): AlignmentAxisOut[] {
@@ -77,10 +60,10 @@ function topGapAxes(axes: AlignmentAxisOut[]): AlignmentAxisOut[] {
 function conflictFallback(axis: AlignmentAxisOut): AlignmentMapConflictOut {
   return {
     id: `${axis.domain_id}_alignment_gap`,
-    title: `${displayDomainName(axis.domain_name)} 제도의 정합성 괴리가 큽니다.`,
+    title: `${displayAhaDomainName(axis)} 제도의 정합성 괴리가 큽니다.`,
     detail:
       axis.business_risk ??
-      `${displayDomainName(axis.domain_name)}에서 회사의 인사 철학과 실제 운영 방식이 서로 다른 신호를 보내고 있습니다.`,
+      `${displayAhaDomainName(axis)}에서 회사의 인사 철학과 실제 운영 방식이 서로 다른 신호를 보내고 있습니다.`,
     domains: [axis.domain_id],
     severity: axis.tension_level,
   };
@@ -114,13 +97,17 @@ function conflictTone(conflict: AlignmentMapConflictOut, axes: AlignmentAxisOut[
   return "slate";
 }
 
-function policyGroups(axes: AlignmentAxisOut[]): Record<AlignmentAxisOut["policy_direction"], AlignmentAxisOut[]> {
+function directionGroup(value: string): DirectionGroup {
+  return value.includes("성과") || value.includes("시장") ? "성과주의" : "공동체";
+}
+
+function policyGroups(axes: AlignmentAxisOut[]): Record<DirectionGroup, AlignmentAxisOut[]> {
   return axes.reduce(
     (groups, axis) => {
-      groups[axis.policy_direction].push(axis);
+      groups[directionGroup(axis.policy_direction)].push(axis);
       return groups;
     },
-    { 성과주의: [], 공동체: [] } as Record<AlignmentAxisOut["policy_direction"], AlignmentAxisOut[]>,
+    { 성과주의: [], 공동체: [] } as Record<DirectionGroup, AlignmentAxisOut[]>,
   );
 }
 
@@ -138,7 +125,7 @@ function directionSummary(axes: AlignmentAxisOut[]): string {
 
   const majority = performanceCount >= communityCount ? "성과주의" : "공동체";
   const minority = majority === "성과주의" ? "공동체" : "성과주의";
-  const minorityAxes = groups[minority].map((axis) => displayDomainName(axis.domain_name)).join(", ");
+  const minorityAxes = groups[minority].map((axis) => displayAhaDomainName(axis)).join(", ");
   return `현재 제도는 ${majority} 방향이 우세하지만, ${minorityAxes}은 ${minority} 방향으로 작동합니다. 이 영역들이 현장에서 다른 인사 메시지로 읽힐 수 있습니다.`;
 }
 
@@ -158,10 +145,20 @@ function actualSummary(axis: AlignmentAxisOut): string {
   return `현재 제도는 ${axis.actual_label} 방향으로 작동하는 신호를 보입니다.`;
 }
 
+function decisionQuestion(axis: AlignmentAxisOut): string {
+  const domain = displayAhaDomainName(axis);
+  if (domain === "보상") return "보상 메시지가 실제로 붙잡고 싶은 인재와 맞습니까?";
+  if (domain === "평가") return "평가 기준이 보상과 피드백을 설명할 만큼 선명합니까?";
+  if (domain === "채용") return "채용 메시지가 회사가 원하는 인재상과 같은 방향입니까?";
+  if (domain === "인력운영") return "핵심 인재를 지키는 기준과 예외 원칙이 분명합니까?";
+  if (domain === "리더십") return "리더의 의사결정 방식이 회사가 원하는 문화와 맞습니까?";
+  return `${domain}에서 철학과 실제 운영 기준이 같은 방향인지 확인해야 합니다.`;
+}
+
 export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTensionMapProps) {
   const sessionId = useSessionStore((state) => state.sessionId);
   const axes = map.axes ?? [];
-  const lowestAxis = useMemo(() => topGapAxes(axes)[0], [axes]);
+  const lowestAxis = useMemo(() => topGapAxis(axes), [axes]);
   const misalignedCount = axes.filter((axis) => statusLabel(axis) === "심각").length;
   const conflicts = useMemo(() => conflictsForDisplay(map, axes), [map, axes]);
   const groups = useMemo(() => policyGroups(axes), [axes]);
@@ -207,9 +204,33 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
           <p className="m-0 mt-1 text-[34px] font-[720] leading-none text-slate-900">
             {map.alignment_score}%
           </p>
-          <Badge variant={scoreVariant(map.alignment_score)}>{cleanText(map.alignment_level) ?? "정합성 확인"}</Badge>
+          <Badge variant={scoreTone(map.alignment_score)}>{cleanText(map.alignment_level) ?? "정합성 확인"}</Badge>
         </div>
       </div>
+
+      {lowestAxis ? (
+        <div className="mb-4 grid gap-3 rounded-[10px] border border-[#f0d8cf] bg-[#fff7f4] p-4 lg:grid-cols-[1fr_1.2fr]">
+          <div>
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">가장 큰 엇박자</p>
+            <p className="m-0 mt-2 text-[17px] font-[760] leading-[1.45] text-slate-900">
+              {displayAhaDomainName(lowestAxis)} 정합 {alignmentPercent(lowestAxis)}%
+            </p>
+            <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
+              회사가 말하는 방향은 <strong className="font-[760] text-slate-800">{lowestAxis.philosophy_label}</strong>,
+              실제 제도는 <strong className="font-[760] text-slate-800">{lowestAxis.actual_label}</strong>에 가깝습니다.
+            </p>
+          </div>
+          <div className="rounded-[8px] border border-coral/20 bg-white px-3 py-2">
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">대표가 먼저 물어야 할 질문</p>
+            <p className="m-0 mt-2 text-[14px] font-[700] leading-[1.55] text-slate-900">
+              {decisionQuestion(lowestAxis)}
+            </p>
+            <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
+              이 질문에 답하지 않으면 제도 개선이 채용, 평가, 보상 중 한쪽만 바꾸는 일반론으로 흐를 수 있습니다.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-3 lg:grid-cols-5">
         {axes.map((axis) => {
@@ -217,6 +238,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
           const status = statusLabel(axis);
           const meta = STATUS_META[status];
           const evidence = axisEvidence(axis);
+          const mirror = getMirrorSentence(axis);
 
           return (
             <article
@@ -225,7 +247,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <h3 className="m-0 text-[15px] font-[760] leading-[1.35] text-slate-900">
-                  {displayDomainName(axis.domain_name)}
+                  {displayAhaDomainName(axis)}
                 </h3>
                 <Badge variant={meta.variant}>{meta.label}</Badge>
               </div>
@@ -236,6 +258,11 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
                   <p className="m-0 mt-0.5 font-[700] text-slate-800">{axis.philosophy_label}</p>
                   {axis.philosophy_note ? (
                     <p className="m-0 mt-0.5 text-[11px] leading-[1.45] text-slate-500">{axis.philosophy_note}</p>
+                  ) : null}
+                  {mirror ? (
+                    <p className="m-0 mt-2 rounded-[7px] border border-coral/15 bg-[#fff7f4] px-2 py-1.5 text-[11px] font-[650] leading-[1.5] text-slate-700">
+                      {mirror}
+                    </p>
                   ) : null}
                 </div>
                 <div>
@@ -288,7 +315,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
                 <p className="m-0 text-[11px] font-[760] text-slate-400">{direction} 방향</p>
                 <p className="m-0 mt-1 text-[13px] font-[700] leading-[1.45] text-slate-800">
                   {groups[direction].length > 0
-                    ? `${groups[direction].map((axis) => displayDomainName(axis.domain_name)).join(", ")} (${groups[direction].length}개)`
+                    ? `${groups[direction].map((axis) => displayAhaDomainName(axis)).join(", ")} (${groups[direction].length}개)`
                     : "해당 영역 없음"}
                 </p>
               </div>
@@ -311,7 +338,8 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
                 const relatedDomains = conflict.domains
                   .map((domainId) => axes.find((axis) => axis.domain_id === domainId))
                   .filter((axis): axis is AlignmentAxisOut => Boolean(axis))
-                  .map((axis) => displayDomainName(axis.domain_name));
+                  .map((axis) => displayAhaDomainName(axis));
+                const entanglement = getEntanglementMessage(conflict);
 
                 return (
                   <article key={conflict.id} className="rounded-[8px] border border-slate-200 bg-white p-3">
@@ -324,11 +352,11 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
                       />
                       {relatedDomains.length > 0 ? <Badge variant={tone}>{relatedDomains.join(" ↔ ")}</Badge> : null}
                       <h3 className="m-0 text-[13px] font-[720] leading-[1.45] text-slate-900">
-                        {conflict.title}
+                        {entanglement?.title ?? conflict.title}
                       </h3>
                     </div>
                     <p className="m-0 text-[12px] leading-[1.65] text-slate-600">
-                      {conflict.detail}
+                      {entanglement?.body ?? conflict.detail}
                     </p>
                   </article>
                 );

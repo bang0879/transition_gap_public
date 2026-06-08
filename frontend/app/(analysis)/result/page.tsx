@@ -20,6 +20,14 @@ import { AlignmentTensionMap } from "@/components/visualization/AlignmentTension
 import { logEvent } from "@/lib/api/events";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
+import {
+  alignmentPercent as ahaAlignmentPercent,
+  displayAhaDomainName,
+  getMirrorSentence,
+  getPrimaryScenario,
+  scoreTone,
+  topGapAxis,
+} from "@/lib/constants/ahaMoment";
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
 import { buildPhilosophyProfile } from "@/lib/utils/philosophyProfile";
 import { useResponsesStore } from "@/lib/store/responses";
@@ -114,6 +122,9 @@ export default function ResultPage() {
   const avgScore = Math.round(areas.reduce((sum, area) => sum + area.score, 0) / areas.length);
   const alignmentScore = alignment?.score ?? avgScore;
   const alignmentMap = alignment_map?.axes?.length ? alignment_map : buildFallbackAlignmentMap(responses, areas);
+  const ahaAxis = topGapAxis(alignmentMap.axes ?? []);
+  const ahaMirror = ahaAxis ? getMirrorSentence(ahaAxis) : null;
+  const ahaScenario = ahaAxis ? getPrimaryScenario(ahaAxis) : null;
   const philosophyProfile = buildPhilosophyProfile(responses);
   const philosophyConflicts = philosophyProfile.conflicts.slice(0, 2);
   const topConflicts = alignment?.conflicts?.slice(0, 2) ?? [];
@@ -158,7 +169,7 @@ export default function ResultPage() {
   const visibilityDelta = latestSnapshot && previousSnapshot ? latestSnapshot.visibilityScore - previousSnapshot.visibilityScore : null;
 
   const formatDelta = (delta: number | null) => {
-    if (delta === null) return "첫 기록";
+    if (delta === null) return "비교 기준 없음";
     if (delta > 0) return `+${delta}점`;
     if (delta < 0) return `${delta}점`;
     return "변화 없음";
@@ -182,6 +193,43 @@ export default function ResultPage() {
         }
       />
 
+      {ahaAxis ? (
+        <section className="mb-4 rounded-[12px] border border-coral/25 bg-[#fff7f4] p-5 shadow-soft print:break-inside-avoid">
+          <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-stretch">
+            <div className="rounded-[10px] border border-coral/20 bg-white px-4 py-3">
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">진단 핵심 요약</p>
+              <p className="m-0 mt-3 text-[13px] font-[700] leading-[1.45] text-slate-700">
+                {companyName || "우리 회사"}의 인사제도 정합도
+              </p>
+              <div className="mt-2 flex items-end gap-2">
+                <strong className="text-[42px] font-[760] leading-none text-slate-900">{alignmentMap.alignment_score}</strong>
+                <span className="pb-1 text-[15px] font-[700] text-slate-500">%</span>
+              </div>
+              <Badge variant={scoreTone(alignmentMap.alignment_score)}>{alignmentMap.alignment_level}</Badge>
+            </div>
+            <div className="grid gap-3">
+              <div>
+                <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">가장 큰 괴리</p>
+                <h2 className="m-0 mt-1 text-[20px] font-[760] leading-[1.35] text-slate-900">
+                  {displayAhaDomainName(ahaAxis)} 영역 · 정합 {ahaAlignmentPercent(ahaAxis)}%
+                </h2>
+              </div>
+              {ahaMirror ? (
+                <p className="m-0 rounded-[9px] border border-coral/20 bg-white px-3 py-2 text-[13px] font-[650] leading-[1.7] text-slate-800">
+                  {ahaMirror}
+                </p>
+              ) : null}
+              {ahaScenario ? (
+                <p className="m-0 rounded-[9px] border border-amber/25 bg-white px-3 py-2 text-[12px] leading-[1.65] text-slate-600">
+                  <span className="font-[760] text-amber">이 상태가 유지되면: </span>
+                  {ahaScenario}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <ResultReadingFlow />
 
       <ResultStepHeader
@@ -201,7 +249,7 @@ export default function ResultPage() {
                 이 충돌은 답을 고치라는 신호가 아니라, 현행 제도가 어떤 기준을 더 강하게 따라야 하는지 해석하기 위한 기준점입니다.
               </p>
             </div>
-            <Badge variant="amber">수정 유도 아님</Badge>
+            <Badge variant="amber">참고</Badge>
           </div>
           <div className="mt-3 grid gap-2 lg:grid-cols-2">
             {philosophyConflicts.map((conflict) => (
@@ -264,31 +312,33 @@ export default function ResultPage() {
         />
       </div>
 
-      <section className="mb-[18px] rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="m-0 text-[14px] font-[690] text-slate-900">반복 진단 변화 추적</p>
-            <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
-              같은 브라우저에서 저장된 최근 진단과 비교해 정합성, 가시성, 최우선 논의 영역 변화를 확인합니다.
-            </p>
+      {previousSnapshot ? (
+        <section className="mb-[18px] rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="m-0 text-[14px] font-[690] text-slate-900">최근 진단 대비 변화</p>
+              <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
+                같은 브라우저에 저장된 이전 진단과 비교해 정합성, 가시성, 최우선 논의 영역 변화를 확인합니다.
+              </p>
+            </div>
+            <Badge variant="slate">최근 기록 비교</Badge>
           </div>
-          <Badge variant="slate">{previousSnapshot ? "최근 기록 비교" : "첫 진단 기록"}</Badge>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-            <p className="m-0 text-[11px] font-[760] text-slate-400">정합성 변화</p>
-            <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(alignmentDelta)}</strong>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="m-0 text-[11px] font-[760] text-slate-400">정합성 변화</p>
+              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(alignmentDelta)}</strong>
+            </div>
+            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="m-0 text-[11px] font-[760] text-slate-400">가시성 변화</p>
+              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(visibilityDelta)}</strong>
+            </div>
+            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
+              <p className="m-0 text-[11px] font-[760] text-slate-400">이전 우선 영역</p>
+              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{previousSnapshot.topGapArea}</strong>
+            </div>
           </div>
-          <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-            <p className="m-0 text-[11px] font-[760] text-slate-400">가시성 변화</p>
-            <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(visibilityDelta)}</strong>
-          </div>
-          <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-            <p className="m-0 text-[11px] font-[760] text-slate-400">최근 우선 영역</p>
-            <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{previousSnapshot?.topGapArea ?? topGapArea?.area_name ?? "저장 대기"}</strong>
-          </div>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <div className="mb-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">

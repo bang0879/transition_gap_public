@@ -65,7 +65,7 @@ function ScenariosContent() {
       <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <p className="m-0 text-[13px] font-[690] text-slate-900">검토할 방향을 골랐다면 12개월 실행 순서로 바꿉니다.</p>
-          <p className="m-0 mt-1 text-[12px] text-slate-500">로드맵에서도 선택은 조정 가능하며, 제도별 도입 순서를 다시 봅니다.</p>
+          <p className="m-0 mt-1 text-[12px] text-slate-500">로드맵은 현재 검토 중인 시나리오를 12개월 실행 순서로 정리합니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => router.push("/matrix")}>트레이드오프 분석으로</Button>
