@@ -13,6 +13,11 @@ import { QUESTION_HELP } from "@/lib/constants/questionHelp";
 
 const options = {
   "2-3-2": [
+    {
+      label: "입사·협상 때마다 개별 결정",
+      value: "입사·협상 때마다 개별 결정",
+      description: "역할/레벨별 기준보다 개별 협상과 대표 판단이 크게 작동합니다.",
+    },
     "기본급 위주의 안정형",
     "인센티브 위주의 성과연동형",
     "스톡옵션 중심의 장기비전형",

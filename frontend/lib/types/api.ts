@@ -131,11 +131,25 @@ export interface InsightOut {
   source: string;
 }
 
+export type DiagnosisMode = "foundation" | "alignment" | "hybrid";
+
+export interface DiagnosisSignalOut {
+  id: string;
+  domain_id: string;
+  domain_name: string;
+  title: string;
+  detail: string;
+  severity: "low" | "medium" | "high" | string;
+}
+
 export interface DiagnoseResponse {
   areas: AreaAnalysisOut[];
   visibility: VisibilityOut;
   matrix: MatrixOut;
   alignment: AlignmentOut;
   alignment_map?: AlignmentMapOut;
+  diagnosis_mode?: DiagnosisMode;
+  foundation_signals?: DiagnosisSignalOut[];
+  alignment_signals?: DiagnosisSignalOut[];
   insights: InsightOut[];
 }

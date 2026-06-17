@@ -238,6 +238,8 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
     tags: list[str] = []
     if comp_philosophy <= 2:
         tags.append("비금전적 보상 중심")
+    if _is_ad_hoc_compensation(comp_structure):
+        tags.append("보상 기준 부재")
     if market_position in ("하위", "중위"):
         tags.append(f"시장 {market_position}")
     if _is_high_cost_ratio(cost_ratio):
@@ -246,6 +248,15 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
     issues: list[Issue] = []
     eval_link = _as_int(responses.get("2-4-2"), 3)
     eval_active = _is_evaluation_active(responses.get("2-4-1a"))
+
+    if _is_ad_hoc_compensation(comp_structure):
+        issues.append(
+            Issue(
+                "보상 기준 부재",
+                "보상 판단이 입사자별 협상과 개별 판단에 의존하면 같은 역할 안에서도 형평성 이슈가 뒤늦게 드러날 수 있습니다.",
+                "high",
+            )
+        )
 
     if eval_link <= 2 and eval_active:
         issues.append(
@@ -298,7 +309,9 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
             f"귀사의 보상 구조에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
-        if market_position in ("하위", "중위"):
+        if issues[0].title == "보상 기준 부재":
+            recommendation += "전체 연봉 테이블을 한 번에 만들기보다 역할별 기준 범위와 예외 승인 원칙부터 정리하십시오."
+        elif market_position in ("하위", "중위"):
             recommendation += "1단계로 밴드형 급여와 제한적 성과급을 설계해 오퍼 경쟁력부터 회복하십시오."
         else:
             recommendation += "성과급 운영 원칙을 명확히 해 보상-성과 연동을 점진적으로 강화하십시오."
@@ -355,7 +368,11 @@ def _calc_compensation_score(responses: dict[str, Any]) -> tuple[int, list[dict[
         score -= 5
         breakdown.append(_score_item("인건비 비중", cost, -5, "높은 고정비 부담"))
 
-    if "단기 성과형" in str(responses.get("2-3-2", "")):
+    structure = str(responses.get("2-3-2", ""))
+    if _is_ad_hoc_compensation(structure):
+        score -= 12
+        breakdown.append(_score_item("보상 구조", structure, -12, "역할/레벨 기준보다 개별 협상 의존"))
+    elif "단기 성과형" in structure:
         score += 5
         breakdown.append(_score_item("보상 구조", responses.get("2-3-2", ""), 5, "성과급 구조 존재"))
 
@@ -1210,6 +1227,7 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
     """이슈의 트리거 근거를 CEO가 납득할 수 있는 자연어로 반환한다."""
     reasons = {
         "보상-성과 연동 부재": "평가는 하고 있지만 그 결과가 보상에 반영되지 않는",
+        "보상 기준 부재": "보상 결정이 역할별 기준보다 입사·협상 상황에 따라 달라지는",
         "시장 경쟁력 열위": "같은 포지션 경쟁사 대비 보상이 밀리는",
         "인건비 효율성 저하": "인건비는 올라가는데 성과와 연결되지 않아 투자가 아닌 비용으로만 쌓이는",
         "성과급 구조 부재": "고성과자에게 줄 명확한 upside가 없는",
@@ -1281,6 +1299,11 @@ def _is_aggressive_hiring(value: Any) -> bool:
 
 def _is_high_cost_ratio(value: Any) -> bool:
     return value in ("35~50%", "50% 초과", "50% 이상")
+
+
+def _is_ad_hoc_compensation(value: Any) -> bool:
+    text = str(value or "")
+    return "입사·협상" in text or "정해진 보상 체계 없음" in text or "개별 결정" in text
 
 
 def _has_offer_rejection(value: Any) -> bool:

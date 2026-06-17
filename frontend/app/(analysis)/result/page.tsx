@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { GapBarList } from "@/components/visualization/GapBarList";
 import { InsightCard } from "@/components/result/InsightCard";
 import { CompanyContextBar } from "@/components/result/CompanyContextBar";
+import { DiagnosisModeSummary } from "@/components/result/DiagnosisModeSummary";
 import { AlignmentOperatingRisk } from "@/components/result/AlignmentOperatingRisk";
 import { BenchmarkHelp } from "@/components/result/BenchmarkHelp";
 import { MemoBlock } from "@/components/result/MemoBlock";
@@ -69,6 +70,7 @@ export default function ResultPage() {
         alignment_map_score: data.alignment_map?.alignment_score,
         alignment_map_level: data.alignment_map?.alignment_level,
         alignment_map_dispersion: data.alignment_map?.dispersion,
+        diagnosis_mode: data.diagnosis_mode,
         max_tension_domain: maxTensionAxis?.domain_id,
         misaligned_count: axes.filter((axis) => axis.tension_level === "misaligned").length,
       },
@@ -119,6 +121,9 @@ export default function ResultPage() {
   }
 
   const { areas, visibility, insights, alignment, alignment_map } = data;
+  const diagnosisMode = data.diagnosis_mode ?? "alignment";
+  const foundationSignals = data.foundation_signals ?? [];
+  const alignmentSignals = data.alignment_signals ?? [];
   const avgScore = Math.round(areas.reduce((sum, area) => sum + area.score, 0) / areas.length);
   const alignmentScore = alignment?.score ?? avgScore;
   const alignmentMap = alignment_map?.axes?.length ? alignment_map : buildFallbackAlignmentMap(responses, areas);
@@ -184,7 +189,13 @@ export default function ResultPage() {
             {companyName ? <span className="text-teal-deep">{companyName}</span> : "우리 회사"} 인사제도 정합성 진단결과 요약
           </>
         }
-        lead="이 화면은 잘한 점수를 보여주는 대시보드가 아니라, 회사가 어디부터 제도를 정렬할지 결정하기 위한 첫 장입니다."
+        lead={
+          diagnosisMode === "foundation"
+            ? "이 화면은 잘한 점수를 보여주는 대시보드가 아니라, 지금 규모에서 먼저 만들어야 할 운영 기준을 확인하는 첫 장입니다."
+            : diagnosisMode === "hybrid"
+              ? "이 화면은 없는 기준과 어긋난 제도를 구분해, 무엇을 먼저 정리할지 결정하기 위한 첫 장입니다."
+              : "이 화면은 잘한 점수를 보여주는 대시보드가 아니라, 회사가 어디부터 제도를 정렬할지 결정하기 위한 첫 장입니다."
+        }
         actions={
           <>
             <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
@@ -193,7 +204,15 @@ export default function ResultPage() {
         }
       />
 
-      {ahaAxis ? (
+      {diagnosisMode !== "alignment" ? (
+        <DiagnosisModeSummary
+          mode={diagnosisMode}
+          companyName={companyName}
+          headcount={responses["L1-2"] as string | undefined}
+          foundationSignals={foundationSignals}
+          alignmentSignals={alignmentSignals}
+        />
+      ) : ahaAxis ? (
         <section className="mb-4 rounded-[12px] border border-coral/25 bg-[#fff7f4] p-5 shadow-soft print:break-inside-avoid">
           <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-stretch">
             <div className="rounded-[10px] border border-coral/20 bg-white px-4 py-3">

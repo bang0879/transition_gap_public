@@ -10,6 +10,7 @@ from fastapi import APIRouter
 from app.core.alignment_engine import analyze_alignment
 from app.core.alignment_map import analyze_alignment_map
 from app.core.analysis_engine import analyze_all_areas, get_cross_domain_insights
+from app.core.diagnosis_mode import analyze_diagnosis_mode
 from app.core.trade_off import calc_to_be_coordinates, calculate_coordinates
 from app.core.visibility_index import calculate_visibility_index
 from app.schemas.analysis import (
@@ -21,6 +22,7 @@ from app.schemas.analysis import (
     AlignmentOut,
     AreaAnalysisOut,
     BlindSpotTip,
+    DiagnosisSignalOut,
     DiagnoseResponse,
     InsightOut,
     IssueOut,
@@ -197,6 +199,32 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
             for conflict in alignment_map.conflicts
         ],
     )
+    diagnosis_mode = analyze_diagnosis_mode(
+        responses,
+        [*alignment.conflicts, *alignment_map.conflicts],
+    )
+    foundation_signals_out = [
+        DiagnosisSignalOut(
+            id=signal.id,
+            domain_id=signal.domain_id,
+            domain_name=signal.domain_name,
+            title=signal.title,
+            detail=signal.detail,
+            severity=signal.severity,
+        )
+        for signal in diagnosis_mode.foundation_signals
+    ]
+    alignment_signals_out = [
+        DiagnosisSignalOut(
+            id=signal.id,
+            domain_id=signal.domain_id,
+            domain_name=signal.domain_name,
+            title=signal.title,
+            detail=signal.detail,
+            severity=signal.severity,
+        )
+        for signal in diagnosis_mode.alignment_signals
+    ]
 
     return DiagnoseResponse(
         areas=areas_out,
@@ -204,6 +232,9 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
         matrix=matrix_out,
         alignment=alignment_out,
         alignment_map=alignment_map_out,
+        diagnosis_mode=diagnosis_mode.diagnosis_mode,
+        foundation_signals=foundation_signals_out,
+        alignment_signals=alignment_signals_out,
         insights=insights_out,
     )
 

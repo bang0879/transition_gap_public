@@ -159,7 +159,9 @@ def _compensation_axis(responses: dict[str, Any]) -> AlignmentAxis:
     eval_link = _as_int(responses.get("2-4-2"), 3)
 
     actual = -_score_to_axis(reward_philosophy)
-    if "단기 성과형" in structure or "인센티브" in structure:
+    if _is_ad_hoc_compensation(structure):
+        actual = 0.0
+    elif "단기 성과형" in structure or "인센티브" in structure:
         actual -= 0.25
     if "현금 안정형" in structure or "기본급" in structure:
         actual += 0.2
@@ -588,6 +590,8 @@ def _leadership_philosophy_note(responses: dict[str, Any]) -> str:
 
 
 def _compensation_actual_label(structure: str, actual_position: float) -> str:
+    if _is_ad_hoc_compensation(structure):
+        return "보상 기준 미정"
     if "단기 성과형" in structure or "인센티브" in structure:
         return "성과급 중심 보상"
     if "현금 안정형" in structure or "기본급" in structure:
@@ -655,7 +659,9 @@ def _compensation_vector(responses: dict[str, Any]) -> AlignmentMapVector:
         x += 0.15
 
     y = 0.2
-    if "밴드" in structure or "성과형" in structure:
+    if _is_ad_hoc_compensation(structure):
+        y -= 0.25
+    elif "밴드" in structure or "성과형" in structure:
         y += 0.35
     if "현금 안정형" in structure:
         y -= 0.1
@@ -906,6 +912,11 @@ def _text(value: Any) -> str:
     if isinstance(value, list):
         return ", ".join(str(item) for item in value if item not in (None, ""))
     return str(value) if value not in (None, "") else "미입력"
+
+
+def _is_ad_hoc_compensation(value: Any) -> bool:
+    text = str(value or "")
+    return "입사·협상" in text or "정해진 보상 체계 없음" in text or "개별 결정" in text
 
 
 def _direction_label(x: float, y: float) -> str:

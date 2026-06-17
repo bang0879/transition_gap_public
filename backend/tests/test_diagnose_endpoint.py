@@ -35,6 +35,12 @@ def test_diagnose_returns_200(client, full_responses):
         assert "detail" in insight
         assert "source" in insight
 
+    assert data["diagnosis_mode"] in ("foundation", "alignment", "hybrid")
+    assert isinstance(data["foundation_signals"], list)
+    assert isinstance(data["alignment_signals"], list)
+    for signal in [*data["foundation_signals"], *data["alignment_signals"]]:
+        assert {"id", "domain_id", "domain_name", "title", "detail", "severity"} <= set(signal)
+
 
 def test_diagnose_empty_responses(client):
     response = client.post("/api/diagnose", json={"responses": {}})

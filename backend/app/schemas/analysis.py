@@ -137,10 +137,22 @@ class InsightOut(BaseModel):
     source: str
 
 
+class DiagnosisSignalOut(BaseModel):
+    id: str
+    domain_id: str
+    domain_name: str
+    title: str
+    detail: str
+    severity: str
+
+
 class DiagnoseResponse(BaseModel):
     areas: list[AreaAnalysisOut]
     visibility: VisibilityOut
     matrix: MatrixOut
     alignment: AlignmentOut
     alignment_map: AlignmentMapOut
+    diagnosis_mode: str
+    foundation_signals: list[DiagnosisSignalOut]
+    alignment_signals: list[DiagnosisSignalOut]
     insights: list[InsightOut]
