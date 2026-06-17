@@ -70,7 +70,7 @@ function statusLabel(percent: number): AlignmentAxisOut["status_label"] {
 function riskForAxis(domainId: string, tension: number): string | null {
   if (tension < 0.75) return null;
   const risks: Record<string, string> = {
-    compensation: "차등 보상 철학과 실제 균등 운영이 벌어지면 고성과자는 보상 신호를 믿기 어렵고, 내부 공정성 논쟁은 더 커질 수 있습니다.",
+    compensation: "협업과 안정적 보상 질서를 중시한다고 말하면서 실제 보상은 성과급 중심으로 작동하면, 구성원은 회사의 보상 원칙을 헷갈려 하고 조용한 불만이나 이탈 신호를 늦게 드러낼 수 있습니다.",
     evaluation: "엄격한 성과 철학과 느슨한 평가 운영이 벌어지면 고성과자는 불공정성을 느끼고 저성과자는 개선 압력을 받기 어렵습니다.",
     recruitment: "외부 영입 철학과 내부 양성 중심 운영이 벌어지면 성장 속도에 필요한 역량 확보가 늦어질 수 있습니다.",
     retention: "핵심 인재 예외 인정 철학과 획일적 안정 운영이 벌어지면 중요한 역할 공백 비용이 반복될 수 있습니다.",
