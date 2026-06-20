@@ -203,13 +203,7 @@ export default function ResultPage() {
             {companyName ? <span className="text-teal-deep">{companyName}</span> : "우리 회사"} 인사제도 정합성 진단결과 요약
           </>
         }
-        lead={
-          diagnosisMode === "foundation"
-            ? "이 화면은 잘한 점수를 보여주는 대시보드가 아니라, 지금 규모에서 먼저 만들어야 할 운영 기준을 확인하는 첫 장입니다."
-            : diagnosisMode === "hybrid"
-              ? "이 화면은 없는 기준과 어긋난 제도를 구분해, 무엇을 먼저 정리할지 결정하기 위한 첫 장입니다."
-              : "이 화면은 잘한 점수를 보여주는 대시보드가 아니라, 회사가 어디부터 제도를 정렬할지 결정하기 위한 첫 장입니다."
-        }
+        lead="핵심 결론, 그대로 둘 때의 운영 리스크, 다음 결정을 먼저 봅니다."
         actions={
           <>
             <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
@@ -256,6 +250,7 @@ export default function ResultPage() {
         </div>
         <AlignmentTensionMap
           map={alignmentMap}
+          showSectionHeader={false}
           showConflicts={false}
           showTopGapSummary={false}
           showOverallScore={false}

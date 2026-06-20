@@ -17,6 +17,7 @@ import type { AlignmentAxisOut, AlignmentMapConflictOut, AlignmentMapOut } from 
 
 interface AlignmentTensionMapProps {
   map: AlignmentMapOut;
+  showSectionHeader?: boolean;
   showConflicts?: boolean;
   showTopGapSummary?: boolean;
   showOverallScore?: boolean;
@@ -161,6 +162,7 @@ function decisionQuestion(axis: AlignmentAxisOut): string {
 
 export function AlignmentTensionMap({
   map,
+  showSectionHeader = true,
   showConflicts = true,
   showTopGapSummary = true,
   showOverallScore = true,
@@ -197,20 +199,23 @@ export function AlignmentTensionMap({
 
   return (
     <section className="mb-[18px] w-full max-w-[calc(100vw-32px)] overflow-hidden rounded-[8px] border border-slate-200 bg-white p-4 print:break-inside-avoid sm:max-w-full">
-      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">
-            정합성 괴리 분석
-          </p>
-          <h2 className="m-0 mt-2 text-[20px] font-[720] leading-[1.35] text-slate-950">
-            회사의 인사 철학과 실제 제도가 같은 방향을 보고 있는지 확인합니다.
-          </h2>
-          <p className="m-0 mt-2 max-w-[860px] text-[12px] leading-[1.7] text-slate-600">
-            인사 철학과 실제 운영 제도 사이의 거리가 <strong className="font-[760] text-slate-800">정합성 괴리</strong>입니다.
-            괴리가 클수록 구성원은 같은 제도를 서로 다른 메시지로 받아들이고, 실행 리스크가 커질 수 있습니다.
-          </p>
-        </div>
-        {showOverallScore ? (
+      {showSectionHeader || showOverallScore ? (
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          {showSectionHeader ? (
+            <div>
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">
+                정합성 괴리 분석
+              </p>
+              <h2 className="m-0 mt-2 text-[20px] font-[720] leading-[1.35] text-slate-950">
+                회사의 인사 철학과 실제 제도가 같은 방향을 보고 있는지 확인합니다.
+              </h2>
+              <p className="m-0 mt-2 max-w-[860px] text-[12px] leading-[1.7] text-slate-600">
+                인사 철학과 실제 운영 제도 사이의 거리가 <strong className="font-[760] text-slate-800">정합성 괴리</strong>입니다.
+                괴리가 클수록 구성원은 같은 제도를 서로 다른 메시지로 받아들이고, 실행 리스크가 커질 수 있습니다.
+              </p>
+            </div>
+          ) : null}
+          {showOverallScore ? (
           <div className="min-w-[142px] rounded-[8px] border border-slate-200 bg-slate-50 p-3 text-right">
             <p className="m-0 text-[11px] font-[760] text-slate-400">전체 정합도</p>
             <p className="m-0 mt-1 text-[34px] font-[720] leading-none text-slate-950">
@@ -218,8 +223,9 @@ export function AlignmentTensionMap({
             </p>
             <Badge variant={scoreTone(map.alignment_score)}>{cleanText(map.alignment_level) ?? "정합성 확인"}</Badge>
           </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {showTopGapSummary && lowestAxis ? (
         <div className="mb-4 grid gap-3 rounded-[8px] border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr_1.2fr]">
