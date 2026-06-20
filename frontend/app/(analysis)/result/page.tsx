@@ -2,18 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { GapBarList } from "@/components/visualization/GapBarList";
-import { InsightCard } from "@/components/result/InsightCard";
 import { CompanyContextBar } from "@/components/result/CompanyContextBar";
-import { DiagnosisModeSummary } from "@/components/result/DiagnosisModeSummary";
+import { ExecutiveSummaryPanel } from "@/components/result/ExecutiveSummaryPanel";
 import { AlignmentOperatingRisk } from "@/components/result/AlignmentOperatingRisk";
-import { BenchmarkHelp } from "@/components/result/BenchmarkHelp";
-import { MemoBlock } from "@/components/result/MemoBlock";
-import { MetricCard } from "@/components/result/MetricCard";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ResultReadingFlow } from "@/components/result/ResultReadingFlow";
-import { ResultStepHeader } from "@/components/result/ResultStepHeader";
-import { RadarChart } from "@/components/visualization/RadarChart";
 import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
@@ -30,7 +22,6 @@ import {
   topGapAxis,
 } from "@/lib/constants/ahaMoment";
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
-import { buildPhilosophyProfile } from "@/lib/utils/philosophyProfile";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
 import { useDiagnosisHistoryStore } from "@/lib/store/diagnosisHistory";
@@ -91,6 +82,19 @@ export default function ResultPage() {
     window.print();
   };
 
+  const handleNavigate = (action: string, path: string) => {
+    if (sessionId) {
+      logEvent({
+        session_id: sessionId,
+        event_type: "cta_click",
+        page: "/result",
+        metadata: { action },
+        timestamp: new Date().toISOString(),
+      });
+    }
+    router.push(path);
+  };
+
   if (isWaitingForResponses) {
     return (
       <AnalysisNotice
@@ -120,7 +124,7 @@ export default function ResultPage() {
     );
   }
 
-  const { areas, visibility, insights, alignment, alignment_map } = data;
+  const { areas, visibility, alignment, alignment_map } = data;
   const diagnosisMode = data.diagnosis_mode ?? "alignment";
   const foundationSignals = data.foundation_signals ?? [];
   const alignmentSignals = data.alignment_signals ?? [];
@@ -130,9 +134,6 @@ export default function ResultPage() {
   const ahaAxis = topGapAxis(alignmentMap.axes ?? []);
   const ahaMirror = ahaAxis ? getMirrorSentence(ahaAxis) : null;
   const ahaScenario = ahaAxis ? getPrimaryScenario(ahaAxis) : null;
-  const philosophyProfile = buildPhilosophyProfile(responses);
-  const philosophyConflicts = philosophyProfile.conflicts.slice(0, 2);
-  const topConflicts = alignment?.conflicts?.slice(0, 2) ?? [];
   const topicAreas = areas.filter((area) => area.gap >= 10).sort((a, b) => b.gap - a.gap);
   const topicCount = topicAreas.length;
   const topicNames = topicAreas.map((area) => area.area_name).join(", ") || "핵심";
@@ -148,26 +149,6 @@ export default function ResultPage() {
   const visibilityCopy = visibility.blind_spot_labels.length === 0
     ? "진단이 안 된 영역 없이 현재 판단에 필요한 데이터가 확보되었습니다."
     : `진단이 안 된 영역 ${visibility.blind_spots.length}개가 남아 있습니다. 진단이 약한 영역: ${blindSpotNames}`;
-  const decisionCards = [
-    {
-      label: "가장 먼저 볼 영역",
-      title: topGapArea?.area_name ?? "핵심 영역",
-      value: topGapText,
-      body: "이 회사 조건에서 필요한 운영 기준과 현재 응답의 차이가 가장 큰 영역입니다.",
-    },
-    {
-      label: "회사가 결정할 질문",
-      title: "무엇을 먼저 정렬할 것인가",
-      value: `${topicCount}개 논의 영역`,
-      body: "점수 자체보다 제도 간 기준이 어긋난 지점을 먼저 좁히는 화면입니다.",
-    },
-    {
-      label: "다음 화면에서 확인",
-      title: "상세 근거와 트레이드오프",
-      value: "상세 분석 → 트레이드오프 분석",
-      body: "원인을 확인한 뒤, 얻는 것과 부담/주의점을 비교합니다.",
-    },
-  ];
   const previousSnapshot = snapshots.find((snapshot) => snapshot.sessionId !== sessionId);
   const latestSnapshot = snapshots.find((snapshot) => snapshot.sessionId === sessionId);
   const alignmentDelta = latestSnapshot && previousSnapshot ? latestSnapshot.alignmentScore - previousSnapshot.alignmentScore : null;
@@ -179,6 +160,39 @@ export default function ResultPage() {
     if (delta < 0) return `${delta}점`;
     return "변화 없음";
   };
+
+  const executiveFocusName = ahaAxis ? displayAhaDomainName(ahaAxis) : topGapArea?.area_name ?? "핵심 영역";
+  const executiveFocusMeta = ahaAxis ? `${executiveFocusName} 정합 ${ahaAlignmentPercent(ahaAxis)}%` : topGapText;
+  const executiveTitle =
+    diagnosisMode === "foundation"
+      ? "제도 정합성보다 운영 기준부터 세워야 합니다."
+      : diagnosisMode === "hybrid"
+        ? "없는 기준과 어긋난 기준을 분리해서 정리해야 합니다."
+        : `${executiveFocusName} 기준부터 정렬해야 합니다.`;
+  const executiveInsight =
+    diagnosisMode === "foundation"
+      ? "지금은 좋은 제도를 더 고르는 단계가 아니라, 보상 기준·평가 루프·리더 운영 중 비어 있는 운영 기준을 먼저 확인해야 하는 단계입니다."
+      : diagnosisMode === "hybrid"
+        ? "일부 영역은 기준 자체가 비어 있고, 일부 영역은 이미 있는 제도가 서로 다른 메시지를 냅니다. 먼저 순서를 나눠야 실행 부담이 커지지 않습니다."
+        : ahaMirror ?? "정합성 차이가 큰 영역과 필요 기준 차이를 함께 보면, 다음 회의에서 먼저 맞춰야 할 제도 기준이 좁혀집니다.";
+  const executiveRisk =
+    diagnosisMode === "foundation"
+      ? "다음 성장 구간으로 넘어갈 때 보상 설명, 평가 수용성, 리더별 운영 편차가 동시에 커질 수 있습니다."
+      : diagnosisMode === "hybrid"
+        ? "제도를 한 번에 손대면 기준을 새로 만드는 일과 기존 제도를 정렬하는 일이 섞여 현장 혼선이 커질 수 있습니다."
+        : ahaScenario;
+  const nextDecisionTitle =
+    diagnosisMode === "foundation"
+      ? "이번 미팅에서는 먼저 비어 있는 운영 기준을 정해야 합니다."
+      : diagnosisMode === "hybrid"
+        ? "이번 미팅에서는 새로 만들 기준과 정렬할 기준을 나눠야 합니다."
+        : `이번 미팅에서는 ${executiveFocusName} 기준부터 정렬할지 결정해야 합니다.`;
+  const nextDecisionBody =
+    diagnosisMode === "foundation"
+      ? `${topicNames} 영역에서 기준 부재가 운영 비용으로 번지기 전에, 30일 안에 정할 최소 기준을 좁힙니다.`
+      : diagnosisMode === "hybrid"
+        ? `${topicNames} 영역을 한 번에 고치기보다, 기준을 새로 세울 영역과 이미 있는 제도를 맞출 영역을 분리합니다.`
+        : `${topicNames} 영역의 엇박자를 방치하면 제도 개선 논의가 일반론으로 흐르기 쉽습니다. 상세 분석에서 근거를 확인한 뒤 트레이드오프를 비교합니다.`;
 
   return (
     <>
@@ -199,137 +213,56 @@ export default function ResultPage() {
         actions={
           <>
             <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
-            <Button variant="primary" onClick={() => router.push("/result/detail")}>상세 분석 보기</Button>
+            <Button variant="primary" onClick={() => handleNavigate("open_detail", "/result/detail")}>상세 분석 보기</Button>
           </>
         }
       />
 
-      {diagnosisMode !== "alignment" ? (
-        <DiagnosisModeSummary
-          mode={diagnosisMode}
-          companyName={companyName}
-          headcount={responses["L1-2"] as string | undefined}
-          foundationSignals={foundationSignals}
-          alignmentSignals={alignmentSignals}
-        />
-      ) : ahaAxis ? (
-        <section className="mb-4 rounded-[12px] border border-coral/25 bg-[#fff7f4] p-5 shadow-soft print:break-inside-avoid">
-          <div className="grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-stretch">
-            <div className="rounded-[10px] border border-coral/20 bg-white px-4 py-3">
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">진단 핵심 요약</p>
-              <p className="m-0 mt-3 text-[13px] font-[700] leading-[1.45] text-slate-700">
-                {companyName || "우리 회사"}의 인사제도 정합도
-              </p>
-              <div className="mt-2 flex items-end gap-2">
-                <strong className="text-[42px] font-[760] leading-none text-slate-900">{alignmentMap.alignment_score}</strong>
-                <span className="pb-1 text-[15px] font-[700] text-slate-500">%</span>
-              </div>
-              <Badge variant={scoreTone(alignmentMap.alignment_score)}>{alignmentMap.alignment_level}</Badge>
-            </div>
-            <div className="grid gap-3">
-              <div>
-                <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">가장 큰 괴리</p>
-                <h2 className="m-0 mt-1 text-[20px] font-[760] leading-[1.35] text-slate-900">
-                  {displayAhaDomainName(ahaAxis)} 영역 · 정합 {ahaAlignmentPercent(ahaAxis)}%
-                </h2>
-              </div>
-              {ahaMirror ? (
-                <p className="m-0 rounded-[9px] border border-coral/20 bg-white px-3 py-2 text-[13px] font-[650] leading-[1.7] text-slate-800">
-                  {ahaMirror}
-                </p>
-              ) : null}
-              {ahaScenario ? (
-                <p className="m-0 rounded-[9px] border border-amber/25 bg-white px-3 py-2 text-[12px] leading-[1.65] text-slate-600">
-                  <span className="font-[760] text-amber">이 상태가 유지되면: </span>
-                  {ahaScenario}
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      <ResultReadingFlow />
-
-      <ResultStepHeader
-        step="STEP 01 · 철학-제도 정합성"
-        title="회사의 인사철학과 현재 제도가 같은 방향을 보고 있습니까?"
-        body="이 단계는 철학과 제도의 방향을 비교합니다. 아래의 필요 기준/벤치마크와는 다른 비교이며, 먼저 회사가 내는 인사 메시지가 일관적인지 확인합니다."
-      />
-      {philosophyConflicts.length > 0 ? (
-        <section className="mb-4 rounded-[10px] border border-amber/30 bg-[#fffaf0] p-4 print:break-inside-avoid">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-amber">철학 프로필 상기</p>
-              <h2 className="m-0 mt-2 text-[16px] font-[720] leading-[1.45] text-slate-900">
-                앞 단계에서 {philosophyProfile.conflicts.length}개의 철학 충돌 가능성이 확인되었습니다.
-              </h2>
-              <p className="m-0 mt-2 text-[12px] leading-[1.7] text-slate-600">
-                이 충돌은 답을 고치라는 신호가 아니라, 현행 제도가 어떤 기준을 더 강하게 따라야 하는지 해석하기 위한 기준점입니다.
-              </p>
-            </div>
-            <Badge variant="amber">참고</Badge>
-          </div>
-          <div className="mt-3 grid gap-2 lg:grid-cols-2">
-            {philosophyConflicts.map((conflict) => (
-              <div key={conflict.id} className="rounded-[8px] border border-amber/20 bg-white px-3 py-2">
-                <p className="m-0 text-[12px] font-[700] text-slate-900">{conflict.title}</p>
-                <p className="m-0 mt-1 text-[11px] leading-[1.6] text-slate-500">{conflict.implication}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
       <CompanyContextBar companyName={companyName} responses={responses} />
 
-      <AlignmentTensionMap map={alignmentMap} showConflicts={false} />
-
-      <ResultStepHeader
-        step="STEP 02 · 운영 리스크와 전체 조감"
-        title="정합성이 어긋나면 어디서 실제 문제가 생깁니까?"
-        body="여기서는 회사 규모, 성장 기조, 입력한 인재 기준을 반영한 운영 필요 기준과 현재 상태의 차이를 봅니다. 정합성 비교와 달리, 실제로 어디부터 손봐야 하는지 판단하기 위한 영역별 조감입니다."
+      <ExecutiveSummaryPanel
+        mode={diagnosisMode}
+        companyName={companyName}
+        headcount={responses["L1-2"] as string | undefined}
+        alignmentScore={alignmentMap.alignment_score}
+        alignmentLevel={alignmentMap.alignment_level}
+        scoreTone={scoreTone(alignmentMap.alignment_score)}
+        focusTitle={executiveTitle}
+        focusMeta={executiveFocusMeta}
+        insight={executiveInsight}
+        risk={executiveRisk}
+        topGapAreaName={topGapArea?.area_name ?? executiveFocusName}
+        topGapText={topGapText}
+        topicCount={topicCount}
+        visibilityScore={visibility.score}
+        visibilityLabel={visTierText}
+        visibilityTone={visibilityVariant}
+        foundationSignals={foundationSignals}
+        alignmentSignals={alignmentSignals}
       />
-      <MemoBlock
-        title={`${topicNames} 영역을 먼저 논의해야 합니다.`}
-        body="현재 점수와 이 회사 조건에서 필요한 운영 기준의 차이가 큰 영역부터 보면, 제도 개선 논의가 일반론으로 흐르지 않고 실제 의사결정 순서로 정리됩니다."
-      />
-
-      <div className="mb-[18px]">
-        <BenchmarkHelp />
-      </div>
 
       <AlignmentOperatingRisk map={alignmentMap} />
 
-      <div className="mb-[18px] grid grid-cols-1 gap-[14px] xl:grid-cols-3">
-        <MetricCard
-          variant={visibilityVariant}
-          label="HR 가시성"
-          badgeText={visTierText}
-          value={Math.round(visibility.score)}
-          unit="%"
-          copy={visibility.blind_spot_labels.length === 0 ? "진단이 안 된 영역 없음" : `진단이 약한 영역: ${blindSpotNames}`}
+      <section className="mb-4 print:break-inside-avoid">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">근거</p>
+            <h2 className="m-0 mt-1 text-[18px] font-[720] leading-[1.4] text-slate-950">어느 기준이 어긋났는지 확인합니다.</h2>
+            <p className="m-0 mt-1 max-w-[760px] text-[12px] leading-[1.7] text-slate-600">
+              아래 5개 카드는 요약에서 짚은 결론의 근거입니다. 상세 점수보다 각 영역이 구성원에게 어떤 메시지로 읽히는지 확인합니다.
+            </p>
+          </div>
+          <Badge variant="slate">상세 근거는 다음 화면</Badge>
+        </div>
+        <AlignmentTensionMap
+          map={alignmentMap}
+          showConflicts={false}
+          showTopGapSummary={false}
+          showOverallScore={false}
+          showDirectionSummary={false}
+          compactCards
         />
-        <MetricCard
-          variant="amber"
-          label="제도 운영 일관성"
-          badgeText={alignmentScore >= 70 ? "양호" : alignmentScore >= 50 ? "중간" : "위험"}
-          value={alignmentScore}
-          unit="/100"
-          copy={
-            topConflicts.length > 0
-              ? "일부 제도 기준이 서로 다른 방향으로 작동합니다. 아래 정합성 괴리와 상세 분석에서 엇박자 요인을 확인하세요."
-              : "보상, 채용, 평가, 리더십 기준이 같은 방향으로 작동하는지 평가한 전사 운영 점수입니다."
-          }
-        />
-        <MetricCard
-          variant="coral"
-          label="주요 논의사항"
-          badgeText={`${topicCount}개 영역`}
-          value={topicCount}
-          unit="개 영역"
-          copy={`${topicNames} 영역에서 현재 방식과 이 회사 조건에서 필요한 운영 기준의 차이가 큽니다.`}
-        />
-      </div>
+      </section>
 
       {previousSnapshot ? (
         <section className="mb-[18px] rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
@@ -359,76 +292,22 @@ export default function ResultPage() {
         </section>
       ) : null}
 
-      <div className="mb-4 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
-          <div className="flex items-start justify-between gap-[18px] p-4 pb-0">
-            <div>
-              <p className="m-0 text-[14px] font-[680] text-slate-900">5개 영역 필요 기준 차이</p>
-              <p className="m-0 mt-[5px] text-[11px] leading-[1.55] text-slate-500">
-                회사 규모, 성장 기조, 입력한 인재 기준을 반영한 영역별 필요 기준과 현재 상태를 비교합니다.
-              </p>
+      <section className="mt-4 overflow-hidden rounded-[10px] border border-slate-200 bg-white print:hidden">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="p-5 sm:p-6">
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">지금 결정할 질문</p>
+            <h2 className="m-0 mt-2 text-[20px] font-[720] leading-[1.35] text-slate-950">{nextDecisionTitle}</h2>
+            <p className="m-0 mt-3 max-w-[780px] text-[13px] leading-[1.75] text-slate-600">{nextDecisionBody}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="inline-flex rounded-[7px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-[720] text-slate-700">
+                먼저 볼 영역: {topGapArea?.area_name ?? executiveFocusName}
+              </span>
+              <span className="inline-flex rounded-[7px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-[720] text-slate-700">
+                논의 범위: {topicCount > 0 ? `${topicCount}개 영역` : "추가 확인"}
+              </span>
             </div>
-            <Badge variant="slate">필요 기준 비교</Badge>
           </div>
-          <div className="mx-4 mt-3 flex flex-wrap gap-2 text-[11px] font-[650] text-slate-500">
-            <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-2 py-1">
-              <span className="h-2 w-2 rounded-full bg-teal" />현재 응답
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-2 py-1">
-              <span className="h-0.5 w-4 border-t border-dashed border-slate-400" />필요 기준
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-[7px] border border-slate-200 bg-white px-2 py-1">
-              차이 = 논의 우선도
-            </span>
-          </div>
-          <div className="px-[18px] pb-[18px] pt-[10px]">
-            <RadarChart areas={areas} />
-          </div>
-        </div>
-        <div className="rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
-          <div className="flex items-start justify-between gap-[18px] p-4 pb-0">
-            <div>
-              <p className="m-0 text-[14px] font-[680] text-slate-900">영역별 논의 우선순위</p>
-              <p className="m-0 mt-[5px] text-[11px] leading-[1.55] text-slate-500">
-                필요 기준과 현재 점수의 차이가 클수록 먼저 논의할 영역입니다.
-              </p>
-            </div>
-            <Badge variant="amber">{topicCount}개 영역</Badge>
-          </div>
-          <GapBarList areas={areas} />
-        </div>
-        <div className="rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-[12px] leading-[1.65] text-slate-500 xl:col-span-2">
-          <strong className="font-[680] text-slate-800">읽는 방법:</strong>{" "}
-          점선은 필요 기준, 초록색 영역은 현재 상태입니다. 우측 우선순위는{" "}
-          <span className="font-[680] text-slate-800">필요 기준 - 현재 점수</span>를 기준으로 정렬한 논의 순서입니다.
-          필요 기준은 회사 규모, 성장 기조, 입력한 인재 기준을 반영해 영역별로 다르게 설정됩니다.
-        </div>
-      </div>
-
-      <div className={`grid grid-cols-1 gap-3 ${insights.length >= 3 ? "xl:grid-cols-3" : insights.length === 2 ? "xl:grid-cols-2" : "xl:grid-cols-1"}`}>
-        {insights.slice(0, 3).map((insight, index) => (
-          <InsightCard key={`${insight.headline}-${index}`} source={insight.source} headline={insight.headline} detail={insight.detail} />
-        ))}
-      </div>
-
-      <ResultStepHeader
-        step="STEP 03 · 다음 단계 안내"
-        title="이제 무엇을 확인해야 합니까?"
-        body="요약에서 방향과 우선순위를 확인했다면, 상세 분석에서는 근거를 더 깊게 보고 트레이드오프 분석에서는 선택에 따른 비용을 비교합니다."
-      />
-      <section className="mb-[18px] overflow-hidden rounded-[10px] border border-slate-200 bg-white print:break-inside-avoid">
-        <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-[1fr_1fr_1fr_260px] lg:divide-x lg:divide-y-0">
-          {decisionCards.map((card) => (
-            <div key={card.label} className="p-4">
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">{card.label}</p>
-              <strong className="mt-2 block text-[15px] font-[680] leading-[1.45] text-slate-900">{card.title}</strong>
-              <div className="mt-3 inline-flex max-w-full rounded-[7px] border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-[720] text-slate-700">
-                {card.value}
-              </div>
-              <p className="m-0 mt-3 text-[12px] leading-[1.65] text-slate-500">{card.body}</p>
-            </div>
-          ))}
-          <div className="bg-slate-50/70 p-4">
+          <aside className="border-t border-slate-200 bg-slate-50/70 p-5 lg:border-l lg:border-t-0">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">데이터 신뢰도</p>
             <div className="mt-3 flex items-baseline gap-1.5">
               <strong className="text-[34px] font-[680] leading-none text-slate-900">{Math.round(visibility.score)}</strong>
@@ -436,20 +315,16 @@ export default function ResultPage() {
             </div>
             <Badge variant={visibilityVariant}>{visTierText}</Badge>
             <p className="m-0 mt-3 text-[12px] leading-[1.65] text-slate-500">{visibilityCopy}</p>
-          </div>
+          </aside>
         </div>
-      </section>
-
-      <section className="mt-4 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 print:hidden sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="m-0 text-[12px] font-[680] text-slate-900">다음 단계</p>
-          <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
-            요약을 확인했다면 영역별 근거와 운영 충돌을 자세히 봅니다.
+        <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="m-0 text-[12px] leading-[1.6] text-slate-500">
+            요약에서 충분히 찔렸다면, 이제 근거와 선택지를 분리해서 봅니다.
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
-          <Button variant="primary" onClick={() => router.push("/result/detail")}>상세 분석 보기</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => handleNavigate("open_detail", "/result/detail")}>상세 분석 보기</Button>
+            <Button variant="primary" onClick={() => handleNavigate("open_matrix", "/matrix")}>트레이드오프 보기</Button>
+          </div>
         </div>
       </section>
     </>

@@ -18,6 +18,10 @@ import type { AlignmentAxisOut, AlignmentMapConflictOut, AlignmentMapOut } from 
 interface AlignmentTensionMapProps {
   map: AlignmentMapOut;
   showConflicts?: boolean;
+  showTopGapSummary?: boolean;
+  showOverallScore?: boolean;
+  showDirectionSummary?: boolean;
+  compactCards?: boolean;
 }
 
 type Tone = "teal" | "amber" | "coral" | "slate";
@@ -155,7 +159,14 @@ function decisionQuestion(axis: AlignmentAxisOut): string {
   return `${domain}에서 철학과 실제 운영 기준이 같은 방향인지 확인해야 합니다.`;
 }
 
-export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTensionMapProps) {
+export function AlignmentTensionMap({
+  map,
+  showConflicts = true,
+  showTopGapSummary = true,
+  showOverallScore = true,
+  showDirectionSummary = true,
+  compactCards = false,
+}: AlignmentTensionMapProps) {
   const sessionId = useSessionStore((state) => state.sessionId);
   const axes = map.axes ?? [];
   const lowestAxis = useMemo(() => topGapAxis(axes), [axes]);
@@ -185,13 +196,13 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
   }
 
   return (
-    <section className="mb-[18px] w-full max-w-[calc(100vw-32px)] overflow-hidden rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid sm:max-w-full">
+    <section className="mb-[18px] w-full max-w-[calc(100vw-32px)] overflow-hidden rounded-[8px] border border-slate-200 bg-white p-4 print:break-inside-avoid sm:max-w-full">
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">
             정합성 괴리 분석
           </p>
-          <h2 className="m-0 mt-2 text-[20px] font-[720] leading-[1.35] text-slate-900">
+          <h2 className="m-0 mt-2 text-[20px] font-[720] leading-[1.35] text-slate-950">
             회사의 인사 철학과 실제 제도가 같은 방향을 보고 있는지 확인합니다.
           </h2>
           <p className="m-0 mt-2 max-w-[860px] text-[12px] leading-[1.7] text-slate-600">
@@ -199,20 +210,22 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
             괴리가 클수록 구성원은 같은 제도를 서로 다른 메시지로 받아들이고, 실행 리스크가 커질 수 있습니다.
           </p>
         </div>
-        <div className="min-w-[142px] rounded-[10px] border border-slate-200 bg-slate-50 p-3 text-right">
-          <p className="m-0 text-[11px] font-[760] text-slate-400">전체 정합도</p>
-          <p className="m-0 mt-1 text-[34px] font-[720] leading-none text-slate-900">
-            {map.alignment_score}%
-          </p>
-          <Badge variant={scoreTone(map.alignment_score)}>{cleanText(map.alignment_level) ?? "정합성 확인"}</Badge>
-        </div>
+        {showOverallScore ? (
+          <div className="min-w-[142px] rounded-[8px] border border-slate-200 bg-slate-50 p-3 text-right">
+            <p className="m-0 text-[11px] font-[760] text-slate-400">전체 정합도</p>
+            <p className="m-0 mt-1 text-[34px] font-[720] leading-none text-slate-950">
+              {map.alignment_score}%
+            </p>
+            <Badge variant={scoreTone(map.alignment_score)}>{cleanText(map.alignment_level) ?? "정합성 확인"}</Badge>
+          </div>
+        ) : null}
       </div>
 
-      {lowestAxis ? (
-        <div className="mb-4 grid gap-3 rounded-[10px] border border-[#f0d8cf] bg-[#fff7f4] p-4 lg:grid-cols-[1fr_1.2fr]">
+      {showTopGapSummary && lowestAxis ? (
+        <div className="mb-4 grid gap-3 rounded-[8px] border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr_1.2fr]">
           <div>
-            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">가장 큰 엇박자</p>
-            <p className="m-0 mt-2 text-[17px] font-[760] leading-[1.45] text-slate-900">
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">가장 큰 엇박자</p>
+            <p className="m-0 mt-2 text-[17px] font-[760] leading-[1.45] text-slate-950">
               {displayAhaDomainName(lowestAxis)} 정합 {alignmentPercent(lowestAxis)}%
             </p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
@@ -220,9 +233,9 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
               실제 제도는 <strong className="font-[760] text-slate-800">{lowestAxis.actual_label}</strong>에 가깝습니다.
             </p>
           </div>
-          <div className="rounded-[8px] border border-coral/20 bg-white px-3 py-2">
+          <div className="rounded-[8px] border border-slate-200 bg-white px-3 py-2">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">대표가 먼저 물어야 할 질문</p>
-            <p className="m-0 mt-2 text-[14px] font-[700] leading-[1.55] text-slate-900">
+            <p className="m-0 mt-2 text-[14px] font-[700] leading-[1.55] text-slate-950">
               {decisionQuestion(lowestAxis)}
             </p>
             <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
@@ -243,7 +256,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
           return (
             <article
               key={axis.domain_id}
-              className="flex min-h-[226px] flex-col rounded-[10px] border border-slate-200 bg-white p-3"
+              className={`flex flex-col rounded-[8px] border border-slate-200 bg-white p-3 ${compactCards ? "min-h-[178px]" : "min-h-[226px]"}`}
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <h3 className="m-0 text-[15px] font-[760] leading-[1.35] text-slate-900">
@@ -256,11 +269,11 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
                 <div>
                   <p className="m-0 text-[11px] font-[760] text-slate-400">인사 철학</p>
                   <p className="m-0 mt-0.5 font-[700] text-slate-800">{axis.philosophy_label}</p>
-                  {axis.philosophy_note ? (
+                  {!compactCards && axis.philosophy_note ? (
                     <p className="m-0 mt-0.5 text-[11px] leading-[1.45] text-slate-500">{axis.philosophy_note}</p>
                   ) : null}
-                  {mirror ? (
-                    <p className="m-0 mt-2 rounded-[7px] border border-coral/15 bg-[#fff7f4] px-2 py-1.5 text-[11px] font-[650] leading-[1.5] text-slate-700">
+                  {!compactCards && mirror ? (
+                    <p className="m-0 mt-2 rounded-[7px] border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] font-[650] leading-[1.5] text-slate-700">
                       {mirror}
                     </p>
                   ) : null}
@@ -268,7 +281,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
                 <div>
                   <p className="m-0 text-[11px] font-[760] text-slate-400">현행 제도</p>
                   <p className="m-0 mt-0.5 font-[700] text-slate-800">{axis.actual_label}</p>
-                  <p className="m-0 mt-0.5 line-clamp-3 text-[11px] leading-[1.45] text-slate-500">{actualSummary(axis)}</p>
+                  <p className={`m-0 mt-0.5 text-[11px] leading-[1.45] text-slate-500 ${compactCards ? "line-clamp-2" : "line-clamp-3"}`}>{actualSummary(axis)}</p>
                 </div>
               </div>
 
@@ -282,7 +295,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                   <div className={`h-full rounded-full ${meta.bar}`} style={{ width: `${percent}%` }} />
                 </div>
-                {evidence.length > 0 ? (
+                {!compactCards && evidence.length > 0 ? (
                   <ul className="m-0 mt-3 grid gap-1 p-0 text-[11px] leading-[1.45] text-slate-500">
                     {evidence.map((item) => (
                       <li key={item} className="list-none">
@@ -297,11 +310,13 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
         })}
       </div>
 
+      {showDirectionSummary || showConflicts ? (
       <div className={`mt-4 grid gap-3 ${showConflicts ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}`}>
-        <section className="rounded-[10px] border border-slate-200 bg-white p-4">
+        {showDirectionSummary ? (
+        <section className="rounded-[8px] border border-slate-200 bg-white p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal-deep">
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">
                 현행 인사제도 방향 요약
               </p>
               <p className="m-0 mt-2 text-[13px] font-[700] leading-[1.65] text-slate-800">
@@ -322,9 +337,10 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
             ))}
           </div>
         </section>
+        ) : null}
 
         {showConflicts ? (
-        <section className="rounded-[10px] border border-slate-200 bg-white p-4">
+        <section className="rounded-[8px] border border-slate-200 bg-white p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">
               제도 간 충돌 경고
@@ -370,6 +386,7 @@ export function AlignmentTensionMap({ map, showConflicts = true }: AlignmentTens
         </section>
         ) : null}
       </div>
+      ) : null}
     </section>
   );
 }

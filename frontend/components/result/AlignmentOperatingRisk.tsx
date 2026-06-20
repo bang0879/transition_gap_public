@@ -24,6 +24,12 @@ function toneForSeverity(severity: string): Tone {
   return "slate";
 }
 
+function riskCardTone(tone: Tone): string {
+  if (tone === "coral") return "border-[#eadfda] bg-[#fffcfb]";
+  if (tone === "amber") return "border-[#eadfca] bg-[#fffdf8]";
+  return "border-slate-200 bg-slate-50";
+}
+
 function cleanText(value: string | null | undefined): string | null {
   if (!value) return null;
   if (value.includes("占") || /[?좎콡梨좎콠梨]/.test(value)) return null;
@@ -63,13 +69,13 @@ export function AlignmentOperatingRisk({ map }: AlignmentOperatingRiskProps) {
     .slice(0, 3);
 
   return (
-    <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
+    <section className="mb-4 rounded-[8px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">운영 리스크</p>
-          <h3 className="m-0 mt-1 text-[15px] font-[720] text-slate-900">정합성이 어긋나면 실제로 생길 수 있는 문제</h3>
+          <h3 className="m-0 mt-1 text-[15px] font-[720] text-slate-950">정합성이 어긋나면 실제로 생길 수 있는 문제</h3>
           <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-500">
-            위에서는 철학과 제도 방향을 봤고, 여기서는 그 괴리가 현장에서 어떤 비용으로 번질 수 있는지 확인합니다.
+            요약에서 확인한 괴리가 현장에서 어떤 비용으로 번질 수 있는지 확인합니다.
           </p>
         </div>
         <Badge variant="slate">운영 판단 근거</Badge>
@@ -86,7 +92,7 @@ export function AlignmentOperatingRisk({ map }: AlignmentOperatingRiskProps) {
             const entanglement = getEntanglementMessage(risk);
 
             return (
-              <article key={risk.id} className="rounded-[8px] border border-slate-200 bg-slate-50 p-3">
+              <article key={risk.id} className={`rounded-[8px] border p-3 ${riskCardTone(tone)}`}>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
@@ -96,7 +102,7 @@ export function AlignmentOperatingRisk({ map }: AlignmentOperatingRiskProps) {
                   />
                   {relatedDomains.length > 0 ? <Badge variant={tone}>{relatedDomains.join(" ↔ ")}</Badge> : null}
                 </div>
-                <h4 className="m-0 text-[13px] font-[720] leading-[1.45] text-slate-900">{entanglement?.title ?? risk.title}</h4>
+                <h4 className="m-0 text-[13px] font-[720] leading-[1.45] text-slate-950">{entanglement?.title ?? risk.title}</h4>
                 <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-600">{entanglement?.body ?? risk.detail}</p>
               </article>
             );
@@ -109,17 +115,17 @@ export function AlignmentOperatingRisk({ map }: AlignmentOperatingRiskProps) {
       )}
 
       {scenarioAxes.length > 0 ? (
-        <div className="mt-4 rounded-[10px] border border-[#f0d8cf] bg-[#fff7f4] p-4">
+        <div className="mt-4 rounded-[8px] border border-[#eadfca] bg-[#fffdf8] p-4">
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">예상 시나리오</p>
-              <h4 className="m-0 mt-1 text-[14px] font-[720] text-slate-900">이대로 두면 현장에서 이런 일이 벌어질 수 있습니다.</h4>
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">예상 시나리오</p>
+              <h4 className="m-0 mt-1 text-[14px] font-[720] text-slate-950">이대로 두면 현장에서 이런 일이 벌어질 수 있습니다.</h4>
             </div>
-            <Badge variant="coral">주의/심각 영역만 표시</Badge>
+            <Badge variant="slate">주의/심각 영역만 표시</Badge>
           </div>
           <div className="grid gap-3 lg:grid-cols-3">
             {scenarioAxes.map((axis) => (
-              <article key={axis.domain_id} className="rounded-[8px] border border-coral/15 bg-white p-3">
+              <article key={axis.domain_id} className="rounded-[8px] border border-slate-200 bg-white p-3">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <Badge variant={statusLabel(axis) === "심각" ? "coral" : "amber"}>{displayAhaDomainName(axis)}</Badge>
                   <span className="text-[11px] font-[700] text-slate-400">{statusLabel(axis)}</span>
