@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo } from "react";
 import { Badge } from "@/components/shared/Badge";
@@ -251,7 +251,7 @@ export function AlignmentTensionMap({
         </div>
       ) : null}
 
-      <div className="grid gap-3 lg:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {axes.map((axis) => {
           const percent = alignmentPercent(axis);
           const status = statusLabel(axis);
@@ -262,7 +262,7 @@ export function AlignmentTensionMap({
           return (
             <article
               key={axis.domain_id}
-              className={`flex flex-col rounded-[8px] border border-slate-200 bg-white p-3 ${compactCards ? "min-h-[178px]" : "min-h-[226px]"}`}
+              className={`flex flex-col rounded-[8px] border border-slate-200 bg-white p-3 ${compactCards ? "min-h-[208px]" : "min-h-[226px]"}`}
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <h3 className="m-0 text-[15px] font-[760] leading-[1.35] text-slate-900">
@@ -287,7 +287,7 @@ export function AlignmentTensionMap({
                 <div>
                   <p className="m-0 text-[11px] font-[760] text-slate-400">현행 제도</p>
                   <p className="m-0 mt-0.5 font-[700] text-slate-800">{axis.actual_label}</p>
-                  <p className={`m-0 mt-0.5 text-[11px] leading-[1.45] text-slate-500 ${compactCards ? "line-clamp-2" : "line-clamp-3"}`}>{actualSummary(axis)}</p>
+                  <p className={`m-0 mt-0.5 text-[11px] leading-[1.45] text-slate-500 ${compactCards ? "" : "line-clamp-3"}`}>{actualSummary(axis)}</p>
                 </div>
               </div>
 

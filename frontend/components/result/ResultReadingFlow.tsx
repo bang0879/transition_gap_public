@@ -18,11 +18,11 @@ const STEPS = [
 
 export function ResultReadingFlow() {
   return (
-    <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-3 print:hidden">
-      <div className="grid gap-2 lg:grid-cols-3">
+    <section className="mb-6 border-y border-slate-200 bg-white/80 py-3 print:hidden">
+      <div className="grid gap-0 lg:grid-cols-3 lg:divide-x lg:divide-slate-200">
         {STEPS.map((item) => (
-          <div key={item.step} className="flex gap-3 rounded-[8px] bg-slate-50 px-3 py-2">
-            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-[800] text-teal shadow-soft">
+          <div key={item.step} className="flex gap-3 px-3 py-2 lg:px-4">
+            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-[10px] font-[800] text-slate-500">
               {item.step}
             </span>
             <div>

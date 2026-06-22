@@ -9,7 +9,7 @@ import { Button } from "@/components/shared/Button";
 import { MemoBlock } from "@/components/result/MemoBlock";
 import { MatrixSVG } from "@/components/visualization/MatrixSVG";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { ScenarioFitTable } from "@/components/matrix/ScenarioFitTable";
+import { ScenarioFitTable, scenarioMatrixConnection } from "@/components/matrix/ScenarioFitTable";
 import { SelectedScenarioCard } from "@/components/matrix/SelectedScenarioCard";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
@@ -23,6 +23,7 @@ interface Scenario {
   package: Array<{ area: string; action: string; timeline: string }>;
   impact?: Array<{ metric: string; after: string; direction?: string }>;
   financial_impact?: Array<{ item: string; amount: string; note?: string; color_intent?: string }>;
+  tradeoff_summary?: { gain: string; burden: string; talent_risk: string; decision_question: string };
   warnings?: string[];
 }
 
@@ -97,21 +98,23 @@ export default function MatrixPage() {
   }
 
   const selected = scenarios.find((scenario) => scenario.id === selectedId) ?? scenarios[0];
-  const selectedGain = selected?.impact?.[0]
+  const selectedGain = selected?.tradeoff_summary?.gain ?? (selected?.impact?.[0]
     ? `${selected.impact[0].metric} 개선 목표: ${selected.impact[0].after}`
-    : selected?.description;
-  const selectedCost = selected?.financial_impact?.[0]
+    : selected?.description);
+  const selectedCost = selected?.tradeoff_summary?.burden ?? (selected?.financial_impact?.[0]
     ? `${selected.financial_impact[0].item} 예상 부담: ${selected.financial_impact[0].amount}`
-    : selected?.warnings?.[0];
+    : selected?.warnings?.[0]);
+  const selectedTalentRisk = selected?.tradeoff_summary?.talent_risk ?? selected?.warnings?.[0];
   const matrixConfidence = confidenceText(data.visibility.score);
   const selectedReference = selected ? referenceForScenario(selected.id) : undefined;
+  const selectedMatrixConnection = selected ? scenarioMatrixConnection(selected.id, data.matrix) : undefined;
 
   return (
     <>
       <PageHeader
         eyebrow="트레이드오프 분석 · 매트릭스 A/B"
         title="어느 제도를 먼저 바꾸고, 어떤 부담을 감당할지 비교합니다."
-        lead="As-Is는 현재 운영 데이터로 자동 배치하고, To-Be는 회사가 선택한 인재 운영 방향으로 도출합니다. 두 점 사이의 거리가 클수록 제도 변경에 따른 실행 부담이 커집니다."
+        lead="As-Is는 현재 제도가 실제로 작동하는 위치이고, To-Be는 회사가 철학에서 선택한 인재 운영 방향입니다. 두 점 사이의 거리는 지금 모습에서 원하는 운영 방식으로 옮겨갈 때 감당해야 할 전환 부담을 뜻합니다."
         actions={
           <>
             <Button onClick={() => router.push("/result/detail")}>상세 분석으로</Button>
@@ -120,49 +123,49 @@ export default function MatrixPage() {
         }
       />
       <MemoBlock
-        title="인사제도 선택은 실행 부담을 함께 보는 일입니다."
-        body="아래 매트릭스는 회사가 선택한 방향(To-Be)과 현재 제도가 실제로 작동하는 위치(As-Is)의 거리를 보여줍니다. 이 거리가 곧 실행 부담이며, 어떤 방향이든 추가로 관리해야 할 비용이 있습니다."
+        title="이 화면은 현재 운영 방식과 지향점 사이의 간극을 보는 장치입니다."
+        body="Matrix A는 보상과 평가가 어떤 인재 메시지를 만들고 있는지, Matrix B는 의사결정과 컬처핏 운영이 어떤 조직 이미지를 만들고 있는지 보여줍니다. 내가 어떤 회사처럼 운영하고 싶었는지와 실제로 어디에 가까웠는지를 비교한 뒤, 다음 화면에서 시나리오별 트레이드오프를 검토합니다."
       />
-      <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
+      <section className="mb-4 rounded-[8px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
         <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
           <div className="py-2 lg:px-4 lg:first:pl-0">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">읽는 순서</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
-              현재 위치를 먼저 보고, To-Be까지의 선 길이로 전환 비용을 봅니다.
+              현재 위치를 먼저 보고, To-Be까지의 선 길이로 전환 부담을 봅니다.
             </p>
           </div>
           <div className="py-3 lg:px-4 lg:py-2">
             <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">A/B 역할</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
-              A는 보상·성과 메시지, B는 의사결정·컬처핏 운영 부담을 나눠 봅니다.
+              A는 보상·평가 메시지, B는 의사결정·컬처핏 운영 방식을 나눠 봅니다.
             </p>
           </div>
           <div className="py-2 lg:px-4 lg:first:pl-0">
-            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">얻는 것</p>
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-[#4c7974]">얻는 것</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
               선택한 방향은 인재 메시지, 보상 원칙, 의사결정 속도를 더 선명하게 만듭니다.
             </p>
           </div>
           <div className="py-3 lg:px-4 lg:py-2">
-            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">부담</p>
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-[#8a6259]">부담</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
               반대로 인건비, 평가 갈등, 리더 운영 부담이 커질 수 있습니다.
             </p>
           </div>
           <div className="py-3 lg:px-4 lg:py-2 lg:last:pr-0">
-            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-amber">결정 질문</p>
+            <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-[#8a6b3b]">결정 질문</p>
             <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-600">
               다음 화면에서 어떤 실행안을 먼저 검토할지 정합니다.
             </p>
           </div>
         </div>
       </section>
-      <div className="mb-4 grid gap-4 xl:grid-cols-2">
+      <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <MatrixSVG
           title="매트릭스 A"
           markerId="matrix-a-arrow"
           subtitle="보상 구조와 성과 운영의 방향"
-          quadrantLabels={["Q2 장기 비전형 공동체", "Q1 단기 성과 집중형", "Q3 평균 기준형", "Q4 소수정예 중심형"]}
+          quadrantLabels={["장기 비전형 공동체", "단기 성과 집중형", "평균 기준형", "소수정예 중심형"]}
           quadrantExamples={[
             "Google식 공동체 기반 협업 조직",
             "Netflix식 고성과·고책임 보상 조직",
@@ -174,13 +177,14 @@ export default function MatrixPage() {
           asIs={{ x: data.matrix.a_x_as_is, y: data.matrix.a_y_as_is }}
           toBe={{ x: data.matrix.a_x_to_be, y: data.matrix.a_y_to_be }}
           badgeText={data.matrix.a_quadrant_as_is}
+          toBeBadgeText={data.matrix.a_quadrant_to_be}
           confidenceText={matrixConfidence}
         />
         <MatrixSVG
           title="매트릭스 B"
           markerId="matrix-b-arrow"
           subtitle="의사결정 통제와 컬처핏 운영의 방향"
-          quadrantLabels={["Q2 가족형 자율 조직", "Q4 대기업 공채 시스템형", "Q1 개인플레이어 중심형", "Q3 에이전시형 분업 조직"]}
+          quadrantLabels={["가족형 자율 조직", "대기업 공채 시스템형", "개인플레이어 중심형", "에이전시형 분업 조직"]}
           quadrantExamples={[
             "Google식 자율과 신뢰 기반 운영",
             "삼성식 공채/직무순환 시스템",
@@ -192,13 +196,15 @@ export default function MatrixPage() {
           asIs={{ x: data.matrix.b_x_as_is, y: data.matrix.b_y_as_is }}
           toBe={{ x: data.matrix.b_x_to_be ?? data.matrix.b_x_as_is, y: data.matrix.b_y_to_be ?? data.matrix.b_y_as_is }}
           badgeText={data.matrix.b_quadrant_as_is}
-          confidenceText="Matrix B는 의사결정 병목과 컬처핏 기준의 비용을 보여줍니다."
+          toBeBadgeText={data.matrix.b_quadrant_to_be}
+          confidenceText="Matrix B는 의사결정 병목, 자율/통제 수준, 컬처핏 기준의 운영 부담을 보여줍니다."
         />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
         <ScenarioFitTable
           scenarios={scenarios}
           selectedId={selectedId}
+          matrix={data.matrix}
           onSelect={(id) => {
             setManualSelection(true);
             setSelectedId(id);
@@ -211,15 +217,17 @@ export default function MatrixPage() {
             packageItems={selected.package}
             gain={selectedGain}
             cost={selectedCost}
-            warning={selected.warnings?.[0]}
+            talentRisk={selectedTalentRisk}
             reference={selectedReference}
+            matrixReason={selectedMatrixConnection?.why}
+            scenarioRole={selectedMatrixConnection?.role}
           />
         ) : null}
       </div>
-      <p className="m-0 mt-3 rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-[12px] leading-[1.65] text-slate-500">
+      <p className="m-0 mt-3 rounded-[8px] border border-slate-200 bg-white px-4 py-3 text-[12px] leading-[1.65] text-slate-500">
         매트릭스의 기업 예시는 이해를 돕기 위한 운영 이미지입니다. 이 화면에서는 방향별 부담을 비교하고, 다음 시나리오 화면에서 실제 도입·보류·대체 검토를 정합니다.
       </p>
-      <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
+      <section className="mt-6 flex flex-col gap-3 rounded-[8px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <p className="m-0 text-[13px] font-[690] text-slate-900">트레이드오프를 확인했다면 시나리오별 실행안을 비교합니다.</p>
           <p className="m-0 mt-1 text-[12px] text-slate-500">선택은 확정이 아니라, 다음 화면에서 더 구체적으로 검토합니다.</p>

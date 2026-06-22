@@ -28,11 +28,11 @@ class MatrixCoordinates:
     def matrix_a_quadrant(self) -> str:
         """매트릭스 A의 사분면 명칭."""
         if self.matrix_a_x >= 0.5 and self.matrix_a_y >= 0.5:
-            return "Q1: 단기 성과형 용병조직"
+            return "Q1: 단기 성과 집중형"
+        if self.matrix_a_x < 0.5 and self.matrix_a_y >= 0.5:
+            return "Q2: 장기 비전형 공동체"
         if self.matrix_a_x < 0.5 and self.matrix_a_y < 0.5:
-            return "Q2: 장기 비전형 공동체 조직"
-        if self.matrix_a_x >= 0.5 and self.matrix_a_y < 0.5:
-            return "Q3: 평균의 함정형"
+            return "Q3: 평균 기준형"
         return "Q4: 소수정예 중심형"
 
     @property

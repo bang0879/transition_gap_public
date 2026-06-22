@@ -1,4 +1,4 @@
-"""Static content endpoint tests."""
+﻿"""Static content endpoint tests."""
 from __future__ import annotations
 
 
@@ -48,8 +48,20 @@ def test_get_scenarios(client):
         assert "package" in scenario
         assert "impact" in scenario
         assert "financial_impact" in scenario
+        assert "tradeoff_summary" in scenario
         assert "warnings" in scenario
         assert "next_steps" in scenario
+
+        tradeoff_summary = scenario["tradeoff_summary"]
+        assert "gain" in tradeoff_summary
+        assert "burden" in tradeoff_summary
+        assert "talent_risk" in tradeoff_summary
+        assert "decision_question" in tradeoff_summary
+
+        for package_item in scenario["package"]:
+            assert "benefit" in package_item
+            assert "tradeoff" in package_item
+            assert "reference_example" in package_item
 
         for financial_impact in scenario["financial_impact"]:
             assert "rationale" in financial_impact

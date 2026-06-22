@@ -242,12 +242,12 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
 def _matrix_a_quadrant(x: float, y: float) -> str:
     """Return Matrix A quadrant label for To-Be coordinates."""
     if x >= 0.5 and y >= 0.5:
-        return "Q1: 단기 성과형 작업조직"
+        return "Q1: 단기 성과 집중형"
+    if x < 0.5 and y >= 0.5:
+        return "Q2: 장기 비전형 공동체"
     if x < 0.5 and y < 0.5:
-        return "Q2: 장기 비전형 공동체 조직"
-    if x >= 0.5 and y < 0.5:
-        return "Q3: 평준형 안정 조직"
-    return "Q4: 소수정예 중심 조직"
+        return "Q3: 평균 기준형"
+    return "Q4: 소수정예 중심형"
 
 
 def _matrix_b_quadrant(x: float, y: float) -> str:

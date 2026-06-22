@@ -20,6 +20,16 @@ interface ScenarioPackageItem {
   area: string;
   action: string;
   timeline: string;
+  benefit?: string;
+  tradeoff?: string;
+  reference_example?: string;
+}
+
+interface TradeoffSummary {
+  gain: string;
+  burden: string;
+  talent_risk: string;
+  decision_question: string;
 }
 
 interface ScenarioDetail {
@@ -30,6 +40,7 @@ interface ScenarioDetail {
   philosophy?: string;
   impact?: ScenarioImpact[];
   financial_impact?: FinancialImpact[];
+  tradeoff_summary?: TradeoffSummary;
   package?: ScenarioPackageItem[];
   warnings?: string[];
 }
@@ -79,7 +90,25 @@ const DETAILED_COST: Record<string, string> = {
     "소수 핵심 인재에게 자원을 집중하는 만큼 내부 형평성 논란과 비핵심 인력의 이탈 가능성을 관리해야 합니다. 핵심/비핵심 구분 기준이 불명확하면 조직 신뢰가 빠르게 흔들릴 수 있습니다.",
 };
 
+const FINANCIAL_CONTEXT: Record<string, { label: string; body: string; offset: string }> = {
+  performance: {
+    label: "비용만 보는 항목이 아닙니다",
+    body: "성과급과 리더 운영 비용은 고성과자를 붙잡고 평가 불신을 줄이기 위한 실행 비용입니다. 숫자만 보면 인건비 증가로 보이지만, 실제 판단은 핵심 인재 설득력과 성과 기준 수용성이 함께 좋아지는지로 해야 합니다.",
+    offset: "핵심 인재 이탈, 평가 불신, 오퍼 경쟁력 약화로 생기는 재채용·조직 지연 비용",
+  },
+  community: {
+    label: "낮은 비용이 곧 정답은 아닙니다",
+    body: "공동체 안정형은 이탈과 불안을 낮추는 장점이 있지만, 고성과자에게 돌아가는 차등 보상 신호가 약해질 수 있습니다. 비용이 작아 보여도 핵심 인재가 시장 보상과 성장 기회를 어떻게 받아들이는지 함께 봐야 합니다.",
+    offset: "초기 이탈, 온보딩 실패, 리더-구성원 신뢰 저하로 생기는 반복 채용과 운영 손실",
+  },
+  elite: {
+    label: "전사 인건비 상승률처럼 읽으면 안 됩니다",
+    body: "소수정예 집중형의 보상 증가는 전원에게 같은 폭으로 올리는 비용이 아니라, 핵심 역할에 자원을 좁게 집중하는 선택입니다. 대신 내부 형평성 메시지와 비핵심 인력 이탈 리스크를 반드시 같이 관리해야 합니다.",
+    offset: "핵심 역할 공백, 의사결정 지연, 대체 채용 실패로 생기는 사업 실행 손실",
+  },
+};
 function detailedGain(scenario: ScenarioDetail): string {
+  if (scenario.tradeoff_summary?.gain) return scenario.tradeoff_summary.gain;
   if (DETAILED_GAIN[scenario.id]) return DETAILED_GAIN[scenario.id];
   const impacts = scenario.impact?.slice(0, 3) ?? [];
   if (impacts.length === 0) return scenario.description;
@@ -89,6 +118,7 @@ function detailedGain(scenario: ScenarioDetail): string {
 }
 
 function detailedCost(scenario: ScenarioDetail): string {
+  if (scenario.tradeoff_summary?.burden) return scenario.tradeoff_summary.burden;
   if (DETAILED_COST[scenario.id]) return DETAILED_COST[scenario.id];
   const financial = scenario.financial_impact?.[0];
   const warning = scenario.warnings?.[0];
@@ -98,22 +128,23 @@ function detailedCost(scenario: ScenarioDetail): string {
 }
 
 function financialTone(colorIntent?: string): string {
-  if (colorIntent === "positive") return "text-teal-deep";
-  if (colorIntent === "negative") return "text-coral";
+  if (colorIntent === "positive") return "text-[#4c7974]";
+  if (colorIntent === "negative") return "text-[#8a6259]";
   return "text-slate-800";
 }
 
 function financialExplanation(item: FinancialImpact): string {
   const basis = item.note ?? item.rationale;
   if (basis) return `산출 관점: ${basis}와 현재 조직 상태를 함께 반영한 추정 범위입니다.`;
-  return "산출 관점: 현재 입력값과 일반적인 스타트업 운영 범위를 함께 본 추정치입니다.";
+  return "읽는 방법: 현재 입력값과 일반적인 스타트업 운영 범위를 함께 본 검토 범위입니다. 효과와 리스크 방어 항목 옆에서 함께 봐야 합니다.";
 }
 
 export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
   const mainFinancial = scenario.financial_impact?.slice(0, 3) ?? [];
   const mainImpacts = scenario.impact?.slice(0, 3) ?? [];
-  const mainPackages = scenario.package?.slice(0, 4) ?? [];
+  const mainPackages = scenario.package?.slice(0, 5) ?? [];
   const operatingImage = OPERATING_IMAGE[scenario.id];
+  const financialContext = FINANCIAL_CONTEXT[scenario.id];
   const [decisions, setDecisions] = useState<Record<string, PackageDecision>>({});
   const decisionValues = Object.values(decisions);
   const adoptedCount = decisionValues.filter((decision) => decision === "도입").length;
@@ -129,49 +160,56 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
   };
 
   return (
-    <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-5 print:break-inside-avoid">
+    <section className="mb-4 rounded-[8px] border border-slate-200 bg-white p-5 print:break-inside-avoid">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">선택한 시나리오 상세</p>
-          <h3 className="m-0 mt-2 text-[18px] font-[690] text-slate-900">{scenario.name}</h3>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-500">선택한 시나리오 상세</p>
+          <h3 className="m-0 mt-2 text-[18px] font-[720] text-slate-950">{scenario.name}</h3>
           <p className="m-0 mt-2 max-w-[760px] text-[12px] leading-[1.7] text-slate-600">
             <GlossaryText text={scenario.philosophy ?? scenario.description} />
           </p>
         </div>
-        <span className="w-fit rounded-full border border-teal-line bg-teal-soft px-[9px] py-[4px] text-[11px] font-[680] text-teal-deep">
+        <span className="w-fit rounded-full border border-[#cfe7e2] bg-white px-[9px] py-[4px] text-[11px] font-[680] text-[#4c7974]">
           {scenario.subtitle}
         </span>
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 rounded-[10px] border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.1fr_1fr]">
+      <div className="mb-5 grid grid-cols-1 gap-3 rounded-[8px] border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.1fr_1fr]">
         <div>
           <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">선택한 시나리오 요약</p>
-          <p className="m-0 mt-2 text-[13px] font-[690] leading-[1.5] text-slate-900">
+          <p className="m-0 mt-2 text-[13px] leading-[1.6] text-slate-700">
             <GlossaryText text={scenario.description} />
           </p>
         </div>
         <div>
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-amber">검토 관점</p>
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">결정 질문</p>
           <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-700">
-            <GlossaryText text={REVIEW_PERSPECTIVE[scenario.id] ?? scenario.description} />
+            <GlossaryText text={scenario.tradeoff_summary?.decision_question ?? REVIEW_PERSPECTIVE[scenario.id] ?? scenario.description} />
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <div className="rounded-[10px] border border-teal-line bg-teal-soft p-4">
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">얻는 것</p>
-          <p className="m-0 mt-2 text-[13px] font-[650] leading-[1.65] text-slate-800">
+        <div className="rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] p-4">
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-[#4c7974]">얻는 것</p>
+          <p className="m-0 mt-2 text-[13px] leading-[1.65] text-slate-700">
             <GlossaryText text={detailedGain(scenario)} />
           </p>
         </div>
-        <div className="rounded-[10px] border border-[#f0d8cf] bg-[#fff7f4] p-4">
-          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-coral">부담/주의점</p>
-          <p className="m-0 mt-2 text-[13px] font-[650] leading-[1.65] text-slate-800">
+        <div className="rounded-[8px] border border-[#eadfda] bg-[#fffcfb] p-4">
+          <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-[#8a6259]">부담/주의점</p>
+          <p className="m-0 mt-2 text-[13px] leading-[1.65] text-slate-700">
             <GlossaryText text={detailedCost(scenario)} />
           </p>
         </div>
       </div>
+
+      {scenario.tradeoff_summary?.talent_risk ? (
+        <div className="mt-3 rounded-[8px] border border-[#eadfca] bg-white px-4 py-3 text-[12px] leading-[1.65] text-slate-700">
+          <span className="font-[760] text-[#8a6b3b]">핵심 인재 리스크: </span>
+          <GlossaryText text={scenario.tradeoff_summary.talent_risk} />
+        </div>
+      ) : null}
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1fr_1fr]">
         <div>
@@ -188,13 +226,25 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           </div>
         </div>
         <div>
-          <p className="m-0 text-[12px] font-[680] text-slate-900">재무 영향</p>
-          <div className="mt-3 divide-y divide-slate-100">
+          <p className="m-0 text-[12px] font-[680] text-slate-900">재무 영향의 해석</p>
+          {financialContext ? (
+            <div className="mt-3 rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] px-3 py-2">
+              <p className="m-0 text-[11px] font-[760] text-[#4c7974]">{financialContext.label}</p>
+              <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-600">
+                <GlossaryText text={financialContext.body} />
+              </p>
+              <p className="m-0 mt-1 text-[10.5px] leading-[1.45] text-slate-500">
+                <span className="font-[720] text-slate-700">상쇄해서 볼 것: </span>
+                <GlossaryText text={financialContext.offset} />
+              </p>
+            </div>
+          ) : null}
+          <div className={`${financialContext ? "mt-2" : "mt-3"} divide-y divide-slate-100`}>
             {mainFinancial.map((item) => (
               <div key={`${item.item}-${item.amount}`} className="py-2 first:pt-0 last:pb-0">
-                <p className={`m-0 text-[12px] font-[650] ${financialTone(item.color_intent)}`}>{item.item}: {item.amount}</p>
+                <p className={`m-0 text-[11.5px] font-[620] ${financialTone(item.color_intent)}`}>{item.item}: <span className="font-[650]">{item.amount}</span></p>
                 <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-500">
-                  <GlossaryText text={item.note ?? "현재 입력값 기준의 추정 범위입니다."} />
+                  <GlossaryText text={item.note ?? "현재 입력값 기준의 검토 범위입니다."} />
                 </p>
                 <p className="m-0 mt-1 text-[10.5px] leading-[1.45] text-slate-400">
                   <GlossaryText text={financialExplanation(item)} />
@@ -204,10 +254,10 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           </div>
         </div>
         <div>
-          <p className="m-0 text-[12px] font-[680] text-slate-900">운영 리스크</p>
+          <p className="m-0 text-[12px] font-[680] text-[#8a6259]">운영 리스크</p>
           <div className="mt-3 divide-y divide-slate-100">
             {(scenario.warnings ?? []).slice(0, 3).map((warning) => (
-              <p key={warning} className="m-0 py-2 text-[11px] leading-[1.6] text-slate-600 first:pt-0 last:pb-0">
+              <p key={warning} className="m-0 py-2 text-[11px] leading-[1.6] text-slate-700 first:pt-0 last:pb-0">
                 <GlossaryText text={warning} />
               </p>
             ))}
@@ -237,11 +287,11 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           <div>
             <p className="m-0 text-[12px] font-[680] text-slate-900">검토 관점</p>
             <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-600">
-              <GlossaryText text={REVIEW_PERSPECTIVE[scenario.id] ?? scenario.description} />
+              <GlossaryText text={scenario.tradeoff_summary?.decision_question ?? REVIEW_PERSPECTIVE[scenario.id] ?? scenario.description} />
             </p>
           </div>
         </div>
-        <div className="mt-4 rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="mt-4 rounded-[8px] border border-slate-200 bg-slate-50 px-4 py-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="m-0 text-[12px] font-[700] text-slate-900">제도별 선택 결과</p>
@@ -250,9 +300,9 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-[11px] font-[720]">
-              <span className="rounded-full border border-teal-line bg-white px-2.5 py-1 text-teal-deep">도입 {adoptedCount}</span>
-              <span className="rounded-full border border-coral/25 bg-white px-2.5 py-1 text-coral">보류 {heldCount}</span>
-              <span className="rounded-full border border-amber/30 bg-white px-2.5 py-1 text-amber">대체 {alternativeCount}</span>
+              <span className="rounded-full border border-[#d9ebe7] bg-white px-2.5 py-1 text-[#4c7974]">도입 {adoptedCount}</span>
+              <span className="rounded-full border border-[#eadfda] bg-white px-2.5 py-1 text-[#8a6259]">보류 {heldCount}</span>
+              <span className="rounded-full border border-[#eadfca] bg-white px-2.5 py-1 text-[#8a6b3b]">대체 {alternativeCount}</span>
             </div>
           </div>
         </div>

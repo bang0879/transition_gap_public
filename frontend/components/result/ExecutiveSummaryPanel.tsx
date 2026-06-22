@@ -110,7 +110,7 @@ export function ExecutiveSummaryPanel({
       <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="p-5 sm:p-6">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-[780] tracking-[0.08em] text-slate-500">임원용 요약</span>
+            <span className="text-[11px] font-[780] tracking-[0.08em] text-slate-500">경영진용 요약</span>
             <Badge variant="slate">{MODE_LABEL[mode]}</Badge>
           </div>
           <h2 className="m-0 mt-3 max-w-[780px] text-[24px] font-[720] leading-[1.32] text-slate-950">

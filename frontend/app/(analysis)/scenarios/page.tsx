@@ -62,7 +62,7 @@ function ScenariosContent() {
       />
       <ScenarioComparisonCards scenarios={scenarios} selectedId={selectedId} onSelect={selectScenario} />
       {selectedScenario ? <ScenarioDetailPanel scenario={selectedScenario} /> : null}
-      <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
+      <section className="mt-6 flex flex-col gap-3 rounded-[8px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <p className="m-0 text-[13px] font-[690] text-slate-900">검토할 방향을 골랐다면 12개월 실행 순서로 바꿉니다.</p>
           <p className="m-0 mt-1 text-[12px] text-slate-500">로드맵은 현재 검토 중인 시나리오를 12개월 실행 순서로 정리합니다.</p>
