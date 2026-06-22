@@ -69,18 +69,6 @@ export default function ResultPage() {
     });
   }, [companyName, data, sessionId, upsertSnapshot]);
 
-  const handlePrint = () => {
-    if (sessionId) {
-      logEvent({
-        session_id: sessionId,
-        event_type: "cta_click",
-        page: "/result",
-        metadata: { action: "print_report" },
-        timestamp: new Date().toISOString(),
-      });
-    }
-    window.print();
-  };
 
   const handleNavigate = (action: string, path: string) => {
     if (sessionId) {
@@ -206,7 +194,7 @@ export default function ResultPage() {
         lead="핵심 결론, 그대로 둘 때의 운영 리스크, 다음 결정을 먼저 봅니다."
         actions={
           <>
-            <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
+            <Button onClick={() => handleNavigate("open_report", "/report")}>진단 보고서 보기</Button>
             <Button variant="primary" onClick={() => handleNavigate("open_detail", "/result/detail")}>상세 분석 보기</Button>
           </>
         }
