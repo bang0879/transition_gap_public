@@ -1,5 +1,7 @@
 "use client";
 
+import { MATRIX_LAYOUT, MATRIX_QUADRANT_LABEL_BOXES, matrixMarkerDisplayPosition } from "@/lib/utils/matrixLayout";
+
 interface MatrixSVGProps {
   title: string;
   markerId: string;
@@ -12,15 +14,7 @@ interface MatrixSVGProps {
   toBe: { x: number; y: number };
   badgeText: string;
   toBeBadgeText?: string | null;
-  confidenceText?: string;
 }
-
-const X0 = 20;
-const X1 = 480;
-const Y0 = 20;
-const Y1 = 320;
-const CX = 250;
-const CY = 170;
 
 type QuadrantInterpretation = {
   ambition: string;
@@ -80,14 +74,6 @@ const QUADRANT_INTERPRETATIONS: Record<string, QuadrantInterpretation> = {
   },
 };
 
-function sx(x: number): number {
-  return X0 + Math.max(0, Math.min(1, x)) * (X1 - X0);
-}
-
-function sy(y: number): number {
-  return Y1 - Math.max(0, Math.min(1, y)) * (Y1 - Y0);
-}
-
 function stripQuadrantCode(label: string): string {
   return label.replace(/^Q\d:\s*/i, "").trim();
 }
@@ -121,18 +107,6 @@ function yAxisEnds(label: string): { top: string; bottom: string } {
     return { top: top.trim(), bottom: rest.replace("↓", "").trim() };
   }
   return { top: normalized, bottom: "낮음" };
-}
-
-function displayToBePosition(point: { x: number; y: number }): { x: number; y: number } {
-  let x = sx(point.x);
-  let y = sy(point.y);
-
-  if (point.y >= 0.72) y = Math.max(y, Y0 + 112);
-  if (point.y <= 0.28) y = Math.min(y, Y1 - 132);
-  if (point.x <= 0.28) x = Math.max(x, X0 + 96);
-  if (point.x >= 0.72) x = Math.min(x, X1 - 96);
-
-  return { x, y };
 }
 
 type MovementNarrative = {
@@ -183,6 +157,8 @@ function QuadrantLabel({
   vertical = "top",
   label,
   example,
+  width = 180,
+  height = 58,
 }: {
   x: number;
   y: number;
@@ -190,16 +166,18 @@ function QuadrantLabel({
   vertical?: "top" | "bottom";
   label: string;
   example?: string;
+  width?: number;
+  height?: number;
 }) {
   return (
-    <foreignObject x={x} y={y} width="190" height="74">
+    <foreignObject x={x} y={y} width={width} height={height}>
       <div
         className={`pointer-events-none flex h-full flex-col bg-transparent px-0 py-0 leading-[1.25] ${
           align === "right" ? "items-end text-right" : "items-start text-left"
         } ${vertical === "bottom" ? "justify-end" : "justify-start"}`}
       >
-        <span className="max-w-[176px] text-[10.5px] font-[760] text-slate-600">{canonicalQuadrantLabel(label)}</span>
-        {example ? <span className="mt-1 max-w-[176px] text-[9.5px] font-[560] leading-[1.35] text-slate-400">{example}</span> : null}
+        <span className="block max-w-[170px] truncate text-[10.5px] font-[760] text-slate-600">{canonicalQuadrantLabel(label)}</span>
+        {example ? <span className="mt-1 block max-w-[170px] truncate text-[9.5px] font-[560] leading-[1.35] text-slate-400">{example}</span> : null}
       </div>
     </foreignObject>
   );
@@ -217,13 +195,11 @@ export function MatrixSVG({
   toBe,
   badgeText,
   toBeBadgeText,
-  confidenceText,
 }: MatrixSVGProps) {
-  const ax = sx(asIs.x);
-  const ay = sy(asIs.y);
-  const tx = sx(toBe.x);
-  const ty = sy(toBe.y);
-  const displayTarget = displayToBePosition(toBe);
+  const displayAsIs = matrixMarkerDisplayPosition(asIs);
+  const displayTarget = matrixMarkerDisplayPosition(toBe);
+  const ax = displayAsIs.x;
+  const ay = displayAsIs.y;
   const dx = displayTarget.x - ax;
   const dy = displayTarget.y - ay;
   const length = Math.max(1, Math.hypot(dx, dy));
@@ -236,6 +212,10 @@ export function MatrixSVG({
   const movementText = movementNarrative(asIsText, targetText, rawGap);
   const xEnds = xAxisEnds(xAxisLabel);
   const yEnds = yAxisEnds(yAxisLabel);
+  const verticalGuideLeft = MATRIX_LAYOUT.plotLeft + MATRIX_LAYOUT.plotWidth * 0.25;
+  const verticalGuideRight = MATRIX_LAYOUT.plotLeft + MATRIX_LAYOUT.plotWidth * 0.75;
+  const horizontalGuideTop = MATRIX_LAYOUT.plotTop + MATRIX_LAYOUT.plotHeight * 0.25;
+  const horizontalGuideBottom = MATRIX_LAYOUT.plotTop + MATRIX_LAYOUT.plotHeight * 0.75;
 
   const narrativeItems: Array<{ label: string; body: string }> = [
     { label: "철학 방향", body: movementText.direction },
@@ -259,53 +239,48 @@ export function MatrixSVG({
           </span>
         </div>
       </div>
-      <div className="mb-2 rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] p-3">
-        <div className="grid gap-2 md:grid-cols-3">
-          {narrativeItems.map((item) => (
-            <div key={item.label} className="rounded-[7px] border border-[#d9ebe7] bg-white px-3 py-2">
-              <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-[#4c7974]">{item.label}</p>
-              <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-700">{item.body}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-      <svg viewBox="0 0 500 384" className="h-auto w-full rounded-[8px] border border-slate-200 bg-white" role="img" aria-label={title}>
+      <svg
+        viewBox={`0 0 ${MATRIX_LAYOUT.viewBoxWidth} ${MATRIX_LAYOUT.viewBoxHeight}`}
+        className="h-auto w-full rounded-[8px] border border-slate-200 bg-white"
+        role="img"
+        aria-label={title}
+      >
         <defs>
           <marker id={markerId} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#2f8f86" />
           </marker>
         </defs>
-        <rect x={X0} y={Y0} width={X1 - X0} height={Y1 - Y0} rx="8" fill="#fff" stroke="#d8e0ea" />
-        <line x1="135" y1={Y0} x2="135" y2={Y1} stroke="#f1f5f9" />
-        <line x1="365" y1={Y0} x2="365" y2={Y1} stroke="#f1f5f9" />
-        <line x1={X0} y1="95" x2={X1} y2="95" stroke="#f1f5f9" />
-        <line x1={X0} y1="245" x2={X1} y2="245" stroke="#f1f5f9" />
-        <line x1={CX} y1={Y0} x2={CX} y2={Y1} stroke="#d8e0ea" />
-        <line x1={X0} y1={CY} x2={X1} y2={CY} stroke="#d8e0ea" />
-        <line x1={X0 + 10} y1={CY} x2={X1 - 10} y2={CY} stroke="#94a3b8" strokeWidth=".9" opacity=".55" />
-        <text x={CX} y={Y0 + 14} textAnchor="middle" className="fill-slate-500 text-[10px] font-[700]">
+        <rect x={MATRIX_LAYOUT.plotLeft} y={MATRIX_LAYOUT.plotTop} width={MATRIX_LAYOUT.plotWidth} height={MATRIX_LAYOUT.plotHeight} rx="8" fill="#fff" stroke="#d8e0ea" />
+        <line x1={verticalGuideLeft} y1={MATRIX_LAYOUT.plotTop} x2={verticalGuideLeft} y2={MATRIX_LAYOUT.plotBottom} stroke="#f1f5f9" />
+        <line x1={verticalGuideRight} y1={MATRIX_LAYOUT.plotTop} x2={verticalGuideRight} y2={MATRIX_LAYOUT.plotBottom} stroke="#f1f5f9" />
+        <line x1={MATRIX_LAYOUT.plotLeft} y1={horizontalGuideTop} x2={MATRIX_LAYOUT.plotRight} y2={horizontalGuideTop} stroke="#f1f5f9" />
+        <line x1={MATRIX_LAYOUT.plotLeft} y1={horizontalGuideBottom} x2={MATRIX_LAYOUT.plotRight} y2={horizontalGuideBottom} stroke="#f1f5f9" />
+        <line x1={MATRIX_LAYOUT.centerX} y1={MATRIX_LAYOUT.plotTop} x2={MATRIX_LAYOUT.centerX} y2={MATRIX_LAYOUT.plotBottom} stroke="#d8e0ea" />
+        <line x1={MATRIX_LAYOUT.plotLeft} y1={MATRIX_LAYOUT.centerY} x2={MATRIX_LAYOUT.plotRight} y2={MATRIX_LAYOUT.centerY} stroke="#d8e0ea" />
+        <line x1={MATRIX_LAYOUT.plotLeft + 10} y1={MATRIX_LAYOUT.centerY} x2={MATRIX_LAYOUT.plotRight - 10} y2={MATRIX_LAYOUT.centerY} stroke="#94a3b8" strokeWidth=".9" opacity=".55" />
+        <text x={MATRIX_LAYOUT.centerX} y={MATRIX_LAYOUT.plotTop + 14} textAnchor="middle" className="fill-slate-500 text-[10px] font-[700]">
           ↑ {yEnds.top}
         </text>
-        <text x={CX} y={Y1 - 8} textAnchor="middle" className="fill-slate-500 text-[10px] font-[700]">
+        <text x={MATRIX_LAYOUT.centerX} y={MATRIX_LAYOUT.plotBottom - 8} textAnchor="middle" className="fill-slate-500 text-[10px] font-[700]">
           ↓ {yEnds.bottom}
         </text>
-        <text x={X0 + 12} y={CY - 8} className="fill-slate-500 text-[10px] font-[700]">
+        <text x={MATRIX_LAYOUT.plotLeft + 12} y={MATRIX_LAYOUT.centerY - 8} className="fill-slate-500 text-[10px] font-[700]">
           ← {xEnds.left}
         </text>
-        <text x={X1 - 12} y={CY - 8} textAnchor="end" className="fill-slate-500 text-[10px] font-[700]">
+        <text x={MATRIX_LAYOUT.plotRight - 12} y={MATRIX_LAYOUT.centerY - 8} textAnchor="end" className="fill-slate-500 text-[10px] font-[700]">
           {xEnds.right} →
         </text>
-        <QuadrantLabel x={30} y={34} label={quadrantLabels[0]} example={quadrantExamples?.[0]} />
-        <QuadrantLabel x={282} y={34} align="right" label={quadrantLabels[1]} example={quadrantExamples?.[1]} />
-        <QuadrantLabel x={30} y={216} vertical="bottom" label={quadrantLabels[2]} example={quadrantExamples?.[2]} />
-        <QuadrantLabel x={282} y={216} align="right" vertical="bottom" label={quadrantLabels[3]} example={quadrantExamples?.[3]} />
+        <QuadrantLabel {...MATRIX_QUADRANT_LABEL_BOXES.topLeft} label={quadrantLabels[0]} example={quadrantExamples?.[0]} />
+        <QuadrantLabel {...MATRIX_QUADRANT_LABEL_BOXES.topRight} align="right" label={quadrantLabels[1]} example={quadrantExamples?.[1]} />
+        <QuadrantLabel {...MATRIX_QUADRANT_LABEL_BOXES.bottomLeft} vertical="bottom" label={quadrantLabels[2]} example={quadrantExamples?.[2]} />
+        <QuadrantLabel {...MATRIX_QUADRANT_LABEL_BOXES.bottomRight} align="right" vertical="bottom" label={quadrantLabels[3]} example={quadrantExamples?.[3]} />
         <line x1={arrowStart.x} y1={arrowStart.y} x2={arrowEnd.x} y2={arrowEnd.y} stroke="#2f8f86" strokeWidth="2" strokeLinecap="round" markerEnd={`url(#${markerId})`} />
         <circle cx={ax} cy={ay} r="15.5" fill="none" stroke="#334155" strokeWidth=".8" opacity=".14" />
         <circle cx={ax} cy={ay} r="10.5" fill="#fff" stroke="#334155" strokeWidth="1.6" />
         <circle cx={ax} cy={ay} r="3" fill="#334155" />
         <rect x={displayTarget.x - 9} y={displayTarget.y - 9} width="18" height="18" rx="4" transform={`rotate(45 ${displayTarget.x} ${displayTarget.y})`} fill="#fff" stroke="#2f8f86" strokeWidth="1.8" />
         <circle cx={displayTarget.x} cy={displayTarget.y} r="2.7" fill="#2f8f86" />
-        <foreignObject x={28} y={328} width="444" height="46">
+        <foreignObject x={MATRIX_LAYOUT.legendX} y={MATRIX_LAYOUT.legendY} width={MATRIX_LAYOUT.legendWidth} height={MATRIX_LAYOUT.legendHeight}>
           <div className="flex h-full flex-col justify-center gap-1 rounded-[7px] border border-slate-200 bg-slate-50 px-2.5 text-[9.5px] leading-[1.35] text-slate-500">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
               <span className="inline-flex items-center gap-1 font-[720] text-slate-700">
@@ -322,8 +297,18 @@ export function MatrixSVG({
           </div>
         </foreignObject>
       </svg>
-      <p className="m-0 mt-2 text-[10.5px] leading-[1.5] text-slate-500">{confidenceText ?? "선의 길이는 전환 부담을 의미합니다."}</p>
-      <span className="sr-only">원래 To-Be 좌표는 x {tx.toFixed(3)}, y {ty.toFixed(3)}입니다.</span>
+      <div className="mt-3 rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] p-3">
+        <div className="grid gap-2 md:grid-cols-3">
+          {narrativeItems.map((item) => (
+            <div key={item.label} className="rounded-[7px] border border-[#d9ebe7] bg-white px-3 py-2">
+              <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-[#4c7974]">{item.label}</p>
+              <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-700">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <span className="sr-only">원래 To-Be 좌표는 x {toBe.x.toFixed(3)}, y {toBe.y.toFixed(3)}입니다.</span>
     </div>
   );
 }
+

@@ -37,12 +37,6 @@ function referenceForScenario(id: string): string {
   return OPERATING_REFERENCES[id] ?? "성장 단계 스타트업의 혼합 운영 이미지";
 }
 
-function confidenceText(score: number): string {
-  if (score >= 70) return `가시성 ${Math.round(score)}% · 정량 비교 신뢰도 높음`;
-  if (score >= 40) return `가시성 ${Math.round(score)}% · 신뢰도 중간`;
-  return `가시성 ${Math.round(score)}% · 정성 판단 우선`;
-}
-
 function scenarioFromToBe(matrix: {
   a_quadrant_to_be?: string | null;
   b_quadrant_to_be?: string | null;
@@ -105,7 +99,6 @@ export default function MatrixPage() {
     ? `${selected.financial_impact[0].item} 예상 부담: ${selected.financial_impact[0].amount}`
     : selected?.warnings?.[0]);
   const selectedTalentRisk = selected?.tradeoff_summary?.talent_risk ?? selected?.warnings?.[0];
-  const matrixConfidence = confidenceText(data.visibility.score);
   const selectedReference = selected ? referenceForScenario(selected.id) : undefined;
   const selectedMatrixConnection = selected ? scenarioMatrixConnection(selected.id, data.matrix) : undefined;
 
@@ -178,7 +171,6 @@ export default function MatrixPage() {
           toBe={{ x: data.matrix.a_x_to_be, y: data.matrix.a_y_to_be }}
           badgeText={data.matrix.a_quadrant_as_is}
           toBeBadgeText={data.matrix.a_quadrant_to_be}
-          confidenceText={matrixConfidence}
         />
         <MatrixSVG
           title="매트릭스 B"
@@ -197,7 +189,6 @@ export default function MatrixPage() {
           toBe={{ x: data.matrix.b_x_to_be ?? data.matrix.b_x_as_is, y: data.matrix.b_y_to_be ?? data.matrix.b_y_as_is }}
           badgeText={data.matrix.b_quadrant_as_is}
           toBeBadgeText={data.matrix.b_quadrant_to_be}
-          confidenceText="Matrix B는 의사결정 병목, 자율/통제 수준, 컬처핏 기준의 운영 부담을 보여줍니다."
         />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
@@ -240,3 +231,4 @@ export default function MatrixPage() {
     </>
   );
 }
+
