@@ -31,7 +31,7 @@ export function SelectedScenarioCard({ name, philosophy, packageItems, gain, cos
       ) : null}
       {matrixReason ? (
         <div className="mt-3 rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] px-3 py-2 text-[11px] leading-[1.55] text-slate-600">
-          <span className="font-[760] text-[#4c7974]">{scenarioRole ?? "Matrix 연결"}: </span>
+          <span className="font-[760] text-[#4c7974]">{scenarioRole ?? "집중 축"}: </span>
           <GlossaryText text={matrixReason} />
         </div>
       ) : null}

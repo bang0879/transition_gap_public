@@ -219,8 +219,8 @@ export default function MatrixPage() {
             cost={selectedCost}
             talentRisk={selectedTalentRisk}
             reference={selectedReference}
-            matrixReason={selectedMatrixConnection?.why}
-            scenarioRole={selectedMatrixConnection?.role}
+            matrixReason={selectedMatrixConnection ? `${selectedMatrixConnection.axis}: ${selectedMatrixConnection.why}` : undefined}
+            scenarioRole="집중 축"
           />
         ) : null}
       </div>

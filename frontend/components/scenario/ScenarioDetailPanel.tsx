@@ -226,20 +226,8 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           </div>
         </div>
         <div>
-          <p className="m-0 text-[12px] font-[680] text-slate-900">재무 영향의 해석</p>
-          {financialContext ? (
-            <div className="mt-3 rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] px-3 py-2">
-              <p className="m-0 text-[11px] font-[760] text-[#4c7974]">{financialContext.label}</p>
-              <p className="m-0 mt-1 text-[11px] leading-[1.55] text-slate-600">
-                <GlossaryText text={financialContext.body} />
-              </p>
-              <p className="m-0 mt-1 text-[10.5px] leading-[1.45] text-slate-500">
-                <span className="font-[720] text-slate-700">상쇄해서 볼 것: </span>
-                <GlossaryText text={financialContext.offset} />
-              </p>
-            </div>
-          ) : null}
-          <div className={`${financialContext ? "mt-2" : "mt-3"} divide-y divide-slate-100`}>
+          <p className="m-0 text-[12px] font-[680] text-slate-900">재무 영향</p>
+          <div className="mt-3 divide-y divide-slate-100">
             {mainFinancial.map((item) => (
               <div key={`${item.item}-${item.amount}`} className="py-2 first:pt-0 last:pb-0">
                 <p className={`m-0 text-[11.5px] font-[620] ${financialTone(item.color_intent)}`}>{item.item}: <span className="font-[650]">{item.amount}</span></p>
@@ -264,6 +252,20 @@ export function ScenarioDetailPanel({ scenario }: ScenarioDetailPanelProps) {
           </div>
         </div>
       </div>
+
+      {financialContext ? (
+        <div className="mt-5 rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] px-4 py-3">
+          <p className="m-0 text-[12px] font-[720] text-slate-900">이 트레이드오프를 읽는 법</p>
+          <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-700">
+            <span className="font-[760] text-[#4c7974]">{financialContext.label}: </span>
+            <GlossaryText text={financialContext.body} />
+          </p>
+          <p className="m-0 mt-2 text-[11px] leading-[1.55] text-slate-500">
+            <span className="font-[720] text-slate-700">상쇄해서 볼 것: </span>
+            <GlossaryText text={financialContext.offset} />
+          </p>
+        </div>
+      ) : null}
 
       <div className="mt-5 border-t border-slate-100 pt-4">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_1fr]">

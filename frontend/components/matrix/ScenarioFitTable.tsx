@@ -56,6 +56,24 @@ const OPERATING_IMAGES: Record<string, { reference: string; fit: string }> = {
   },
 };
 
+const SCENARIO_FOCUS: Record<string, { axis: string; why: string; change: string }> = {
+  performance: {
+    axis: "보상·평가 신호",
+    why: "성과 기준, 평가 수용성, 차등 보상을 한 줄로 연결하는 선택입니다. Matrix A에서 보상과 성과 기준이 흐릿할 때, 구성원에게 '무엇을 하면 더 크게 인정받는지'를 선명하게 만드는 데 집중합니다.",
+    change: "얻는 것은 고성과자 설득력이고, 감당할 것은 평가 기준 공개와 리더 설명 부담입니다.",
+  },
+  community: {
+    axis: "안정감·관계 기반 운영",
+    why: "이탈 불안, 온보딩 실패, 리더-구성원 신뢰를 먼저 낮추는 선택입니다. Matrix A/B에서 안정감이나 조직 적합성 신호가 약할 때, 구성원이 오래 머물 수 있는 반복 루틴을 만드는 데 집중합니다.",
+    change: "얻는 것은 조직 예측 가능성이고, 감당할 것은 고성과자에게 줄 차등 보상 신호가 약해질 수 있다는 점입니다.",
+  },
+  elite: {
+    axis: "핵심 인재 밀도·실행 속도",
+    why: "소수 핵심 역할에 권한, 보상, 의사결정을 집중하는 선택입니다. Matrix A/B에서 빠른 실행이나 즉시 전력 신호가 중요할 때, 전사 평균보다 핵심 인재 밀도를 높이는 데 집중합니다.",
+    change: "얻는 것은 중요한 역할의 속도와 책임감이고, 감당할 것은 내부 형평성 메시지와 비핵심 인력 이탈 리스크입니다.",
+  },
+};
+
 function operatingImageFor(id: string): { reference: string; fit: string } {
   return OPERATING_IMAGES[id] ?? {
     reference: "성장 단계 스타트업의 혼합 운영 이미지",
@@ -63,21 +81,11 @@ function operatingImageFor(id: string): { reference: string; fit: string } {
   };
 }
 
-function cleanQuadrant(label?: string | null): string {
-  if (!label) return "미확인";
-  return label.replace(/^Q\d:\s*/i, "").replace("평균의 함정형", "평균 기준형").replace(/\s+/g, " ").trim();
-}
-
 function scenarioIdFromSignal(signal: string, fallback = "community"): string {
   if (signal.includes("소수정예") || signal.includes("개인플레이어") || signal.includes("에이전시")) return "elite";
   if (signal.includes("단기 성과") || signal.includes("성과형") || signal.includes("시스템")) return "performance";
   if (signal.includes("장기 비전") || signal.includes("공동체") || signal.includes("가족형")) return "community";
   return fallback;
-}
-
-function matrixAxisText(matrix?: MatrixSnapshot): string {
-  if (!matrix) return "Matrix A/B · 현재 위치와 지향점 간극";
-  return `Matrix A: ${cleanQuadrant(matrix.a_quadrant_as_is)} → ${cleanQuadrant(matrix.a_quadrant_to_be)} · Matrix B: ${cleanQuadrant(matrix.b_quadrant_as_is)} → ${cleanQuadrant(matrix.b_quadrant_to_be)}`;
 }
 
 function targetScenarioId(matrix?: MatrixSnapshot): string {
@@ -90,64 +98,27 @@ function currentScenarioId(matrix?: MatrixSnapshot): string {
   return scenarioIdFromSignal(`${matrix.a_quadrant_as_is ?? ""} ${matrix.b_quadrant_as_is ?? ""}`);
 }
 
-function scenarioWhy(id: string, matrix?: MatrixSnapshot): string {
+function roleFor(id: string, matrix?: MatrixSnapshot): { role: string; fitLabel: string } {
   const targetId = targetScenarioId(matrix);
   const currentId = currentScenarioId(matrix);
-  const aAsIs = cleanQuadrant(matrix?.a_quadrant_as_is);
-  const aToBe = cleanQuadrant(matrix?.a_quadrant_to_be);
-  const bToBe = cleanQuadrant(matrix?.b_quadrant_to_be);
-
-  if (id === "performance") {
-    if (targetId === id) {
-      return `To-Be가 ${aToBe} 쪽에 찍혀 있어, 성과 기준과 보상 메시지를 조직 전체 규칙으로 선명하게 만드는 후보입니다. 현재가 ${aAsIs}라면 소수 핵심 인재 중심 신호를 누구에게나 납득 가능한 성과 기준으로 바꾸는 과제가 큽니다.`;
-    }
-    return "이번 지향점의 1순위가 아니더라도, 성과 차등을 강화할 때 얻는 속도와 평가 수용성 부담을 비교하기 위한 기준점입니다.";
-  }
-
-  if (id === "community") {
-    if (targetId === id) {
-      return `To-Be가 ${aToBe} 또는 ${bToBe} 방향으로 읽혀, 이탈 불안과 관계 기반 운영을 먼저 안정시키는 후보입니다. 다만 고성과자에게 필요한 차등 보상 신호가 약해지지 않도록 별도 장치가 필요합니다.`;
-    }
-    return "성과주의나 소수정예 방향을 고를 때 무엇을 포기하는지 보여주는 안정성 기준점입니다. 비용만 낮은 선택지가 아니라 핵심 인재 보상 신호가 약해질 수 있는 선택지로 비교해야 합니다.";
-  }
-
-  if (id === "elite") {
-    if (targetId === id) {
-      return `To-Be가 ${aToBe} 또는 ${bToBe} 방향으로 읽혀, 핵심 인재에게 권한과 보상을 집중해 실행 속도를 높이는 후보입니다. 내부 형평성과 비핵심 인력 메시지를 같이 설계해야 합니다.`;
-    }
-    if (currentId === id) {
-      return `현재 제도가 ${aAsIs} 신호를 이미 보내고 있어, 이 후보는 새 방향이라기보다 현재 운영을 더 정교하게 강화하거나 의도적으로 줄일지 판단하는 비교 축입니다.`;
-    }
-    return "핵심 인재 집중 전략을 택할 때 얻는 속도와 조직 수용성 비용을 비교하기 위한 기준점입니다.";
-  }
-
-  return "현재 운영 위치와 지향점의 차이를 줄이기 위한 후보입니다. 얻는 효과와 추가 부담을 함께 비교해야 합니다.";
-}
-
-function scenarioChange(id: string): string {
-  if (id === "performance") {
-    return "고성과자에게는 보상 신호가 강해지지만, 평가 기준 공개와 리더 설명 부담이 같이 커집니다.";
-  }
-  if (id === "community") {
-    return "이직 불안은 줄일 수 있지만, 고성과자에게 필요한 차등 보상 신호는 약해질 수 있습니다.";
-  }
-  if (id === "elite") {
-    return "핵심 인재 밀도는 높아지지만, 내부 형평성과 비핵심 인력의 이탈 리스크를 관리해야 합니다.";
-  }
-  return "얻는 효과와 추가 부담을 함께 비교해야 합니다.";
+  if (id === targetId) return { role: "1순위 검토", fitLabel: "지향점과 가까움" };
+  if (id === currentId) return { role: "현재 신호 점검", fitLabel: "현재 운영과 가까움" };
+  return { role: "비교 기준", fitLabel: "대안 비교" };
 }
 
 export function scenarioMatrixConnection(id: string, matrix?: MatrixSnapshot): ScenarioMatrixConnection {
-  const targetId = targetScenarioId(matrix);
-  const currentId = currentScenarioId(matrix);
-  const fitLabel = id === targetId ? "지향점 직접 연결" : id === currentId ? "현재 신호 보정" : "비교 기준";
-  const role = id === targetId ? "1순위 검토" : id === currentId ? "현재 운영 점검" : "대안 비교";
+  const focus = SCENARIO_FOCUS[id] ?? {
+    axis: "운영 기준 정렬",
+    why: "현재 운영 위치와 지향점 사이에서 무엇을 먼저 바꿀지 비교하는 선택입니다.",
+    change: "얻는 효과와 감당할 부담을 함께 비교해야 합니다.",
+  };
+  const role = roleFor(id, matrix);
   return {
-    role,
-    fitLabel,
-    axis: matrixAxisText(matrix),
-    why: scenarioWhy(id, matrix),
-    change: scenarioChange(id),
+    role: role.role,
+    fitLabel: role.fitLabel,
+    axis: focus.axis,
+    why: focus.why,
+    change: focus.change,
   };
 }
 
@@ -157,7 +128,7 @@ export function ScenarioFitTable({ scenarios, selectedId, matrix, onSelect }: Sc
       <div className="border-b border-slate-100 p-4">
         <p className="m-0 text-[14px] font-[680] text-slate-900">시나리오별 트레이드오프 확인</p>
         <p className="m-0 mt-[5px] text-[11px] leading-[1.55] text-slate-500">
-          세 후보는 고정된 실행 축입니다. Matrix의 To-Be에 따라 1순위 검토 대상과 이유가 달라지고, 나머지는 무엇을 포기하거나 감당하는지 비교하는 기준점입니다.
+          세 후보는 같은 답이 아니라 서로 다른 운영 레버입니다. 지향점과 가까운 후보를 먼저 보되, 나머지는 무엇을 포기하거나 감당하는지 비교하는 기준으로 봅니다.
         </p>
       </div>
       <div className="grid gap-3 p-4">
@@ -192,7 +163,7 @@ export function ScenarioFitTable({ scenarios, selectedId, matrix, onSelect }: Sc
 
               <div className="mt-3 rounded-[8px] border border-[#d9ebe7] bg-[#fbfefd] px-3 py-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-[#4c7974]">Matrix 연결</p>
+                  <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-[#4c7974]">집중 축</p>
                   <span className="rounded-full border border-[#cfe7e2] bg-white px-2 py-[2px] text-[10px] font-[720] text-[#4c7974]">
                     {connection.fitLabel}
                   </span>
@@ -214,7 +185,7 @@ export function ScenarioFitTable({ scenarios, selectedId, matrix, onSelect }: Sc
                 </div>
               </div>
               <p className="m-0 mt-3 border-t border-slate-100 pt-3 text-[11px] leading-[1.55] text-slate-500">
-                바뀌는 방향: <span className="font-[680] text-slate-700"><GlossaryText text={connection.change} /></span>
+                트레이드오프: <span className="font-[680] text-slate-700"><GlossaryText text={connection.change} /></span>
               </p>
               <div className="mt-3 grid gap-2 border-t border-slate-100 pt-3 text-[11px] sm:grid-cols-[1fr_112px]">
                 <span className="leading-[1.55] text-slate-500">
