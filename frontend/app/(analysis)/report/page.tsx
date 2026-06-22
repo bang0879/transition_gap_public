@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Button } from "@/components/shared/Button";
+import { ReportDownloadButton } from "@/components/report/ReportDownloadButton";
 import { ReportPreview } from "@/components/report/ReportPreview";
 import { buildDiagnosticReportViewModel } from "@/lib/report/buildDiagnosticReportViewModel";
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
@@ -72,7 +73,8 @@ export default function ReportPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => router.push("/result")}>결과 요약으로</Button>
-            <Button variant="primary" onClick={() => window.print()}>브라우저 인쇄</Button>
+            <Button onClick={() => window.print()}>브라우저 인쇄</Button>
+            <ReportDownloadButton report={report} />
           </div>
         </div>
       </div>
