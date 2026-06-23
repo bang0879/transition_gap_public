@@ -23,8 +23,6 @@ type PdfAssets = {
   DiagnosticPdfDocument: typeof import("@/components/finish/DiagnosticPdfDocument").DiagnosticPdfDocument;
 };
 
-type ReportStatus = "idle" | "preparing" | "ready" | "error";
-
 let pdfAssetsPromise: Promise<PdfAssets> | null = null;
 const reportBlobPromises = new Map<string, Promise<Blob>>();
 
@@ -73,7 +71,6 @@ export default function FinishPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [reportStatus, setReportStatus] = useState<ReportStatus>("idle");
   const preparedReportRef = useRef<{ key: string; blob: Blob } | null>(null);
   const sessionId = useSessionStore((state) => state.sessionId);
   const companyName = useSessionStore((state) => state.companyName);
@@ -99,41 +96,12 @@ export default function FinishPage() {
     });
   }, [companyName, data, responses]);
 
-  useEffect(() => {
-    if (!exportData) {
-      setReportStatus("idle");
-      preparedReportRef.current = null;
-      return;
-    }
-
-    let cancelled = false;
-    const cacheKey = buildReportCacheKey(exportData);
-    const prepared = preparedReportRef.current;
-    if (prepared?.key === cacheKey) {
-      setReportStatus("ready");
-      return;
-    }
-
-    setReportStatus("preparing");
-    prepareReportBlob(exportData)
-      .then((blob) => {
-        if (cancelled) return;
-        preparedReportRef.current = { key: cacheKey, blob };
-        setReportStatus("ready");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        preparedReportRef.current = null;
-        setReportStatus("error");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [exportData]);
 
   const handleSaveReport = async () => {
-    if (!exportData) return;
+    if (!exportData) {
+      setErrorMessage("보고서에 담을 진단 결과를 아직 준비하지 못했습니다. 잠시 후 다시 눌러 주세요.");
+      return;
+    }
 
     setIsSaving(true);
     setErrorMessage(null);
@@ -147,7 +115,6 @@ export default function FinishPage() {
       downloadReportExportJson(exportData);
       setSavedAt(new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }));
       preparedReportRef.current = { key: cacheKey, blob: pdfBlob };
-      setReportStatus("ready");
 
       if (sessionId) {
         logEvent({
@@ -159,7 +126,6 @@ export default function FinishPage() {
         });
       }
     } catch (cause) {
-      setReportStatus("error");
       setErrorMessage(cause instanceof Error ? cause.message : "보고서 저장 중 오류가 발생했습니다.");
     } finally {
       setIsSaving(false);
@@ -204,7 +170,7 @@ export default function FinishPage() {
         title="최종 진단 보고서를 다운로드합니다."
         lead="대표님이 리더십과 바로 논의할 수 있도록 6페이지 A4 보고서로 핵심 해석, 운영 리스크, 검토 방향, 의사결정 메모를 정리합니다."
         actions={
-          <Button variant="primary" onClick={handleSaveReport} disabled={isSaving || !exportData}>
+          <Button variant="primary" onClick={handleSaveReport} disabled={isSaving}>
             {isSaving ? "다운로드 생성 중" : "진단보고서 다운로드"}
           </Button>
         }
@@ -230,18 +196,6 @@ export default function FinishPage() {
               <p className="m-0 text-[11px] font-[700] text-slate-500">우선 확인 영역</p>
               <p className="m-0 mt-1 text-[13px] font-[720] text-slate-900">{primaryArea?.area_name ?? "추가 확인"}</p>
             </div>
-          </div>
-          <div className="mt-5 rounded-[8px] border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="m-0 text-[12px] font-[720] text-slate-900">
-              {reportStatus === "ready" ? "보고서 준비 완료" : reportStatus === "error" ? "보고서 준비 재시도 필요" : "보고서 준비 중"}
-            </p>
-            <p className="m-0 mt-1 text-[12px] leading-[1.65] text-slate-500">
-              {reportStatus === "ready"
-                ? "버튼을 누르면 PDF 보고서 다운로드가 바로 시작됩니다."
-                : reportStatus === "error"
-                  ? "버튼을 다시 누르면 보고서를 다시 생성합니다."
-                  : "보고서 파일을 미리 생성해 다운로드 대기 시간을 줄이고 있습니다."}
-            </p>
           </div>
           {errorMessage ? (
             <p className="m-0 mt-4 rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[12px] leading-[1.6] text-red-700">{errorMessage}</p>

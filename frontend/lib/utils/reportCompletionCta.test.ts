@@ -32,9 +32,13 @@ assert.equal(stepsSource.includes('path: "/finish"'), true, "finish tab should p
 const finishPage = readFileSync(finishPagePath, "utf8");
 assert.equal(finishPage.includes("진단보고서 다운로드"), true, "finish page should expose the diagnostic report download as the main CTA");
 assert.equal(finishPage.includes('disabled={isSaving || reportStatus === "preparing"}'), false, "download button should not be disabled while the report is pre-generating");
+assert.equal(finishPage.includes('disabled={isSaving || !exportData}'), false, "download button should not be disabled while export data is settling");
+assert.equal(finishPage.includes('disabled={isSaving}'), true, "download button should only be disabled while an explicit download is running");
 assert.equal(finishPage.includes('{buttonLabel}'), false, "download button label should not change to a preparing state");
 assert.equal(finishPage.includes('상세 분석 다시 보기'), false, "finish page should not show secondary detail navigation buttons");
 assert.equal(finishPage.includes('로드맵 다시 보기'), false, "finish page should not show secondary roadmap navigation buttons");
+assert.equal(finishPage.includes('보고서 준비 중'), false, "finish page should not leave users staring at a report preparing state");
+assert.equal(finishPage.includes('setReportStatus("preparing")'), false, "finish page should not start heavy PDF blob rendering as a blocking background state");
 assert.equal(finishPage.includes("결과 요약으로"), false, "finish page should not look like a jump back to result summary");
 assert.equal(finishPage.includes("preloadPdfAssets"), true, "finish page should preload PDF assets before the click");
 assert.equal(finishPage.includes("prepareReportBlob"), true, "finish page should prepare the PDF blob before the click when data is ready");
