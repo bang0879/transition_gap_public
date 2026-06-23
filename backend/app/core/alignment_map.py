@@ -344,7 +344,7 @@ def _retention_axis(responses: dict[str, Any]) -> AlignmentAxis:
         philosophy_position=philosophy,
         actual_position=actual,
         evidence=[
-            _philosophy_evidence("인력운영 철학", responses.get("L0-4")),
+            _philosophy_evidence("핵심 인력 철학", responses.get("L0-4")),
             f"자발적 이직률: {turnover}",
             f"핵심 인재 이탈: {core_loss}",
             f"핵심 인재 기준: {talent_criteria}",
