@@ -49,11 +49,11 @@ const FIRST_ACTION_BY_FACTOR: Record<string, string> = {
 };
 
 function toBeFor(item: ScoreBreakdownItem): string {
-  return TO_BE_BY_FACTOR[item.factor] ?? "현재 응답의 리스크를 줄이는 운영 기준을 명문화하고 다음 진단에서 추적";
+  return TO_BE_BY_FACTOR[item.factor] ?? "현재 응답에서 확인된 조건을 다음 운영 기준으로 정리하고 다음 진단에서 추적";
 }
 
 function firstActionFor(item: ScoreBreakdownItem): string {
-  return FIRST_ACTION_BY_FACTOR[item.factor] ?? "다음 회의에서 현재 방식의 예외 기준과 책임자를 먼저 정할까요?";
+  return FIRST_ACTION_BY_FACTOR[item.factor] ?? "다음 회의에서 현재 선택의 예외 기준과 책임자를 먼저 확인할까요?";
 }
 
 function displayValue(value: string): string {
@@ -158,14 +158,14 @@ function interpretValue(item: ScoreBreakdownItem): string {
 }
 
 function priorityLabel(impact: number, index: number): string {
-  if (impact <= -10) return "우선 전환";
-  if (impact < 0) return "보완 필요";
+  if (impact <= -10) return "먼저 확인";
+  if (impact < 0) return "보완 검토";
   return index === 0 ? "확인 필요" : "유지";
 }
 
 function priorityBadgeClass(label: string): string {
-  if (label === "우선 전환") return "border-coral/30 bg-coral-soft text-coral";
-  if (label === "보완 필요") return "border-amber/30 bg-amber-soft text-amber";
+  if (label === "먼저 확인") return "border-coral/30 bg-coral-soft text-coral";
+  if (label === "보완 검토") return "border-amber/30 bg-amber-soft text-amber";
   if (label === "유지") return "border-teal-line bg-teal-soft text-teal-deep";
   return "border-slate-200 bg-white text-slate-500";
 }
@@ -182,17 +182,17 @@ export function AsIsToBePanel({ breakdown }: AsIsToBePanelProps) {
     <section className="mb-4 rounded-[10px] border border-slate-200 bg-white p-5 print:break-inside-avoid">
       <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h3 className="m-0 text-[15px] font-[690] text-slate-900">현재 방식과 바꿀 운영 기준</h3>
+          <h3 className="m-0 text-[15px] font-[690] text-slate-900">현재 선택과 다음 확인 기준</h3>
           <p className="m-0 mt-[5px] text-[12px] leading-[1.65] text-slate-500">
-            진단에서 낮게 나온 항목을 다음 회의에서 다룰 운영 기준과 질문으로 번역했습니다.
+            진단에서 낮게 나온 항목을 다음 회의에서 확인할 기준과 질문으로 번역했습니다.
           </p>
         </div>
         <div className="flex w-fit flex-wrap gap-2">
           <span className="rounded-full border border-slate-200 bg-white px-[10px] py-[5px] text-[11px] font-[680] text-slate-500">
-            현재 방식
+            현재 선택
           </span>
           <span className="rounded-full border border-amber-soft bg-amber-soft px-[10px] py-[5px] text-[11px] font-[680] text-amber">
-            개선 기준
+            다음 기준
           </span>
         </div>
       </div>
@@ -213,18 +213,18 @@ export function AsIsToBePanel({ breakdown }: AsIsToBePanelProps) {
             </div>
             <div className="grid gap-3 lg:grid-cols-[1fr_28px_1.08fr_1fr] lg:items-stretch">
               <div className="rounded-[9px] border border-slate-200 bg-white p-3">
-                <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-slate-400">현재 방식</p>
+                <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-slate-400">현재 선택</p>
                 <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-700">{interpretValue(item)}</p>
               </div>
               <div className="hidden h-7 w-7 self-center items-center justify-center rounded-full border border-teal-line bg-white text-[12px] font-[760] text-teal-deep lg:flex">
                 →
               </div>
               <div className="rounded-[9px] border border-teal-line bg-white p-3">
-                <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-teal">개선 방향</p>
+                <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-teal">다음 기준</p>
                 <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-700">{toBeFor(item)}</p>
               </div>
               <div className="rounded-[9px] border border-[#e8dcc7] bg-[#fffdf8] p-3">
-                <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-amber">먼저 던질 질문</p>
+                <p className="m-0 text-[10px] font-[760] tracking-[0.08em] text-amber">먼저 확인할 질문</p>
                 <p className="m-0 mt-2 text-[12px] leading-[1.65] text-slate-700">{firstActionFor(item)}</p>
               </div>
             </div>
