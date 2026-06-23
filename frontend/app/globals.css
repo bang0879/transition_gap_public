@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/fonts/pretendard-400.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/fonts/pretendard-700.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #fbfaf7;
   --ink: #111827;
@@ -48,7 +64,7 @@ body {
     radial-gradient(circle at 15% 0%, rgba(47, 143, 134, 0.06), transparent 30%),
     linear-gradient(180deg, #fdfbf6 0%, #f8fafc 100%);
   color: var(--ink);
-  font-family: Inter, Pretendard, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Pretendard, Inter, "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0;
   word-break: keep-all;
 }

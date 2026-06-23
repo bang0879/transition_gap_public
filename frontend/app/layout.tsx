@@ -3,8 +3,11 @@ import { QueryProvider } from "@/components/providers/QueryProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Transition Gap — 인사제도 정합성 진단",
-  description: "스타트업 인사제도의 엇박자를 실행 가능한 선택지로 바꿉니다.",
+  title: "HR Prism — 진단이라는 프리즘으로 비춰보는 인사 운영",
+  description: "감으로 판단하던 인사 운영을, 진단이라는 프리즘으로 비춰보고 회사의 인사 철학과 실제 제도, 제도 사이의 충돌까지 투명하게 확인합니다.",
+  icons: {
+    icon: "/hr-prism-favicon.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
