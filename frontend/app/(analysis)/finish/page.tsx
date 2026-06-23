@@ -176,7 +176,7 @@ export default function FinishPage() {
       <PageHeader
         eyebrow="진단 마무리"
         title="최종 진단 보고서를 다운로드합니다."
-        lead="대표님이 리더십 미팅에 들고 갈 수 있도록 5페이지 A4 진단 해석 메모로 핵심 패턴, 긴장 지점, 검토 방향, 의사결정 문장을 정리합니다."
+        lead="대표님이 먼저 읽고 다음 리더십 회의에서 함께 볼 수 있도록 5페이지 A4 진단 보고서로 핵심 패턴, 긴장 지점, 검토 방향, 의사결정 문장을 정리합니다."
         actions={
           <Button variant="primary" onClick={handleSaveReport} disabled={isSaving}>
             {isSaving ? "다운로드 생성 중" : "진단보고서 다운로드"}
@@ -187,9 +187,9 @@ export default function FinishPage() {
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <article className="rounded-[10px] border border-slate-200 bg-white p-5 sm:p-6">
           <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">REPORT PACKAGE</p>
-          <h2 className="m-0 mt-2 text-[22px] font-[720] leading-[1.35] text-slate-950">대표용 진단 해석 메모</h2>
+          <h2 className="m-0 mt-2 text-[22px] font-[720] leading-[1.35] text-slate-950">대표용 진단 보고서</h2>
           <p className="m-0 mt-3 text-[13px] leading-[1.75] text-slate-600">
-            표지, 패턴 해석, 긴장 지점, 검토 방향, Decision Memo까지 5페이지로 구성합니다.
+            표지, 패턴 해석, 긴장 지점, 검토 방향, Decision Memo까지 5페이지 진단 보고서로 구성합니다.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-[8px] border border-slate-200 bg-slate-50 p-3">

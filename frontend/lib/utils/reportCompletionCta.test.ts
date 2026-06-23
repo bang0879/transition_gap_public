@@ -22,6 +22,14 @@ const finishPagePath = join(frontendRoot, "app/(analysis)/finish/page.tsx");
 const stepsSource = readFileSync(join(frontendRoot, "lib/constants/steps.ts"), "utf8");
 const pdfDocumentSource = readFileSync(join(frontendRoot, "components/finish/DiagnosticPdfDocument.tsx"), "utf8");
 
+function countOccurrences(source: string, term: string): number {
+  return source.split(term).length - 1;
+}
+
+function countLinesContaining(source: string, term: string): number {
+  return source.split(/\r?\n/).filter((line) => line.includes(term)).length;
+}
+
 assert.equal(resultPage.includes("DiagnosticFinishButton"), true, "result page should use the diagnostic finish button");
 assert.equal(roadmapPage.includes("DiagnosticFinishButton"), true, "roadmap page should use the diagnostic finish button");
 assert.equal(existsSync(finishPagePath), true, "finish page should exist");
@@ -33,6 +41,8 @@ const finishPage = readFileSync(finishPagePath, "utf8");
 assert.equal(finishPage.includes("진단보고서 다운로드"), true, "finish page should expose the diagnostic report download as the main CTA");
 assert.equal(finishPage.includes("5페이지"), true, "finish page should describe the report as five pages");
 assert.equal(finishPage.includes("6페이지"), false, "finish page should not describe the report as six pages");
+assert.equal(finishPage.includes("대표용 진단 보고서"), true, "finish page should frame the download as a diagnostic report");
+assert.equal(finishPage.includes("진단 해석 메모"), false, "finish page should not narrow the report identity to an interpretation memo");
 assert.equal(finishPage.includes("진단 구간"), false, "finish page should avoid internal diagnostic labels");
 assert.equal(finishPage.includes("normalizeCompanyNameForReport"), true, "finish page should normalize missing or placeholder company names before export");
 assert.equal(finishPage.includes('companyName || "우리 회사"'), false, "finish page should not use a generic company name fallback in report exports");
@@ -54,9 +64,23 @@ const pdfPageCount = pdfDocumentSource.match(/<Page size="A4"/g)?.length ?? 0;
 assert.equal(pdfPageCount, 5, "diagnostic PDF should render five A4 pages");
 assert.equal(pdfDocumentSource.includes('Footer page="5 / 5"'), true, "diagnostic PDF should include a fifth page footer");
 assert.equal(pdfDocumentSource.includes('Footer page="6 / 6"'), false, "diagnostic PDF should not include a sixth page footer");
-assert.equal(pdfDocumentSource.includes("진단 해석 메모"), true, "diagnostic PDF should identify itself as an interpretation memo");
+assert.equal(pdfDocumentSource.includes("진단 보고서"), true, "diagnostic PDF should identify itself as a diagnostic report");
+assert.equal(pdfDocumentSource.includes("DIAGNOSTIC REPORT"), true, "diagnostic PDF cover should use a diagnostic report eyebrow");
+assert.equal(pdfDocumentSource.includes("DIAGNOSTIC INTERPRETATION MEMO"), false, "diagnostic PDF cover should not narrow the identity to an interpretation memo");
+assert.equal(pdfDocumentSource.includes("대표가 리더십 미팅에 들고 가는 진단 해석 메모"), false, "diagnostic PDF should not use the old memo subtitle");
+assert.equal(pdfDocumentSource.includes("먼저 혼자 읽으시고, 다음 리더십 회의에서 함께 보시는 문서입니다."), true, "diagnostic PDF should include the usage guide on the cover");
+for (const term of ["회사명", "진단 모드", "조직 규모", "진단일", "진단자", "Kanghoon Kim"]) {
+  assert.equal(pdfDocumentSource.includes(term), true, `diagnostic PDF cover should include metadata: ${term}`);
+}
 assert.equal(pdfDocumentSource.includes("대표님이 의도하신 운영과 조직이 받아들이는 운영이 지금 다르게 작동하고 있습니다."), true, "cover should use the broader mirror sentence");
 assert.equal(pdfDocumentSource.includes("normalizeCompanyName"), true, "PDF should guard missing or placeholder company names");
+assert.equal(countLinesContaining(pdfDocumentSource, "business_risk"), 1, "diagnostic PDF should not repeat the same business risk in multiple sections");
+assert.equal(countOccurrences(pdfDocumentSource, "대표가 의도한 배려가 구성원에게는 기준의 불투명성으로 읽힐"), 1, "diagnostic PDF should not repeat the same blind spot sentence on one page");
+assert.equal(pdfDocumentSource.includes("axis.philosophy_label"), false, "diagnostic PDF should translate philosophy labels instead of exposing raw option labels");
+assert.equal(pdfDocumentSource.includes("axis.actual_label"), false, "diagnostic PDF should translate actual-state labels instead of exposing raw option labels");
+assert.equal(pdfDocumentSource.includes("priorityAreas.slice(1, 3).map"), true, "tension detail cards should exclude the hero area to avoid repeating the same sentence");
+assert.equal(pdfDocumentSource.includes("styles.decisionStack"), true, "Page 4 decision cards should stack vertically to avoid squeezed text");
+assert.equal(pdfDocumentSource.includes("<View style={styles.row}>\n          <View style={styles.statementCard}>\n            <Text style={styles.cardLabel}>대표에게 요구되는 변화"), false, "Page 4 decision cards should not share a narrow horizontal row");
 
 const forbiddenPdfTerms = [
   "정합성 상태",

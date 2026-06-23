@@ -30,24 +30,41 @@ function registerPdfFonts() {
   fontsRegistered = true;
 }
 
+const colors = {
+  teal: "#2d8b83",
+  tealBorder: "#b8d9d5",
+  tealWash: "#f4fbfa",
+  cautionBorder: "#ecd8ad",
+  cautionWash: "#fffaf0",
+  mintBorder: "#c9e6dc",
+  mintWash: "#f3fbf7",
+  grayBorder: "#dfe6ee",
+  grayWash: "#fbfcfd",
+  ink: "#172033",
+  body: "#3c4658",
+  muted: "#5a6475",
+  label: "#7b8495",
+  footer: "#8a94a6",
+};
+
 const styles = StyleSheet.create({
   page: {
     paddingTop: 44,
     paddingHorizontal: 44,
     paddingBottom: 38,
     fontFamily: "Pretendard",
-    color: "#172033",
+    color: colors.ink,
     backgroundColor: "#ffffff",
   },
   eyebrow: {
     fontSize: 8.5,
     fontWeight: 700,
-    color: "#2d8b83",
+    color: colors.teal,
     letterSpacing: 1.1,
     marginBottom: 12,
   },
   title: {
-    fontSize: 25,
+    fontSize: 26,
     fontWeight: 700,
     lineHeight: 1.24,
     marginBottom: 10,
@@ -61,97 +78,131 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 10.2,
     lineHeight: 1.65,
-    color: "#5a6475",
+    color: colors.muted,
     marginBottom: 16,
   },
   heroStatement: {
     borderWidth: 1,
-    borderColor: "#b8d9d5",
+    borderColor: colors.tealBorder,
     borderRadius: 8,
     padding: 18,
-    backgroundColor: "#f4fbfa",
+    backgroundColor: colors.tealWash,
     marginTop: 12,
     marginBottom: 16,
   },
   heroLabel: {
     fontSize: 8.8,
     fontWeight: 700,
-    color: "#2d8b83",
+    color: colors.teal,
     marginBottom: 8,
   },
   heroText: {
     fontSize: 16,
     fontWeight: 700,
     lineHeight: 1.42,
-    color: "#172033",
+    color: colors.ink,
   },
   row: {
     flexDirection: "row",
     gap: 10,
     marginTop: 10,
   },
+  metadataGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 2,
+    marginBottom: 14,
+  },
+  metaCard: {
+    width: "31.6%",
+    borderWidth: 1,
+    borderColor: colors.grayBorder,
+    borderRadius: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
+    backgroundColor: colors.grayWash,
+  },
+  metaLabel: {
+    fontSize: 7.8,
+    fontWeight: 700,
+    color: colors.label,
+    marginBottom: 4,
+  },
+  metaValue: {
+    fontSize: 9.2,
+    fontWeight: 700,
+    lineHeight: 1.35,
+    color: colors.ink,
+  },
   statementCard: {
     borderWidth: 1,
-    borderColor: "#b8d9d5",
+    borderColor: colors.tealBorder,
     borderRadius: 8,
     padding: 14,
-    backgroundColor: "#f4fbfa",
+    backgroundColor: colors.tealWash,
     marginBottom: 12,
   },
   contentCard: {
     flexGrow: 1,
     flexBasis: 0,
+    minHeight: 112,
     borderWidth: 1,
-    borderColor: "#dfe6ee",
+    borderColor: colors.grayBorder,
     borderRadius: 8,
     padding: 12,
-    backgroundColor: "#fbfcfd",
+    backgroundColor: colors.grayWash,
   },
   cautionCard: {
     flexGrow: 1,
     flexBasis: 0,
+    minHeight: 112,
     borderWidth: 1,
-    borderColor: "#ecd8ad",
+    borderColor: colors.cautionBorder,
     borderRadius: 8,
     padding: 12,
-    backgroundColor: "#fffaf0",
+    backgroundColor: colors.cautionWash,
   },
   noteCard: {
     borderWidth: 1,
-    borderColor: "#ecd8ad",
+    borderColor: colors.cautionBorder,
     borderRadius: 8,
     padding: 14,
-    backgroundColor: "#fffaf0",
+    backgroundColor: colors.cautionWash,
     marginTop: 14,
+  },
+  decisionCard: {
+    borderWidth: 1,
+    borderColor: colors.mintBorder,
+    borderRadius: 8,
+    padding: 14,
+    backgroundColor: colors.mintWash,
+  },
+  decisionStack: {
+    marginTop: 12,
+    gap: 10,
   },
   cardLabel: {
     fontSize: 8.2,
     fontWeight: 700,
-    color: "#7b8495",
+    color: colors.label,
     marginBottom: 6,
   },
   cardTitle: {
     fontSize: 10.8,
     fontWeight: 700,
-    color: "#172033",
+    color: colors.ink,
     marginBottom: 6,
   },
   body: {
     fontSize: 9.7,
     lineHeight: 1.62,
-    color: "#3c4658",
+    color: colors.body,
   },
   smallBody: {
     fontSize: 8.9,
     lineHeight: 1.58,
     color: "#4f5a6c",
-  },
-  sectionTitle: {
-    fontSize: 12.3,
-    fontWeight: 700,
-    color: "#172033",
-    marginTop: 12,
-    marginBottom: 8,
   },
   divider: {
     height: 1,
@@ -160,7 +211,7 @@ const styles = StyleSheet.create({
   },
   axisLine: {
     borderWidth: 1,
-    borderColor: "#dfe6ee",
+    borderColor: colors.grayBorder,
     borderRadius: 8,
     padding: 12,
     backgroundColor: "#ffffff",
@@ -179,7 +230,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     fontSize: 7.8,
-    color: "#8a94a6",
+    color: colors.footer,
   },
 });
 
@@ -211,6 +262,12 @@ function topAxis(axes: AlignmentAxisOut[]): AlignmentAxisOut | undefined {
   return sortedAxes(axes)[0];
 }
 
+function modeLabel(mode: DiagnosisMode | undefined): string {
+  if (mode === "foundation") return "기준 수립 구간";
+  if (mode === "hybrid") return "유연성과 기준 분리 구간";
+  return "의도와 경험 정렬 구간";
+}
+
 function modeNoun(mode: DiagnosisMode | undefined): string {
   if (mode === "foundation") return "기준을 먼저 세워야 하는 구간";
   if (mode === "hybrid") return "유연성과 기준을 분리해야 하는 구간";
@@ -238,14 +295,14 @@ function intentText(axis: AlignmentAxisOut | undefined): string {
   if (!axis) {
     return "대표님은 좋은 사람에게 더 나은 기회를 주고 싶어 합니다. 다만 그 기준이 아직 조직 안에서 같은 문장으로 반복되지는 않습니다.";
   }
-  return `대표님은 ${axis.domain_name}에서 ${axis.philosophy_label}에 가까운 운영을 의도하고 있습니다. 그러나 그 의도가 리더의 설명과 반복 행동으로 충분히 번역되지 않았습니다.`;
+  return `대표님은 ${axis.domain_name}에서 좋은 사람을 오래 붙잡고, 조직이 흔들리지 않게 운영하고 싶어 합니다. 그러나 그 의도가 리더의 설명과 반복 행동으로 충분히 번역되지 않았습니다.`;
 }
 
 function interpretationText(axis: AlignmentAxisOut | undefined): string {
   if (!axis) {
     return "구성원은 대표의 의도보다 실제로 반복되는 예외, 설명 방식, 리더별 판단 차이를 더 강한 신호로 받아들입니다.";
   }
-  return `조직은 같은 장면을 ${axis.actual_label}에 가까운 메시지로 받아들일 수 있습니다. 대표가 의도한 배려가 구성원에게는 기준의 불투명성으로 읽힐 여지가 있습니다.`;
+  return `조직은 ${axis.domain_name}에서 실제 반복되는 예외와 리더별 설명 차이를 먼저 봅니다. 그래서 의도는 배려였더라도, 경험은 상황마다 달라지는 기준으로 남을 수 있습니다.`;
 }
 
 function resultText(axis: AlignmentAxisOut | undefined, areaName: string): string {
@@ -281,8 +338,7 @@ function tensionSentence(area: AreaAnalysisOut | undefined, axis: AlignmentAxisO
   return `${name}에서 먼저 흔들리는 것은 제도 자체보다, 같은 판단을 같은 문장으로 설명하는 힘입니다.`;
 }
 
-function dangerText(axis: AlignmentAxisOut | undefined, areaName: string): string {
-  if (axis?.business_risk) return axis.business_risk;
+function dangerText(areaName: string): string {
   return `지금 가장 위험한 선택은 ${areaName} 제도를 더 정교하게 만드는 것만으로 문제를 해결하려는 접근입니다. 결과를 받아들일 리더십 언어와 적용 기준이 없으면 구성원은 제도를 신뢰하기보다 방어적으로 대응할 수 있습니다.`;
 }
 
@@ -353,13 +409,28 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
   const companyName = normalizeCompanyName(exportData.companyName);
   const directions = reviewDirections(mode, primaryAreaName);
   const decisions = decisionItems(mode, primaryAreaName);
+  const metadata = [
+    { label: "회사명", value: companyName },
+    { label: "진단 모드", value: modeLabel(mode) },
+    { label: "조직 규모", value: headcount },
+    { label: "진단일", value: exportData.completedDateLabel },
+    { label: "진단자", value: "Kanghoon Kim" },
+  ];
 
   return (
-    <Document title={`${companyName} 진단 해석 메모`} author={exportData.brand}>
+    <Document title={`${companyName} 진단 보고서`} author={exportData.brand}>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.eyebrow}>DIAGNOSTIC INTERPRETATION MEMO</Text>
-        <Text style={styles.title}>{companyName}</Text>
-        <Text style={styles.subtitle}>대표가 리더십 미팅에 들고 가는 진단 해석 메모</Text>
+        <Text style={styles.eyebrow}>DIAGNOSTIC REPORT</Text>
+        <Text style={styles.title}>진단 보고서</Text>
+        <Text style={styles.subtitle}>먼저 혼자 읽으시고, 다음 리더십 회의에서 함께 보시는 문서입니다.</Text>
+        <View style={styles.metadataGrid}>
+          {metadata.map((item) => (
+            <View key={item.label} style={styles.metaCard}>
+              <Text style={styles.metaLabel}>{item.label}</Text>
+              <Text style={styles.metaValue}>{item.value}</Text>
+            </View>
+          ))}
+        </View>
         <View style={styles.heroStatement}>
           <Text style={styles.heroLabel}>대표가 먼저 봐야 할 문장</Text>
           <Text style={styles.heroText}>{mirrorSentence()}</Text>
@@ -367,7 +438,7 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
         <View style={styles.row}>
           <View style={styles.contentCard}>
             <Text style={styles.cardLabel}>이 문서의 역할</Text>
-            <Text style={styles.body}>이 문서는 진단 결과지가 아닙니다. 대표님이 공동창업자, 이사회, 리더에게 보여주며 다음 회의의 판단 기준을 맞추기 위한 해석 메모입니다.</Text>
+            <Text style={styles.body}>이 문서는 웹 결과 화면을 그대로 옮긴 출력물이 아닙니다. 대표님이 먼저 해석을 정리하고, 공동창업자·이사회·리더와 다음 회의의 판단 기준을 맞추기 위한 진단 보고서입니다.</Text>
           </View>
           <View style={styles.contentCard}>
             <Text style={styles.cardLabel}>현재 읽어야 할 구간</Text>
@@ -416,7 +487,7 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
           <Text style={styles.heroText}>{tensionSentence(primaryArea, axis)}</Text>
         </View>
         <View style={styles.row}>
-          {priorityAreas.slice(0, 3).map((area) => (
+          {priorityAreas.slice(1, 3).map((area) => (
             <View key={area.area_id} style={styles.contentCard}>
               <Text style={styles.cardLabel}>{area.area_name}</Text>
               <Text style={styles.body}>{tensionSentence(area, axis)}</Text>
@@ -424,7 +495,7 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
           ))}
         </View>
         <View style={styles.axisLine}>
-          <Text style={styles.cardLabel}>대표 의도 ─ 조직 해석</Text>
+          <Text style={styles.cardLabel}>대표 의도 - 조직 해석</Text>
           <Text style={styles.body}>대표가 말한 방향과 조직이 실제로 경험한 방향 사이에 간격이 있습니다. 지금 필요한 것은 새 양식이 아니라, 같은 판단을 같은 문장으로 설명하는 힘입니다.</Text>
           <View style={styles.axisLabels}>
             <Text style={styles.smallBody}>대표가 의도한 기준</Text>
@@ -447,14 +518,14 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
             </View>
           ))}
         </View>
-        <View style={styles.row}>
-          <View style={styles.statementCard}>
+        <View style={styles.decisionStack}>
+          <View style={styles.decisionCard}>
             <Text style={styles.cardLabel}>대표에게 요구되는 변화</Text>
             <Text style={styles.body}>대표님이 혼자 알고 있던 판단 기준을 리더가 반복해서 설명할 수 있는 문장으로 내려야 합니다. 제도보다 먼저 대표의 판단 언어가 조직 언어로 바뀌어야 합니다.</Text>
           </View>
           <View style={styles.cautionCard}>
             <Text style={styles.cardLabel}>지금 하면 위험한 실행</Text>
-            <Text style={styles.body}>{dangerText(axis, primaryAreaName)}</Text>
+            <Text style={styles.body}>{dangerText(primaryAreaName)}</Text>
           </View>
         </View>
         <Footer page="4 / 5" decision="이 페이지에서 다룰 결정: 무엇을 고치고 무엇을 보류할 것인가" />
