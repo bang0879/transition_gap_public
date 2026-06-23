@@ -196,11 +196,6 @@ export default function FinishPage() {
 
   const primaryArea = [...data.areas].sort((a, b) => b.gap - a.gap || a.priority - b.priority)[0];
   const modeLabel = data.diagnosis_mode === "foundation" ? "Foundation" : data.diagnosis_mode === "hybrid" ? "Hybrid" : "Alignment";
-  const buttonLabel = isSaving
-    ? "다운로드 준비 중"
-    : reportStatus === "preparing"
-      ? "보고서 준비 중"
-      : "진단보고서 다운로드";
 
   return (
     <>
@@ -209,8 +204,8 @@ export default function FinishPage() {
         title="최종 진단 보고서를 다운로드합니다."
         lead="대표님이 리더십과 바로 논의할 수 있도록 6페이지 A4 보고서로 핵심 해석, 운영 리스크, 검토 방향, 의사결정 메모를 정리합니다."
         actions={
-          <Button variant="primary" onClick={handleSaveReport} disabled={isSaving || reportStatus === "preparing"}>
-            {buttonLabel}
+          <Button variant="primary" onClick={handleSaveReport} disabled={isSaving || !exportData}>
+            {isSaving ? "다운로드 생성 중" : "진단보고서 다운로드"}
           </Button>
         }
       />
@@ -264,10 +259,7 @@ export default function FinishPage() {
           <p className="m-0 mt-3 text-[12px] leading-[1.7] text-slate-600">
             지금 바로 새 제도를 설계할지보다, 먼저 어떤 판단 기준을 공개적으로 말할 수 있는지 정해야 합니다. 기준을 말할 수 없는 영역은 이번 분기에는 정교화보다 관찰과 언어 정렬을 우선합니다.
           </p>
-          <div className="mt-4 flex flex-col gap-2">
-            <Button onClick={() => router.push("/result/detail")}>상세 분석 다시 보기</Button>
-            <Button onClick={() => router.push("/roadmap")}>로드맵 다시 보기</Button>
-          </div>
+          
         </aside>
       </section>
     </>
