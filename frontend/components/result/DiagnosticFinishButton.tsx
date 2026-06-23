@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/shared/Button";
 import { logEvent } from "@/lib/api/events";
 import { useSessionStore } from "@/lib/store/session";
@@ -14,6 +14,10 @@ export function DiagnosticFinishButton({ page }: DiagnosticFinishButtonProps) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const sessionId = useSessionStore((state) => state.sessionId);
+
+  useEffect(() => {
+    router.prefetch("/finish");
+  }, [router]);
 
   const handleFinish = () => {
     setIsNavigating(true);
@@ -29,8 +33,18 @@ export function DiagnosticFinishButton({ page }: DiagnosticFinishButtonProps) {
     router.push(`/finish?from=${encodeURIComponent(page)}`);
   };
 
+  const prefetchFinish = () => {
+    router.prefetch("/finish");
+  };
+
   return (
-    <Button variant="primary" onClick={handleFinish} disabled={isNavigating}>
+    <Button
+      variant="primary"
+      onClick={handleFinish}
+      onFocus={prefetchFinish}
+      onPointerEnter={prefetchFinish}
+      disabled={isNavigating}
+    >
       {isNavigating ? "마무리 화면으로 이동 중" : "진단 마무리"}
     </Button>
   );
