@@ -21,17 +21,19 @@ export default function ReportPage() {
   usePageTracking("/report");
 
   const completedAt = useMemo(() => new Date(), []);
-  const report = useMemo(() => {
+  const reportData = useMemo(() => {
     if (!data) return null;
     const alignmentMap = data.alignment_map?.axes?.length
       ? data.alignment_map
       : buildFallbackAlignmentMap(responses, data.areas);
-    return buildDiagnosticReportViewModel({
+    const diagnosis = { ...data, alignment_map: alignmentMap };
+    const report = buildDiagnosticReportViewModel({
       companyName: companyName || "우리 회사",
       completedAt,
-      diagnosis: { ...data, alignment_map: alignmentMap },
+      diagnosis,
       responses,
     });
+    return { diagnosis, report };
   }, [companyName, completedAt, data, responses]);
 
   if (isWaitingForResponses) {
@@ -50,7 +52,7 @@ export default function ReportPage() {
     return <div className="flex min-h-[400px] items-center justify-center text-[14px] text-slate-400">진단 보고서를 구성하고 있습니다...</div>;
   }
 
-  if (error || !data || !report) {
+  if (error || !data || !reportData) {
     return (
       <AnalysisNotice
         eyebrow="보고서 생성 실패"
@@ -69,16 +71,15 @@ export default function ReportPage() {
         <div className="mx-auto flex max-w-[960px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="m-0 text-[11px] font-[800] tracking-[0.1em] text-slate-400">A4 REPORT PREVIEW</p>
-            <h1 className="m-0 mt-1 text-[18px] font-[760] text-slate-950">{report.cover.title}</h1>
+            <h1 className="m-0 mt-1 text-[18px] font-[760] text-slate-950">{reportData.report.cover.title}</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => router.push("/result")}>결과 요약으로</Button>
-            <Button onClick={() => window.print()}>브라우저 인쇄</Button>
-            <ReportDownloadButton report={report} />
+            <ReportDownloadButton report={reportData.report} diagnosis={reportData.diagnosis} responses={responses} />
           </div>
         </div>
       </div>
-      <ReportPreview report={report} />
+      <ReportPreview report={reportData.report} />
     </>
   );
 }

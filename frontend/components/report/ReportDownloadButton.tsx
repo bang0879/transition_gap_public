@@ -3,14 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/components/shared/Button";
 import type { DiagnosticReportViewModel } from "@/lib/report/buildDiagnosticReportViewModel";
-
-function sanitizeFileSegment(value: string): string {
-  return value
-    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^_+|_+$/g, "") || "진단보고서";
-}
+import {
+  buildDiagnosticCompletionExport,
+  buildDiagnosticCompletionFileNames,
+  buildDiagnosticCompletionJson,
+} from "@/lib/report/diagnosticCompletionExport";
+import type { ResponseValue } from "@/lib/store/responses";
+import type { DiagnoseResponse } from "@/lib/types/api";
 
 function downloadBlob(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
@@ -23,7 +22,15 @@ function downloadBlob(blob: Blob, fileName: string): void {
   URL.revokeObjectURL(url);
 }
 
-export function ReportDownloadButton({ report }: { report: DiagnosticReportViewModel }) {
+export function ReportDownloadButton({
+  report,
+  diagnosis,
+  responses,
+}: {
+  report: DiagnosticReportViewModel;
+  diagnosis: DiagnoseResponse;
+  responses: Record<string, ResponseValue>;
+}) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleDownload = async () => {
@@ -33,8 +40,19 @@ export function ReportDownloadButton({ report }: { report: DiagnosticReportViewM
         import("@react-pdf/renderer"),
         import("./pdf/ReportPdfDocument"),
       ]);
-      const blob = await pdf(<ReportPdfDocument report={report} />).toBlob();
-      downloadBlob(blob, `${sanitizeFileSegment(report.cover.companyName)}_HR_Prism_진단보고서_${report.cover.completedDateLabel}.pdf`);
+      const fileNames = buildDiagnosticCompletionFileNames(report);
+      const pdfBlob = await pdf(<ReportPdfDocument report={report} />).toBlob();
+      const exportData = buildDiagnosticCompletionExport({
+        report,
+        diagnosis,
+        responses,
+        exportedAt: new Date(),
+      });
+      const jsonBlob = new Blob([buildDiagnosticCompletionJson(exportData)], {
+        type: "application/json;charset=utf-8",
+      });
+      downloadBlob(pdfBlob, fileNames.pdf);
+      downloadBlob(jsonBlob, fileNames.json);
     } finally {
       setIsGenerating(false);
     }
@@ -42,7 +60,7 @@ export function ReportDownloadButton({ report }: { report: DiagnosticReportViewM
 
   return (
     <Button variant="primary" onClick={handleDownload} disabled={isGenerating}>
-      {isGenerating ? "보고서 생성 중" : "PDF 다운로드"}
+      {isGenerating ? "보고서와 데이터 저장 중" : "진단 마무리"}
     </Button>
   );
 }
