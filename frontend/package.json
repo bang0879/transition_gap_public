@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:copy": "node --test scripts/result-copy.test.mjs"
+    "test:copy": "node --test scripts/*.test.mjs"
   },
   "dependencies": {
     "@fontsource/pretendard": "^5.2.5",
