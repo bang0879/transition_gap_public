@@ -1,6 +1,6 @@
-# Transition Gap API (Backend)
+# HR Prism API (Backend)
 
-FastAPI stateless calculation engine for Transition Gap diagnosis.
+FastAPI stateless calculation engine for HR Prism diagnosis.
 
 ## Local Run
 
@@ -9,8 +9,10 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e ".[dev]"
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8010
 ```
+
+`8010` matches the frontend default API base (`http://127.0.0.1:8010`).
 
 ## Tests
 
