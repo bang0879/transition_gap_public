@@ -509,8 +509,9 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         )
     else:
         status = (
-            "귀사는 현재 정기적인 공식 평가 체계가 부재합니다. 이 상태에서 보상 차등이나 "
-            "성과 관리를 시도하면 기준 없는 주관적 판단으로 인해 조직 내 불신이 커질 수 있습니다."
+            "귀사는 현재 공식 평가 없이 운영하고 계십니다. 30~50인 전후까지는 합리적 선택일 수 있습니다. "
+            "다만 다음 12개월 안에 보상 차등, 승진, 역할 조정을 늘릴 계획이라면 "
+            "먼저 평가 기준을 만들어두는 것이 분쟁 비용을 줄입니다."
         )
 
     tags: list[str] = []
@@ -591,9 +592,9 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         top_issue = issues[0] if issues else Issue("평가 체계 부재", "", "high")
         reason = _get_trigger_reason(top_issue, responses)
         recommendation = (
-            "가장 시급한 과제는 '평가 체계 구축'입니다. "
-            f"현재 {reason} 상황을 고려할 때, "
-            "MBO 기본 도입부터 시작해 목표 정렬을 만드십시오."
+            "지금 바로 정교한 평가 제도를 만들기보다, 다음 보상 차등이나 승진 판단에 사용할 최소 기준을 정해야 합니다. "
+            f"현재 {reason} 상황이라면, "
+            "분기 1회 목표 정렬 대화와 보상 예외 사유 기록부터 시작하십시오."
         )
     elif issues:
         reason = _get_trigger_reason(issues[0], responses)
@@ -1148,7 +1149,13 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "의사결정 병목":
-            recommendation += "전결권 위임 체계를 설계하고 팀장급 역할을 재정의하십시오."
+            if _is_small_org(responses.get("L1-2")):
+                recommendation = (
+                    "CEO가 채용과 핵심 의사결정을 직접 보는 것은 초기 조직의 강점일 수 있습니다. "
+                    "다만 반복 결정 3개를 골라 리더에게 넘길 후보로 정하고, CEO가 반드시 볼 기준만 분리하십시오."
+                )
+            else:
+                recommendation += "전결권 위임 체계를 설계하고 팀장급 역할을 재정의하십시오."
         elif issues[0].title == "리더 피드백 역량 부족":
             recommendation += "평가 제도 도입보다 리더 교육이 선행되어야 합니다."
         elif issues[0].title == "1on1 부재/형식화":
