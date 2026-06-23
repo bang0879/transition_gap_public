@@ -35,6 +35,18 @@ class Issue:
     severity: str
 
 
+@dataclass(frozen=True)
+class StageGuidance:
+    """조직 단계별 의사결정 가이드."""
+
+    current_choice: str
+    valid_until: str
+    defer_now: list[str]
+    do_now: list[str]
+    self_serve_actions: list[str]
+    needs_help_later: list[str]
+
+
 @dataclass
 class AreaAnalysis:
     """한 영역의 분석 결과."""
@@ -51,6 +63,7 @@ class AreaAnalysis:
     recommendation: str
     tags: list[str] = field(default_factory=list)
     score_breakdown: list[dict[str, Any]] = field(default_factory=list)
+    stage_guidance: StageGuidance | None = None
 
 
 def analyze_all_areas(responses: dict[str, Any]) -> list[AreaAnalysis]:
@@ -65,8 +78,82 @@ def analyze_all_areas(responses: dict[str, Any]) -> list[AreaAnalysis]:
     areas.sort(key=lambda area: area.gap, reverse=True)
     for index, area in enumerate(areas):
         area.priority = index + 1 if area.gap >= 10 else 0
+        area.stage_guidance = _stage_guidance_for(area, responses)
     return areas
 
+
+def _stage_guidance_for(area: AreaAnalysis, responses: dict[str, Any]) -> StageGuidance:
+    """현재 운영 방식을 결핍이 아닌 단계별 선택으로 설명한다."""
+    headcount = _text(responses.get("L1-2"))
+    is_small = _is_small_org(responses.get("L1-2"))
+
+    if area.area_id == "evaluation":
+        if not _is_evaluation_active(responses.get("2-4-1a")):
+            return StageGuidance(
+                current_choice="공식 평가 없이 운영하는 것은 30~50인 전후까지는 합리적 선택일 수 있습니다.",
+                valid_until="보상 차등, 승진 결정, 조직 50인 이상 확장이 본격화되기 전까지 유효합니다.",
+                defer_now=["360도 다면평가", "강제 등급 분포", "정교한 평가 등급 체계"],
+                do_now=["분기 1회 목표 정렬 대화", "보상 차등 시 사용할 최소 판단 기준", "평가 없이 결정한 예외 보상 사유 기록"],
+                self_serve_actions=["대표님 혼자 다음 분기 팀별 목표 3개를 문서로 정리", "엑셀로 보상 예외 사유와 결정자를 기록"],
+                needs_help_later=["평가-보상 연동 구조 설계", "리더별 평가 캘리브레이션 운영"],
+            )
+        return StageGuidance(
+            current_choice="이미 평가를 운영하고 있으므로 새 제도 추가보다 수용성과 설명 기준을 다듬는 단계입니다.",
+            valid_until="평가 결과가 보상, 승진, 역할 조정에 반복적으로 쓰이기 전까지 보완 여지가 있습니다.",
+            defer_now=["복잡한 다면평가 확대", "강제 분포 도입"],
+            do_now=["평가 결과 설명 문장 통일", "이의제기 기준 정리"],
+            self_serve_actions=["최근 평가 결과 3건의 설명 근거를 한 문장으로 정리", "리더별 피드백 완료 여부를 엑셀로 기록"],
+            needs_help_later=["평가 등급 캘리브레이션", "보상 차등 폭 설계"],
+        )
+
+    if area.area_id == "leadership":
+        ceo_bottleneck = _has_ceo_bottleneck(responses.get("2-5-4", ""), responses.get("2-5-5", ""))
+        if is_small and ceo_bottleneck:
+            return StageGuidance(
+                current_choice="초기 조직에서 CEO가 채용과 핵심 결정을 직접 보는 것은 컬처핏과 속도를 지키는 선택일 수 있습니다.",
+                valid_until="50인 전후부터 같은 결정이 반복되거나 리더가 3명 이상으로 늘어나면 위임 기준이 필요해집니다.",
+                defer_now=["전사 권한 규정집", "복잡한 직급별 R&R 체계"],
+                do_now=["전결권을 넘길 결정 3개 선정", "CEO가 반드시 볼 채용 기준과 리더 전결 기준 분리"],
+                self_serve_actions=["최근 10개 의사결정을 CEO 승인 필요/불필요로 나누기", "팀장에게 넘길 반복 승인 항목을 엑셀로 표시"],
+                needs_help_later=["리더 역할 정의", "위임 체계와 평가 책임 연결"],
+            )
+        return StageGuidance(
+            current_choice="리더 운영은 제도보다 리더별 반복 행동을 맞추는 단계입니다.",
+            valid_until="팀별 운영 편차가 구성원 경험 차이로 드러나기 전까지는 가벼운 기준으로 시작할 수 있습니다.",
+            defer_now=["전면적인 리더십 역량 모델", "복잡한 관리자 평가 제도"],
+            do_now=["리더가 반드시 해야 할 1on1/피드백 상황 정의", "반복 의사결정의 책임자 지정"],
+            self_serve_actions=["팀장별 1on1 운영 여부를 월 1회 체크", "대표 개입이 필요한 이슈 유형을 목록화"],
+            needs_help_later=["리더 코칭 체계", "역할·권한 재설계"],
+        )
+
+    if area.area_id == "compensation":
+        return StageGuidance(
+            current_choice="보상 체계를 한 번에 정교화하기보다 핵심 역할부터 기준을 세우는 선택이 현실적입니다.",
+            valid_until=f"{headcount} 규모에서 채용 오퍼와 예외 보상이 반복되기 시작하면 최소 밴드가 필요합니다.",
+            defer_now=["전 직무 연봉 테이블", "복잡한 장기보상 제도"],
+            do_now=["핵심 직무 3개의 시장 보상 기준 확인", "예외 보상 승인 원칙 기록"],
+            self_serve_actions=["최근 오퍼와 연봉 조정 사유를 엑셀로 정리", "역할별 보상 상·하한 임시 범위 작성"],
+            needs_help_later=["직무가치 평가", "보상 밴드와 인센티브 설계"],
+        )
+
+    if area.area_id == "recruitment":
+        return StageGuidance(
+            current_choice="채용 채널을 넓히기보다 핵심 포지션의 병목을 먼저 찾는 선택이 비용을 줄입니다.",
+            valid_until="동시에 열리는 핵심 포지션이 3개 이상이거나 오퍼 거절이 반복되기 전까지 유효합니다.",
+            defer_now=["대규모 채용 브랜딩 캠페인", "ATS 전면 도입"],
+            do_now=["포지션별 채용 소요 단계 기록", "오퍼 거절 사유 분류"],
+            self_serve_actions=["후보자별 유입 채널과 탈락 단계를 엑셀로 기록", "면접관별 회사 소개 문장 통일"],
+            needs_help_later=["채용 브랜딩 체계", "핵심 포지션 소싱 전략"],
+        )
+
+    return StageGuidance(
+        current_choice="리텐션 제도를 늘리기보다 누가 왜 남고 나가는지 먼저 보이게 만드는 단계입니다.",
+        valid_until="핵심 인재 이탈이 반복되거나 자발적 이직률이 20%에 가까워지기 전까지 데이터 정리가 우선입니다.",
+        defer_now=["전사 리텐션 패키지", "복잡한 승계 관리 시스템"],
+        do_now=["자발적 이직률과 조기퇴사율 계산", "핵심 인재 판단 기준 초안 작성"],
+        self_serve_actions=["입사일·퇴사일·퇴사 사유를 엑셀로 정리", "최근 퇴사자 3명의 공통 사유 기록"],
+        needs_help_later=["핵심 인재 리텐션 패키지", "핵심 포스트 승계 계획"],
+    )
 
 def get_cross_domain_insights(
     areas: list[AreaAnalysis],

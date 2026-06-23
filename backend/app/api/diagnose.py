@@ -28,6 +28,7 @@ from app.schemas.analysis import (
     IssueOut,
     MatrixOut,
     ScoreBreakdownItem,
+    StageGuidanceOut,
     VisibilityOut,
 )
 from app.schemas.responses import DiagnoseRequest
@@ -82,6 +83,14 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
                 )
                 for item in area.score_breakdown
             ],
+            stage_guidance=StageGuidanceOut(
+                current_choice=area.stage_guidance.current_choice,
+                valid_until=area.stage_guidance.valid_until,
+                defer_now=area.stage_guidance.defer_now,
+                do_now=area.stage_guidance.do_now,
+                self_serve_actions=area.stage_guidance.self_serve_actions,
+                needs_help_later=area.stage_guidance.needs_help_later,
+            ) if area.stage_guidance else None,
         )
         for area in areas
     ]
