@@ -26,6 +26,13 @@ type PdfAssets = {
 let pdfAssetsPromise: Promise<PdfAssets> | null = null;
 const reportBlobPromises = new Map<string, Promise<Blob>>();
 
+const PLACEHOLDER_COMPANY_NAMES = new Set(["", "ㅁㄴㅇ", "테스트", "test", "Test", "우리 회사"]);
+
+function normalizeCompanyNameForReport(value: string): string {
+  const trimmed = value.trim();
+  return PLACEHOLDER_COMPANY_NAMES.has(trimmed) ? "진단 보고서" : trimmed;
+}
+
 function preloadPdfAssets(): Promise<PdfAssets> {
   if (!pdfAssetsPromise) {
     pdfAssetsPromise = Promise.all([
@@ -88,7 +95,7 @@ export default function FinishPage() {
       : buildFallbackAlignmentMap(responses, data.areas);
 
     return buildReportExport({
-      companyName: companyName || "우리 회사",
+      companyName: normalizeCompanyNameForReport(companyName),
       diagnosis: { ...data, alignment_map: alignmentMap },
       responses,
       exportedAt: new Date(),
@@ -161,14 +168,15 @@ export default function FinishPage() {
   }
 
   const primaryArea = [...data.areas].sort((a, b) => b.gap - a.gap || a.priority - b.priority)[0];
-  const modeLabel = data.diagnosis_mode === "foundation" ? "Foundation" : data.diagnosis_mode === "hybrid" ? "Hybrid" : "Alignment";
+  const modeLabel = data.diagnosis_mode === "foundation" ? "기준 수립 구간" : data.diagnosis_mode === "hybrid" ? "유연성과 기준 분리 구간" : "의도와 경험 정렬 구간";
+  const displayCompanyName = normalizeCompanyNameForReport(companyName);
 
   return (
     <>
       <PageHeader
         eyebrow="진단 마무리"
         title="최종 진단 보고서를 다운로드합니다."
-        lead="대표님이 리더십과 바로 논의할 수 있도록 6페이지 A4 보고서로 핵심 해석, 운영 리스크, 검토 방향, 의사결정 메모를 정리합니다."
+        lead="대표님이 리더십 미팅에 들고 갈 수 있도록 5페이지 A4 진단 해석 메모로 핵심 패턴, 긴장 지점, 검토 방향, 의사결정 문장을 정리합니다."
         actions={
           <Button variant="primary" onClick={handleSaveReport} disabled={isSaving}>
             {isSaving ? "다운로드 생성 중" : "진단보고서 다운로드"}
@@ -179,21 +187,21 @@ export default function FinishPage() {
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <article className="rounded-[10px] border border-slate-200 bg-white p-5 sm:p-6">
           <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal">REPORT PACKAGE</p>
-          <h2 className="m-0 mt-2 text-[22px] font-[720] leading-[1.35] text-slate-950">대표용 진단 보고서</h2>
+          <h2 className="m-0 mt-2 text-[22px] font-[720] leading-[1.35] text-slate-950">대표용 진단 해석 메모</h2>
           <p className="m-0 mt-3 text-[13px] leading-[1.75] text-slate-600">
-            표지, Executive Summary, 대표님의 맹점, 영역별 운영 신호, 검토 방향, Decision Memo까지 6페이지로 구성합니다.
+            표지, 패턴 해석, 긴장 지점, 검토 방향, Decision Memo까지 5페이지로 구성합니다.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="rounded-[8px] border border-slate-200 bg-slate-50 p-3">
               <p className="m-0 text-[11px] font-[700] text-slate-500">회사명</p>
-              <p className="m-0 mt-1 text-[13px] font-[720] text-slate-900">{companyName || "우리 회사"}</p>
+              <p className="m-0 mt-1 text-[13px] font-[720] text-slate-900">{displayCompanyName}</p>
             </div>
             <div className="rounded-[8px] border border-slate-200 bg-slate-50 p-3">
-              <p className="m-0 text-[11px] font-[700] text-slate-500">진단 구간</p>
+              <p className="m-0 text-[11px] font-[700] text-slate-500">읽어야 할 구간</p>
               <p className="m-0 mt-1 text-[13px] font-[720] text-slate-900">{modeLabel}</p>
             </div>
             <div className="rounded-[8px] border border-slate-200 bg-slate-50 p-3">
-              <p className="m-0 text-[11px] font-[700] text-slate-500">우선 확인 영역</p>
+              <p className="m-0 text-[11px] font-[700] text-slate-500">먼저 볼 긴장 지점</p>
               <p className="m-0 mt-1 text-[13px] font-[720] text-slate-900">{primaryArea?.area_name ?? "추가 확인"}</p>
             </div>
           </div>
@@ -209,7 +217,7 @@ export default function FinishPage() {
 
         <aside className="rounded-[10px] border border-[#e8dcc7] bg-[#fffaf0] p-5">
           <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-[#8a6118]">DECISION MEMO</p>
-          <h3 className="m-0 mt-2 text-[17px] font-[720] leading-[1.35] text-slate-950">보고서에서 바로 볼 질문</h3>
+          <h3 className="m-0 mt-2 text-[17px] font-[720] leading-[1.35] text-slate-950">메모에서 바로 볼 질문</h3>
           <p className="m-0 mt-3 text-[12px] leading-[1.7] text-slate-600">
             지금 바로 새 제도를 설계할지보다, 먼저 어떤 판단 기준을 공개적으로 말할 수 있는지 정해야 합니다. 기준을 말할 수 없는 영역은 이번 분기에는 정교화보다 관찰과 언어 정렬을 우선합니다.
           </p>

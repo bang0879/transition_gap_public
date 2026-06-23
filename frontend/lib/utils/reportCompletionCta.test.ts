@@ -31,6 +31,11 @@ assert.equal(stepsSource.includes('path: "/finish"'), true, "finish tab should p
 
 const finishPage = readFileSync(finishPagePath, "utf8");
 assert.equal(finishPage.includes("진단보고서 다운로드"), true, "finish page should expose the diagnostic report download as the main CTA");
+assert.equal(finishPage.includes("5페이지"), true, "finish page should describe the report as five pages");
+assert.equal(finishPage.includes("6페이지"), false, "finish page should not describe the report as six pages");
+assert.equal(finishPage.includes("진단 구간"), false, "finish page should avoid internal diagnostic labels");
+assert.equal(finishPage.includes("normalizeCompanyNameForReport"), true, "finish page should normalize missing or placeholder company names before export");
+assert.equal(finishPage.includes('companyName || "우리 회사"'), false, "finish page should not use a generic company name fallback in report exports");
 assert.equal(finishPage.includes('disabled={isSaving || reportStatus === "preparing"}'), false, "download button should not be disabled while the report is pre-generating");
 assert.equal(finishPage.includes('disabled={isSaving || !exportData}'), false, "download button should not be disabled while export data is settling");
 assert.equal(finishPage.includes('disabled={isSaving}'), true, "download button should only be disabled while an explicit download is running");
@@ -41,12 +46,36 @@ assert.equal(finishPage.includes('보고서 준비 중'), false, "finish page sh
 assert.equal(finishPage.includes('setReportStatus("preparing")'), false, "finish page should not start heavy PDF blob rendering as a blocking background state");
 assert.equal(finishPage.includes("결과 요약으로"), false, "finish page should not look like a jump back to result summary");
 assert.equal(finishPage.includes("preloadPdfAssets"), true, "finish page should preload PDF assets before the click");
-assert.equal(finishPage.includes("prepareReportBlob"), true, "finish page should prepare the PDF blob before the click when data is ready");
+assert.equal(finishPage.includes("prepareReportBlob"), true, "finish page should prepare the PDF blob only inside the download flow");
 assert.equal(finishPage.includes("진단 데이터 백업"), false, "finish page should not mention data backup");
 assert.equal(finishPage.includes("JSON 데이터"), false, "finish page should not mention JSON data");
 
 const pdfPageCount = pdfDocumentSource.match(/<Page size="A4"/g)?.length ?? 0;
-assert.equal(pdfPageCount, 6, "diagnostic PDF should render six A4 pages");
-assert.equal(pdfDocumentSource.includes('Footer page="6 / 6"'), true, "diagnostic PDF should include a sixth page footer");
+assert.equal(pdfPageCount, 5, "diagnostic PDF should render five A4 pages");
+assert.equal(pdfDocumentSource.includes('Footer page="5 / 5"'), true, "diagnostic PDF should include a fifth page footer");
+assert.equal(pdfDocumentSource.includes('Footer page="6 / 6"'), false, "diagnostic PDF should not include a sixth page footer");
+assert.equal(pdfDocumentSource.includes("진단 해석 메모"), true, "diagnostic PDF should identify itself as an interpretation memo");
+assert.equal(pdfDocumentSource.includes("대표님이 의도하신 운영과 조직이 받아들이는 운영이 지금 다르게 작동하고 있습니다."), true, "cover should use the broader mirror sentence");
+assert.equal(pdfDocumentSource.includes("normalizeCompanyName"), true, "PDF should guard missing or placeholder company names");
+
+const forbiddenPdfTerms = [
+  "정합성 상태",
+  "정합성 신호",
+  "운영 비용",
+  "Executive Summary",
+  "진단 구간",
+  "자연 교체 허용",
+  "핵심 인재 보존",
+  "status_text",
+  "recommendation",
+  "AreaSignal",
+  "barTrack",
+  "barFill",
+  "coralFill",
+  "alignmentScore",
+];
+for (const term of forbiddenPdfTerms) {
+  assert.equal(pdfDocumentSource.includes(term), false, `diagnostic PDF should not expose raw result or internal term: ${term}`);
+}
 
 console.log("reportCompletionCta tests passed");
