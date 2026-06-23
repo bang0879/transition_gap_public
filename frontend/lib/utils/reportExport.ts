@@ -55,20 +55,28 @@ export function buildReportExportFileName(exportData: ReportExportData): string 
   return `${sanitizeFileSegment(exportData.companyName)}_HR_Prism_진단데이터_${exportData.completedDateLabel}.json`;
 }
 
+export function buildReportPdfFileName(exportData: ReportExportData): string {
+  return `${sanitizeFileSegment(exportData.companyName)}_HR_Prism_진단보고서_${exportData.completedDateLabel}.pdf`;
+}
+
 export function buildReportExportJson(exportData: ReportExportData): string {
   return JSON.stringify(exportData, null, 2);
+}
+
+export function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function downloadReportExportJson(exportData: ReportExportData): void {
   const blob = new Blob([buildReportExportJson(exportData)], {
     type: "application/json;charset=utf-8",
   });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = buildReportExportFileName(exportData);
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, buildReportExportFileName(exportData));
 }
