@@ -1196,11 +1196,11 @@ def _calc_leadership_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
         score += 15
         breakdown.append(_score_item("리더 피드백 역량", feedback, 15, "피드백 전달 역량 양호"))
     elif feedback == "갈등을 피하거나 온정주의가 있음":
-        score -= 8
-        breakdown.append(_score_item("리더 피드백 역량", feedback, -8, "온정주의/회피 경향"))
+        score -= 3
+        breakdown.append(_score_item("리더 피드백 역량", feedback, -3, "온정주의/회피 경향"))
     elif feedback == "대표인 내가 직접 나서야 해결됨":
-        score -= 15
-        breakdown.append(_score_item("리더 피드백 역량", feedback, -15, "대표 의존도 높음"))
+        score -= 8
+        breakdown.append(_score_item("리더 피드백 역량", feedback, -8, "대표 의존도 높음"))
 
     one_on_one = responses.get("2-5-2", "")
     if one_on_one == "운영함":
