@@ -16,7 +16,7 @@ function EmptyShellContent({ page, title, description }: EmptyShellProps) {
     <main className="min-h-screen p-9">
       <div className="rounded-card border border-slate-200 bg-white p-8 shadow-card">
         <div className="mb-3 text-[11px] font-[760] uppercase tracking-[0.08em] text-teal">
-          Transition Gap
+          HR Prism
         </div>
         <h2 className="m-0 text-[28px] font-[680] leading-[1.25] text-slate-900">
           {title}

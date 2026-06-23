@@ -30,9 +30,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Transition Gap API",
+    title="HR Prism API",
     version="0.2.0",
-    description="Transition Gap stateless diagnosis API",
+    description="HR Prism stateless diagnosis API",
     lifespan=lifespan,
 )
 
