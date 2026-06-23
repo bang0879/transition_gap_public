@@ -273,7 +273,14 @@ def benchmark_for(area_id: str, responses: dict[str, Any]) -> int:
             "retention": -5,
             "leadership": -3,
         }.get(area_id, 0)
-    elif headcount in ("100~500인", "500인 초과", "100인 초과"):
+    elif headcount == "50~100인":
+        base += {
+            "retention": -3,
+            "evaluation": -3,
+            "leadership": -3,
+            "recruitment": -2,
+        }.get(area_id, 0)
+    elif headcount == "500인 초과":
         base += {
             "evaluation": 5,
             "leadership": 5,
