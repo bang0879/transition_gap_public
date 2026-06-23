@@ -19,7 +19,7 @@ function ReportPage({
   return (
     <section className="mx-auto flex min-h-[1122px] w-[794px] flex-col bg-white px-[56px] py-[48px] text-slate-950 shadow-[0_18px_60px_rgba(15,23,42,0.14)] print:min-h-screen print:w-full print:shadow-none">
       <header className="flex items-center justify-between border-b border-slate-200 pb-3 text-[10px] font-[760] tracking-[0.08em] text-slate-400">
-        <span>TRANSITION GAP DIAGNOSTIC REPORT</span>
+        <span>HR PRISM DIAGNOSTIC REPORT</span>
         <span>{String(pageNumber).padStart(2, "0")} / 06</span>
       </header>
       <main className="flex flex-1 flex-col pt-8">{children}</main>
@@ -47,7 +47,7 @@ export function ReportPreview({ report }: { report: DiagnosticReportViewModel })
         <ReportPage pageNumber={1} title="Cover">
           <div className="flex flex-1 flex-col justify-between">
             <div>
-              <p className="m-0 text-[12px] font-[800] tracking-[0.16em] text-[#4f8f84]">TRANSITION GAP</p>
+              <p className="m-0 text-[12px] font-[800] tracking-[0.16em] text-[#4f8f84]">HR PRISM</p>
               <h1 className="m-0 mt-16 max-w-[560px] text-[44px] font-[780] leading-[1.16] tracking-normal text-slate-950">
                 {report.cover.title}
               </h1>
@@ -83,11 +83,11 @@ export function ReportPreview({ report }: { report: DiagnosticReportViewModel })
                 <InterpretationLine label="따라서 지금의 전환 과제" body={report.executive.transitionTask} />
               </div>
             </article>
-            <aside className="rounded-[10px] border border-slate-200 bg-slate-50 p-4">
-              <p className="m-0 text-[11px] font-[800] tracking-[0.08em] text-slate-400">KEY SIGNALS</p>
+            <aside className="rounded-[10px] border border-slate-200 bg-white p-4">
+              <p className="m-0 text-[11px] font-[800] tracking-[0.08em] text-slate-400">근거 신호</p>
               <div className="mt-3 space-y-3">
                 {report.executive.keySignals.map((signal) => (
-                  <div key={signal.label} className="rounded-[8px] bg-white p-3">
+                  <div key={signal.label} className="rounded-[8px] border border-slate-100 bg-slate-50 p-3">
                     <p className="m-0 text-[11px] font-[760] text-slate-950">{signal.label}</p>
                     <p className="m-0 mt-1 text-[10px] leading-[1.55] text-slate-600">{signal.body}</p>
                   </div>
@@ -141,7 +141,7 @@ export function ReportPreview({ report }: { report: DiagnosticReportViewModel })
         <ReportPage pageNumber={6} title="CEO Decision Memo">
           <SectionTitle
             eyebrow="CEO DECISION MEMO"
-            title="이번 회의에서 합의할 것과 아직 미룰 것을 나눕니다."
+            title="이번 회의, 30일 안, 다음 분기로 의사결정을 나눕니다."
             body="이 페이지는 실행 로드맵이 아니라, 대표님이 리더십 회의에서 바로 사용할 의사결정 메모입니다."
           />
           <div className="mt-8">

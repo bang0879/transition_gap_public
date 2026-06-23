@@ -98,9 +98,9 @@ const styles = StyleSheet.create({
 
 export function ReportPdfDocument({ report }: { report: DiagnosticReportViewModel }) {
   return (
-    <Document title={report.cover.title} author="Transition Gap">
+    <Document title={report.cover.title} author="HR Prism">
       <ReportPdfPage pageNumber={1} title="Cover">
-        <Text style={styles.eyebrow}>TRANSITION GAP</Text>
+        <Text style={styles.eyebrow}>HR PRISM</Text>
         <Text style={styles.h1}>{report.cover.title}</Text>
         <Text style={{ marginTop: 12, fontSize: 12, color: colors.slate500, fontWeight: 700 }}>{report.cover.subtitle}</Text>
         <View style={{ marginTop: 86, borderLeftWidth: 4, borderLeftColor: colors.teal, paddingLeft: 16 }}>
@@ -130,10 +130,10 @@ export function ReportPdfDocument({ report }: { report: DiagnosticReportViewMode
               <InterpretationLine label="따라서 지금의 전환 과제" body={report.executive.transitionTask} />
             </View>
           </View>
-          <View style={[styles.box, { width: 160, backgroundColor: colors.slate100 }]}>
-            <Text style={{ fontSize: 8, color: colors.slate500, fontWeight: 700 }}>KEY SIGNALS</Text>
+          <View style={[styles.box, { width: 160, backgroundColor: "#ffffff" }]}>
+            <Text style={{ fontSize: 8, color: colors.slate500, fontWeight: 700 }}>근거 신호</Text>
             {report.executive.keySignals.map((signal) => (
-              <View key={signal.label} style={{ marginTop: 9, backgroundColor: "#ffffff", borderRadius: 6, padding: 8 }}>
+              <View key={signal.label} style={{ marginTop: 9, borderWidth: 1, borderColor: colors.slate300, backgroundColor: colors.slate100, borderRadius: 6, padding: 8 }}>
                 <Text style={{ fontSize: 8.5, fontWeight: 700 }}>{signal.label}</Text>
                 <Text style={{ marginTop: 3, fontSize: 7.6, lineHeight: 1.35, color: colors.slate650 }}>{signal.body}</Text>
               </View>
@@ -186,7 +186,7 @@ export function ReportPdfDocument({ report }: { report: DiagnosticReportViewMode
       <ReportPdfPage pageNumber={6} title="CEO Decision Memo">
         <SectionTitle
           eyebrow="CEO DECISION MEMO"
-          title="이번 회의에서 합의할 것과 아직 미룰 것을 나눕니다."
+          title="이번 회의, 30일 안, 다음 분기로 의사결정을 나눕니다."
           body="이 페이지는 실행 로드맵이 아니라, 대표님이 리더십 회의에서 바로 사용할 의사결정 메모입니다."
         />
         <View style={{ marginTop: 24 }}>
@@ -209,7 +209,7 @@ function ReportPdfPage({
   return (
     <Page size="A4" style={styles.page}>
       <View style={styles.header} fixed>
-        <Text style={styles.headerText}>TRANSITION GAP DIAGNOSTIC REPORT</Text>
+        <Text style={styles.headerText}>HR PRISM DIAGNOSTIC REPORT</Text>
         <Text style={styles.headerText}>{String(pageNumber).padStart(2, "0")} / 06</Text>
       </View>
       {children}

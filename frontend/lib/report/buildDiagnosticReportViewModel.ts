@@ -73,6 +73,7 @@ export interface TensionChainItem {
 export interface PriorityTension {
   title: string;
   headline: string;
+  riskSummary: string;
   connectedDomains: string[];
   chain: TensionChainItem[];
   handleNow: string[];
@@ -88,11 +89,20 @@ export interface StrategicOptionIndicator {
 export interface StrategicOption {
   id: string;
   title: string;
+  roleLabel: string;
   gain: string;
   burden: string;
   requiredChange: string;
   riskyMove: string;
   indicators: StrategicOptionIndicator;
+}
+
+export interface DecisionMemoTimeBlock {
+  id: string;
+  label: string;
+  title: string;
+  items: string[];
+  tone: ReportTone;
 }
 
 export interface DecisionMemo {
@@ -102,6 +112,7 @@ export interface DecisionMemo {
   riskyMoves: string[];
   signals30Days: string[];
   checklist: Array<{ label: string; priority: "high" | "medium" | "low" }>;
+  timeBlocks: DecisionMemoTimeBlock[];
 }
 
 export interface DiagnosticReportViewModel {
@@ -309,89 +320,331 @@ function connectedDomains(conflict: AlignmentMapConflictOut | null, axis: Alignm
   return domains.map((domain) => displayAhaDomainName(domain));
 }
 
+function hasDomain(domains: string[], domainId: string): boolean {
+  return domains.includes(domainId);
+}
+
+function riskSummaryFor(
+  mode: DiagnosisMode | undefined,
+  domainIds: string[],
+  axis: AlignmentAxisOut | null,
+): string {
+  const focus = axis ? displayAhaDomainName(axis) : "핵심 영역";
+  if (mode === "foundation") {
+    return "지금의 위험은 리더 간 판단 일관성을 측정하지 못하는 것이 아니라, 대표님과 초기 리더가 반복해서 내린 예외 판단이 회사 기준으로 남지 않는 데 있습니다.";
+  }
+  if (hasDomain(domainIds, "compensation") && hasDomain(domainIds, "evaluation")) {
+    return "보상 차등을 먼저 강화하면 성과주의 도입이 아니라 평가 신뢰와 형평성 논쟁으로 번질 가능성이 큽니다.";
+  }
+  if (hasDomain(domainIds, "evaluation") && hasDomain(domainIds, "leadership")) {
+    return "평가 제도를 정교하게 만들수록 리더가 불편한 피드백을 설명해야 하는 비용이 먼저 드러납니다.";
+  }
+  if (hasDomain(domainIds, "recruitment") && hasDomain(domainIds, "retention")) {
+    return "외부 채용 기준과 내부 유지 기준이 다르게 읽히면, 신규 인재 영입은 기존 핵심 인재의 신뢰 비용을 만들 수 있습니다.";
+  }
+  if (hasDomain(domainIds, "compensation") && hasDomain(domainIds, "retention")) {
+    return "핵심 인재 예외를 조용히 처리하면 단기 유지에는 도움이 되지만, 보상 원칙 전체가 협상 가능한 것처럼 읽힐 수 있습니다.";
+  }
+  return `${focus}에서 지금의 위험은 제도가 부족한 것이 아니라, 민감한 순간에 어떤 기준이 실제로 우선되는지 구성원이 다르게 해석하는 데 있습니다.`;
+}
+
+function chainForMode(
+  mode: DiagnosisMode | undefined,
+  focus: string,
+  axis: AlignmentAxisOut | null,
+  riskSummary: string,
+): TensionChainItem[] {
+  if (mode === "foundation") {
+    return [
+      {
+        label: "반복 판단",
+        body: "대표님과 초기 리더가 매번 판단해 온 예외가 아직 회사 기준으로 기록되지 않았습니다.",
+        domainName: focus,
+      },
+      {
+        label: "기준 공백",
+        body: `${focus}에서 같은 상황도 설명 방식이 달라지면, 구성원은 제도가 아니라 사람을 기준으로 판단하게 됩니다.`,
+        domainName: "운영 기준",
+      },
+      {
+        label: "작은 합의",
+        body: "지금 필요한 것은 정교한 제도보다, 반복되는 판단 3~5개를 같은 문장으로 설명하는 것입니다.",
+        domainName: "대표·리더 합의",
+      },
+      {
+        label: "운영 리스크",
+        body: riskSummary,
+        domainName: "다음 성장 구간",
+      },
+    ];
+  }
+  if (mode === "alignment") {
+    return [
+      {
+        label: "의도",
+        body: `${axis?.philosophy_label ?? "명확한 기준"}에 가까운 기준을 만들고 싶습니다.`,
+        domainName: focus,
+      },
+      {
+        label: "현행 경험",
+        body: `${axis?.actual_label ?? "현행 운영"}에 가까운 경험이 반복되면, 구성원은 회사가 말하는 원칙보다 실제 예외를 더 신뢰하게 됩니다.`,
+        domainName: focus,
+      },
+      {
+        label: "연결 비용",
+        body: "이미 있는 제도들이 서로 다른 메시지를 내면, 제도를 추가할수록 정렬 비용이 커집니다.",
+        domainName: "제도 간 정렬",
+      },
+      {
+        label: "운영 리스크",
+        body: riskSummary,
+        domainName: "리더십 신뢰",
+      },
+    ];
+  }
+  return [
+    {
+      label: "의도",
+      body: `${axis?.philosophy_label ?? "성과와 책임"}에 가까운 기준을 만들고 싶습니다.`,
+      domainName: focus,
+    },
+    {
+      label: "현행 경험",
+      body: `${axis?.actual_label ?? "관계 조정"}에 가까운 운영이 구성원 경험으로 남아 있을 수 있습니다.`,
+      domainName: focus,
+    },
+    {
+      label: "리더 부담",
+      body: "리더는 불편한 피드백과 예외 설명을 감당할 준비가 서로 다를 수 있습니다.",
+      domainName: "리더십",
+    },
+    {
+      label: "운영 리스크",
+      body: riskSummary,
+      domainName: "운영 리스크",
+    },
+  ];
+}
+
+function handleNowForMode(mode: DiagnosisMode | undefined): string[] {
+  if (mode === "foundation") {
+    return [
+      "반복되는 예외 판단 3가지를 문장으로 남깁니다.",
+      "대표님이 직접 설명하던 기준을 리더 1~2명이 같은 말로 설명할 수 있게 맞춥니다.",
+      "다음 분기까지 제도화할 것과 아직 구두 운영할 것을 나눕니다.",
+    ];
+  }
+  if (mode === "alignment") {
+    return [
+      "제도별 메시지가 충돌하는 지점을 하나의 판단 원칙으로 묶습니다.",
+      "리더 회의에서 보상·평가·승진 연결 기준을 같은 언어로 재정의합니다.",
+      "구성원이 실제 경험하는 기준을 확인할 신호를 정합니다.",
+    ];
+  }
+  return [
+    "성과 차이를 만드는 기준 문장을 먼저 정리합니다.",
+    "평가 결과를 보상에 연결하는 수준을 합의합니다.",
+    "리더가 구성원에게 설명해야 할 최소 언어를 정합니다.",
+  ];
+}
+
+function holdOffForMode(mode: DiagnosisMode | undefined): string[] {
+  if (mode === "foundation") {
+    return [
+      "12개월 단위 전사 로드맵 확정",
+      "직급·보상 테이블 전면 설계",
+      "모든 리더에게 동일한 평가 운영을 요구하는 것",
+    ];
+  }
+  if (mode === "alignment") {
+    return [
+      "새 제도 추가로 정렬 문제를 덮는 것",
+      "각 부서별 예외 운영을 그대로 두는 것",
+      "조직 전체 커뮤니케이션 전에 일부 보상 예외를 조용히 확정하는 것",
+    ];
+  }
+  return [
+    "전사 보상 체계 전면 개편",
+    "평가 양식만 정교하게 만드는 작업",
+    "모든 리더에게 동일한 고강도 성과관리를 요구하는 것",
+  ];
+}
+
 function priorityTension(
   areas: AreaAnalysisOut[],
   conflict: AlignmentMapConflictOut | null,
   axis: AlignmentAxisOut | null,
+  mode: DiagnosisMode | undefined,
 ): PriorityTension {
+  const domainIds = conflict?.domains ?? (axis ? [axis.domain_id] : []);
   const domains = connectedDomains(conflict, axis);
   const focus = axis ? displayAhaDomainName(axis) : priorityAreas(areas)[0]?.area_name ?? "핵심 영역";
   const headline = domains.length >= 2
     ? `${focus} 문제처럼 보이지만, 실제로는 ${domains.join("·")}이 함께 묶인 운영 문제입니다.`
     : `${focus} 문제처럼 보이지만, 실제로는 기준을 공개적으로 다루는 운영 문제입니다.`;
+  const riskSummary = riskSummaryFor(mode, domainIds, axis);
   return {
     title: "Priority Tension",
     headline,
+    riskSummary,
     connectedDomains: domains,
-    chain: [
-      {
-        label: "의도",
-        body: `${axis?.philosophy_label ?? "성과와 책임"}에 가까운 기준을 만들고 싶습니다.`,
-        domainName: focus,
-      },
-      {
-        label: "현행 경험",
-        body: `${axis?.actual_label ?? "관계 조정"}에 가까운 운영이 구성원 경험으로 남아 있을 수 있습니다.`,
-        domainName: focus,
-      },
-      {
-        label: "리더 부담",
-        body: "리더는 불편한 피드백과 예외 설명을 감당할 준비가 서로 다를 수 있습니다.",
-        domainName: "리더십",
-      },
-      {
-        label: "운영 리스크",
-        body: "보상 차등이나 평가 강화만 먼저 진행하면 형평성 논쟁으로 번질 수 있습니다.",
-        domainName: "운영 리스크",
-      },
-    ],
-    handleNow: [
-      "성과 차이를 만드는 기준 문장을 먼저 정리합니다.",
-      "평가 결과를 보상에 연결하는 수준을 합의합니다.",
-      "리더가 구성원에게 설명해야 할 최소 언어를 정합니다.",
-    ],
-    holdOff: [
-      "전사 보상 체계 전면 개편",
-      "평가 양식만 정교하게 만드는 작업",
-      "모든 리더에게 동일한 고강도 성과관리를 요구하는 것",
-    ],
+    chain: chainForMode(mode, focus, axis, riskSummary),
+    handleNow: handleNowForMode(mode),
+    holdOff: holdOffForMode(mode),
   };
 }
 
-function strategicOptions(mode: DiagnosisMode | undefined): StrategicOption[] {
+function strategicOptions(mode: DiagnosisMode | undefined, axis: AlignmentAxisOut | null): StrategicOption[] {
   const foundationPenalty = mode === "foundation" ? 1 : 0;
-  return [
-    {
+  const optionsById: Record<string, StrategicOption> = {
+    performance: {
       id: "performance",
       title: "성과 책임 강화형",
+      roleLabel: "성과 기준을 공개적으로 다룰 준비가 있을 때 검토",
       gain: "고성과자에게 더 분명한 신호를 줄 수 있습니다.",
       burden: "평가 수용성 논쟁과 리더의 피드백 부담이 커집니다.",
       requiredChange: "대표님께서는 예외 조정보다 기준 반복을 우선하셔야 합니다.",
       riskyMove: "평가 신뢰 없이 차등 보상만 먼저 강화하는 것입니다.",
       indicators: { gain: 86, burden: 74 + foundationPenalty * 8, leadershipLoad: 82 + foundationPenalty * 8 },
     },
-    {
+    community: {
       id: "community",
       title: "공동체 안정 보완형",
+      roleLabel: "기준을 세우기 전 조직 수용성을 먼저 지켜야 할 때 검토",
       gain: "구성원 수용성과 심리적 안정감을 유지할 수 있습니다.",
       burden: "핵심 인재에게 주는 성장·보상 메시지가 약해질 수 있습니다.",
       requiredChange: "대표님께서는 성과 메시지를 늦추는 대신 기준 정리부터 하셔야 합니다.",
       riskyMove: "좋은 분위기를 유지한다는 이유로 민감한 기준 결정을 계속 미루는 것입니다.",
       indicators: { gain: 68, burden: 52, leadershipLoad: 48 },
     },
-    {
+    elite: {
       id: "elite",
       title: "핵심 인재 집중형",
+      roleLabel: "성장 병목이 핵심 인재 유지에 있을 때 검토",
       gain: "성장 병목 인재를 유지하고 중요한 역할 공백을 줄일 수 있습니다.",
       burden: "내부 형평성 논쟁과 예외 기준화 부담이 커집니다.",
       requiredChange: "대표님께서는 예외를 특혜가 아니라 기준 있는 선택으로 설명하셔야 합니다.",
       riskyMove: "핵심 인재 예외를 조용히 처리하는 것입니다.",
       indicators: { gain: 78, burden: 80, leadershipLoad: 72 },
     },
+  };
+
+  const axisDomain = axis?.domain_id;
+  const optionOrder = mode === "foundation"
+    ? ["community", "performance", "elite"]
+    : axisDomain === "recruitment" || axisDomain === "retention"
+      ? ["elite", "performance", "community"]
+      : mode === "alignment"
+        ? ["performance", "elite", "community"]
+        : ["performance", "community", "elite"];
+
+  return optionOrder.map((optionId) => optionsById[optionId]!);
+}
+
+function timeBlocksForMode(mode: DiagnosisMode | undefined, focus: string): DecisionMemoTimeBlock[] {
+  if (mode === "foundation") {
+    return [
+      {
+        id: "meeting",
+        label: "이번 회의",
+        title: "작은 기준부터 합의",
+        tone: "teal",
+        items: [
+          `${focus}에서 반복되는 예외 판단을 어떤 문장으로 설명할지 합의합니다.`,
+          "아직 제도화하지 않을 항목을 명시합니다.",
+        ],
+      },
+      {
+        id: "thirty-days",
+        label: "30일 안",
+        title: "대표님 없이도 설명되는지 확인",
+        tone: "amber",
+        items: [
+          "리더 1~2명이 같은 상황을 같은 말로 설명할 수 있는지 확인합니다.",
+          "구두 운영으로 버틸 판단과 문서화가 필요한 판단을 나눕니다.",
+        ],
+      },
+      {
+        id: "next-quarter",
+        label: "다음 분기",
+        title: "하나의 제도만 작게 고정",
+        tone: "slate",
+        items: [
+          "채용·보상·평가 중 하나만 먼저 작은 기준으로 고정합니다.",
+          "제도 이름보다 실제 적용 사례를 축적합니다.",
+        ],
+      },
+    ];
+  }
+  if (mode === "alignment") {
+    return [
+      {
+        id: "meeting",
+        label: "이번 회의",
+        title: "충돌하는 메시지 합의",
+        tone: "teal",
+        items: [
+          "제도들이 구성원에게 보내는 메시지가 어디서 충돌하는지 합의합니다.",
+          `${focus} 판단을 대표 재량이 아닌 회사 기준으로 둘 범위를 정합니다.`,
+        ],
+      },
+      {
+        id: "thirty-days",
+        label: "30일 안",
+        title: "리더 판단 차이 확인",
+        tone: "amber",
+        items: [
+          "리더 회의에서 같은 사례에 대한 판단 차이를 비교합니다.",
+          "보상·평가·승진 연결 기준을 한 문장으로 설명해 봅니다.",
+        ],
+      },
+      {
+        id: "next-quarter",
+        label: "다음 분기",
+        title: "커뮤니케이션 전 기준 고정",
+        tone: "slate",
+        items: [
+          "전사 커뮤니케이션 전에 예외 기준과 책임자를 확정합니다.",
+          "정렬된 기준이 실제 피드백과 보상 대화에 쓰이는지 점검합니다.",
+        ],
+      },
+    ];
+  }
+  return [
+    {
+      id: "meeting",
+      label: "이번 회의",
+      title: "공개 기준의 범위 결정",
+      tone: "teal",
+      items: [
+        "성과 차이를 어디까지 공개적 기준으로 다룰 것인지 정합니다.",
+        "리더 재량과 회사 기준의 경계를 나눕니다.",
+      ],
+    },
+    {
+      id: "thirty-days",
+      label: "30일 안",
+      title: "수용성 신호 확인",
+      tone: "amber",
+      items: [
+        "보상 예외의 이유가 설명 가능한지 확인합니다.",
+        "평가 피드백이 보상·승진 논의와 충돌하지 않는지 봅니다.",
+      ],
+    },
+    {
+      id: "next-quarter",
+      label: "다음 분기",
+      title: "제도 연결 수준 결정",
+      tone: "slate",
+      items: [
+        "평가 결과를 보상 및 승진 판단에 어느 수준까지 연결할지 정합니다.",
+        "전체 개편보다 먼저 연결 기준 하나를 검증합니다.",
+      ],
+    },
   ];
 }
 
-function decisionMemo(axis: AlignmentAxisOut | null): DecisionMemo {
+function decisionMemo(mode: DiagnosisMode | undefined, axis: AlignmentAxisOut | null): DecisionMemo {
   const focus = axis ? displayAhaDomainName(axis) : "핵심 영역";
   return {
     title: "CEO Decision Memo",
@@ -401,17 +654,17 @@ function decisionMemo(axis: AlignmentAxisOut | null): DecisionMemo {
       "리더 재량으로 남길 판단과 회사 기준으로 고정할 판단을 어디서 나눌 것인가",
     ],
     defer: [
-      "전사 보상 테이블의 전면 개편",
+      mode === "foundation" ? "12개월 단위 전사 로드맵 확정" : "전사 보상 테이블의 전면 개편",
       "복잡한 직급 및 직무 체계",
       "모든 제도의 동시 개편",
     ],
     riskyMoves: [
-      "평가 수용성 없이 차등 보상만 강화하는 것",
+      mode === "foundation" ? "운영 기준 없이 평가 양식부터 도입하는 것" : "평가 수용성 없이 차등 보상만 강화하는 것",
       "리더 준비 없이 성과 책임만 밀어붙이는 것",
       "예외 운영을 기준화하지 않은 채 핵심 인재 보상만 조용히 처리하는 것",
     ],
     signals30Days: [
-      "리더들이 같은 상황에서 비슷한 판단을 내리고 있는가",
+      mode === "foundation" ? "대표님 없이도 같은 설명이 가능한가" : "리더들이 같은 상황에서 비슷한 판단을 내리고 있는가",
       "보상 예외의 이유가 설명 가능한가",
       "평가 피드백이 보상 및 승진 논의와 충돌하지 않는가",
     ],
@@ -420,6 +673,7 @@ function decisionMemo(axis: AlignmentAxisOut | null): DecisionMemo {
       { label: "리더가 같은 사례에 같은 판단을 내릴 수 있는가", priority: "high" },
       { label: "아직 제도화하지 않을 항목이 명확한가", priority: "medium" },
     ],
+    timeBlocks: timeBlocksForMode(mode, focus),
   };
 }
 
@@ -463,8 +717,8 @@ export function buildDiagnosticReportViewModel(input: BuildDiagnosticReportViewM
       tensionGauge: tensionGauge(axis),
     },
     blindSpots: blindSpots(mode, axis),
-    priorityTension: priorityTension(areas, conflict, axis),
-    strategicOptions: strategicOptions(mode),
-    decisionMemo: decisionMemo(axis),
+    priorityTension: priorityTension(areas, conflict, axis, mode),
+    strategicOptions: strategicOptions(mode, axis),
+    decisionMemo: decisionMemo(mode, axis),
   };
 }

@@ -122,6 +122,12 @@ const report = buildDiagnosticReportViewModel({
   diagnosis: baseDiagnosis,
   responses: { "L1-2": "51~100명", "L1-3": "빠른 성장", "L1-4": "채용 확대" },
 });
+const foundationReport = buildDiagnosticReportViewModel({
+  companyName: "테스트컴퍼니",
+  completedAt: new Date("2026-06-22T00:00:00.000Z"),
+  diagnosis: { ...baseDiagnosis, diagnosis_mode: "foundation" },
+  responses: { "L1-2": "1~30명", "L1-3": "초기 운영", "L1-4": "기준 정리" },
+});
 
 const assertions: [string, boolean][] = [
   ["six pages", report.pages.length === 6],
@@ -129,7 +135,12 @@ const assertions: [string, boolean][] = [
   ["core pattern", report.executive.corePattern.includes("기준 회피")],
   ["honorific blind spot", report.blindSpots[0]?.headline.includes("대표님") ?? false],
   ["priority chain", report.priorityTension.chain.length >= 4],
+  ["risk summary", report.priorityTension.riskSummary.includes("평가 신뢰")],
+  ["option role label", report.strategicOptions[0]?.roleLabel.includes("검토") ?? false],
   ["decision memo", report.decisionMemo.decisions[0]?.includes("성과 차이") ?? false],
+  ["decision memo time blocks", report.decisionMemo.timeBlocks.map((block) => block.label).join("/") === "이번 회의/30일 안/다음 분기"],
+  ["foundation chain", foundationReport.priorityTension.chain[0]?.label === "반복 판단"],
+  ["foundation option order", foundationReport.strategicOptions[0]?.id === "community"],
 ];
 
 export const diagnosticReportViewModelSmoke = assertions.every(([, passed]) => passed);

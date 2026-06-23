@@ -101,6 +101,10 @@ export function PdfTensionChain({ tension }: { tension: PriorityTension }) {
         ))}
       </View>
       <View style={{ width: 155, gap: 9 }}>
+        <View style={{ borderWidth: 1, borderColor: colors.slate300, borderRadius: 8, padding: 10, backgroundColor: colors.coralBg }}>
+          <Text style={{ fontSize: 8, fontWeight: 700, color: colors.coral }}>운영 리스크</Text>
+          <Text style={{ marginTop: 5, fontSize: 7.8, lineHeight: 1.35, color: colors.slate650 }}>{tension.riskSummary}</Text>
+        </View>
         <SmallList title="먼저 손댈 것" items={tension.handleNow} color={colors.tealDark} />
         <SmallList title="아직 보류할 것" items={tension.holdOff} color={colors.amber} />
       </View>
@@ -125,6 +129,7 @@ export function PdfStrategicOptions({ options }: { options: StrategicOption[] })
       {options.map((option) => (
         <View key={option.id} style={{ flex: 1, borderWidth: 1, borderColor: colors.slate300, borderRadius: 8, padding: 10 }}>
           <Text style={{ fontSize: 12, fontWeight: 700, color: colors.slate950 }}>{option.title}</Text>
+          <Text style={{ marginTop: 3, fontSize: 7.4, lineHeight: 1.3, color: colors.slate500 }}>{option.roleLabel}</Text>
           <View style={{ marginTop: 9, gap: 5 }}>
             <MetricBar label="얻는 것" value={option.indicators.gain} />
             <MetricBar label="부담" value={option.indicators.burden} />
@@ -165,23 +170,42 @@ function OptionLine({ title, body, color }: { title: string; body: string; color
 
 export function PdfDecisionMemo({ memo }: { memo: DecisionMemo }) {
   return (
-    <View style={{ flexDirection: "row", gap: 10 }}>
-      <View style={{ flex: 1, gap: 9 }}>
-        <View style={{ flexDirection: "row", gap: 9 }}>
-          <MemoList title="이번 회의에서 합의해야 할 것" items={memo.decisions} color={colors.tealDark} />
-          <MemoList title="아직 결정하지 않아도 되는 것" items={memo.defer} color={colors.slate500} />
-        </View>
-        <View style={{ flexDirection: "row", gap: 9 }}>
-          <MemoList title="지금 하면 위험한 것" items={memo.riskyMoves} color={colors.coral} />
-          <MemoList title="30일 안에 확인할 신호" items={memo.signals30Days} color={colors.amber} />
-        </View>
-      </View>
-      <View style={{ width: 150, borderWidth: 1, borderColor: colors.slate300, borderRadius: 8, padding: 10, backgroundColor: colors.slate100 }}>
-        <Text style={{ fontSize: 9, fontWeight: 700, color: colors.slate950 }}>회의 체크리스트</Text>
-        {memo.checklist.map((item) => (
-          <Text key={item.label} style={{ marginTop: 8, fontSize: 8, lineHeight: 1.4, color: colors.slate650 }}>□ {item.label}</Text>
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", gap: 9 }}>
+        {memo.timeBlocks.map((block) => (
+          <PdfTimeBlock key={block.id} block={block} />
         ))}
       </View>
+      <View style={{ flexDirection: "row", gap: 9 }}>
+        <MemoList title="지금 하면 위험한 선택" items={memo.riskyMoves} color={colors.coral} />
+        <MemoList title="아직 결정하지 않아도 되는 것" items={memo.defer} color={colors.slate500} />
+      </View>
+    </View>
+  );
+}
+
+function colorForTone(tone: string): string {
+  if (tone === "coral") return colors.coral;
+  if (tone === "amber") return colors.amber;
+  if (tone === "teal") return colors.tealDark;
+  return colors.slate500;
+}
+
+function backgroundForTone(tone: string): string {
+  if (tone === "coral") return colors.coralBg;
+  if (tone === "amber") return colors.amberBg;
+  if (tone === "teal") return "#f1fbf8";
+  return colors.slate100;
+}
+
+function PdfTimeBlock({ block }: { block: DecisionMemo["timeBlocks"][number] }) {
+  return (
+    <View style={{ flex: 1, borderWidth: 1, borderColor: colors.slate300, borderRadius: 8, padding: 10, backgroundColor: backgroundForTone(block.tone) }}>
+      <Text style={{ fontSize: 7.2, fontWeight: 700, color: colorForTone(block.tone) }}>{block.label}</Text>
+      <Text style={{ marginTop: 5, fontSize: 9.5, fontWeight: 700, lineHeight: 1.3, color: colors.slate950 }}>{block.title}</Text>
+      {block.items.map((item) => (
+        <Text key={item} style={{ marginTop: 6, fontSize: 7.8, lineHeight: 1.35, color: colors.slate650 }}>• {item}</Text>
+      ))}
     </View>
   );
 }

@@ -34,7 +34,7 @@ export function ReportDownloadButton({ report }: { report: DiagnosticReportViewM
         import("./pdf/ReportPdfDocument"),
       ]);
       const blob = await pdf(<ReportPdfDocument report={report} />).toBlob();
-      downloadBlob(blob, `${sanitizeFileSegment(report.cover.companyName)}_진단보고서_${report.cover.completedDateLabel}.pdf`);
+      downloadBlob(blob, `${sanitizeFileSegment(report.cover.companyName)}_HR_Prism_진단보고서_${report.cover.completedDateLabel}.pdf`);
     } finally {
       setIsGenerating(false);
     }

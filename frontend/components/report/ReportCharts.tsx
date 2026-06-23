@@ -107,6 +107,10 @@ export function TensionChain({ tension }: { tension: PriorityTension }) {
         </div>
       </div>
       <div className="space-y-3">
+        <div className="rounded-[8px] border border-[#e6b6a8] bg-[#fff7f4] p-3">
+          <p className="m-0 text-[11px] font-[760] text-[#8a4b3d]">운영 리스크</p>
+          <p className="m-0 mt-2 text-[10px] leading-[1.6] text-slate-650">{tension.riskSummary}</p>
+        </div>
         <div className="rounded-[8px] border border-[#b8d8d2] bg-[#f1fbf8] p-3">
           <p className="m-0 text-[11px] font-[760] text-[#245f58]">먼저 손댈 것</p>
           <ul className="m-0 mt-2 space-y-1.5 p-0 text-[10px] leading-[1.55] text-slate-650">
@@ -148,6 +152,7 @@ export function StrategicOptionsGrid({ options }: { options: StrategicOption[] }
       {options.map((option) => (
         <article key={option.id} className="rounded-[8px] border border-slate-200 bg-white p-3">
           <h3 className="m-0 text-[14px] font-[760] leading-[1.35] text-slate-950">{option.title}</h3>
+          <p className="m-0 mt-1 text-[9.5px] font-[680] leading-[1.45] text-slate-500">{option.roleLabel}</p>
           <div className="mt-3 space-y-2">
             <MetricBar label="얻는 것" value={option.indicators.gain} />
             <MetricBar label="부담" value={option.indicators.burden} />
@@ -179,25 +184,31 @@ export function StrategicOptionsGrid({ options }: { options: StrategicOption[] }
 
 export function DecisionMemoChecklist({ memo }: { memo: DecisionMemo }) {
   return (
-    <div className="grid grid-cols-[1fr_240px] gap-4">
-      <div className="grid grid-cols-2 gap-3">
-        <MemoList title="이번 회의에서 합의해야 할 것" items={memo.decisions} tone="teal" />
-        <MemoList title="아직 결정하지 않아도 되는 것" items={memo.defer} tone="slate" />
-        <MemoList title="지금 하면 위험한 것" items={memo.riskyMoves} tone="coral" />
-        <MemoList title="30일 안에 확인할 신호" items={memo.signals30Days} tone="amber" />
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
+        {memo.timeBlocks.map((block) => (
+          <TimeBlock key={block.id} block={block} />
+        ))}
       </div>
-      <aside className="rounded-[8px] border border-slate-200 bg-slate-50 p-3">
-        <p className="m-0 text-[11px] font-[760] text-slate-500">회의 체크리스트</p>
-        <div className="mt-3 space-y-2">
-          {memo.checklist.map((item) => (
-            <div key={item.label} className="flex gap-2 rounded-[7px] bg-white p-2 text-[10px] leading-[1.45] text-slate-650">
-              <span className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${item.priority === "high" ? "bg-[#b95f4e]" : item.priority === "medium" ? "bg-[#bd9145]" : "bg-[#4f8f84]"}`} />
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </aside>
+      <div className="grid grid-cols-[1.1fr_0.9fr] gap-3">
+        <MemoList title="지금 하면 위험한 선택" items={memo.riskyMoves} tone="coral" />
+        <MemoList title="아직 결정하지 않아도 되는 것" items={memo.defer} tone="slate" />
+      </div>
     </div>
+  );
+}
+
+function TimeBlock({ block }: { block: DecisionMemo["timeBlocks"][number] }) {
+  return (
+    <section className={`rounded-[8px] border p-3 ${toneClass(block.tone)}`}>
+      <p className="m-0 text-[10px] font-[800] tracking-[0.08em] text-slate-400">{block.label}</p>
+      <h3 className="m-0 mt-2 text-[13px] font-[760] leading-[1.35] text-slate-950">{block.title}</h3>
+      <ul className="m-0 mt-3 space-y-1.5 p-0 text-[10px] leading-[1.6] text-slate-650">
+        {block.items.map((item) => (
+          <li key={item} className="list-none">• {item}</li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
