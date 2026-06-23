@@ -50,6 +50,27 @@ def test_diagnose_empty_responses(client):
     assert len(data["areas"]) == 5
 
 
+def test_diagnose_response_uses_ceo_facing_issue_titles(client):
+    response = client.post(
+        "/api/diagnose",
+        json={
+            "responses": {
+                "2-5-1": "대부분 객관적으로 잘 수행함",
+                "2-5-2": "운영 안 함",
+                "2-5-4": "리더/담당자 1차 승인 후 CEO 확인",
+                "2-5-5": "리더 권한 내 결정",
+                "2-5-6": "명확한 기준으로 작동함",
+            }
+        },
+    )
+
+    assert response.status_code == 200
+    leadership = next(area for area in response.json()["areas"] if area["area_id"] == "leadership")
+    issue_titles = [issue["title"] for issue in leadership["issues"]]
+
+    assert "1on1 정기 운영 미정착" in issue_titles
+    assert "1on1 부재/형식화" not in issue_titles
+
 def test_diagnose_normalizes_frontend_philosophy_text_to_to_be_coordinates(client, full_responses):
     full_responses["L0-1"] = "상위 고성과자 10%에게 업계 최고 수준의 파격적 보상을 집중한다"
     full_responses["L0-2"] = "명확한 목표 대비 성과 추적과 저성과 영역에 대한 솔직한 피드백"

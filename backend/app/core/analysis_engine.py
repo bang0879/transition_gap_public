@@ -35,6 +35,30 @@ class Issue:
     severity: str
 
 
+_ISSUE_DISPLAY_TITLES = {
+    "보상-성과 연동 부재": "보상과 성과 연결 기준 미정리",
+    "보상 기준 부재": "보상 결정 기준 미정리",
+    "성과급 구조 부재": "성과 보상 upside 미정리",
+    "복리후생 과잉 투자": "복리후생이 기본 보상보다 앞서 있음",
+    "평가-보상 디커플링": "평가 결과와 보상 결정 연결 약함",
+    "평가 체계 부재": "평가 운영 기준 미정리",
+    "평가 데이터 사각지대": "평가 결과 분포 미확보",
+    "채용 브랜딩 부재": "후보자 설득 자료 미정리",
+    "온보딩 추적 부재": "온보딩 적응 상태 미확인",
+    "이직률 사각지대": "이직 원인과 규모 미확인",
+    "보상-리텐션 디커플링": "보상과 리텐션 대응 연결 약함",
+    "핵심 인재 기준 부재": "핵심 인재 판단 기준 미정리",
+    "1on1 부재/형식화": "1on1 정기 운영 미정착",
+    "1on1 부재": "1on1 정기 운영 미정착",
+    "핵심가치 미작동": "핵심가치의 채용·평가 연결 미정착",
+}
+
+
+def issue_display_title(title: str) -> str:
+    """Return the CEO-facing display title while keeping internal issue keys stable."""
+    return _ISSUE_DISPLAY_TITLES.get(title, title)
+
+
 @dataclass(frozen=True)
 class StageGuidance:
     """조직 단계별 의사결정 가이드."""
@@ -399,7 +423,7 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"귀사의 보상 구조에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"귀사의 보상 구조에서 가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "보상 기준 부재":
@@ -605,7 +629,7 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
     elif issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if _is_small_org(responses.get("L1-2")):
@@ -775,7 +799,7 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title in ("오퍼 경쟁력 부족", "채용-보상 미스매치"):
@@ -970,7 +994,7 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"귀사의 인력 안정성에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"귀사의 인력 안정성에서 가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "핵심 인재 유출 위기":
@@ -1151,7 +1175,7 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"귀사의 리더십에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"귀사의 리더십에서 가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "의사결정 병목":

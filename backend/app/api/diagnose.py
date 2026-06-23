@@ -9,7 +9,7 @@ from fastapi import APIRouter
 
 from app.core.alignment_engine import analyze_alignment
 from app.core.alignment_map import analyze_alignment_map
-from app.core.analysis_engine import analyze_all_areas, get_cross_domain_insights
+from app.core.analysis_engine import analyze_all_areas, get_cross_domain_insights, issue_display_title
 from app.core.diagnosis_mode import analyze_diagnosis_mode
 from app.core.trade_off import calc_to_be_coordinates, calculate_coordinates
 from app.core.visibility_index import calculate_visibility_index
@@ -65,7 +65,7 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
             status_text=area.status_text,
             issues=[
                 IssueOut(
-                    title=issue.title,
+                    title=issue_display_title(issue.title),
                     description=issue.description,
                     severity=issue.severity,
                 )
