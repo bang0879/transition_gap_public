@@ -24,15 +24,12 @@ import {
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
-import { useDiagnosisHistoryStore } from "@/lib/store/diagnosisHistory";
 
 export default function ResultPage() {
   const router = useRouter();
   const sessionId = useSessionStore((state) => state.sessionId);
   const companyName = useSessionStore((state) => state.companyName);
   const responses = useResponsesStore((state) => state.responses);
-  const snapshots = useDiagnosisHistoryStore((state) => state.snapshots);
-  const upsertSnapshot = useDiagnosisHistoryStore((state) => state.upsertSnapshot);
   const { data, isLoading, error, isWaitingForResponses } = useDiagnosis();
   usePageTracking("/result");
 
@@ -41,16 +38,6 @@ export default function ResultPage() {
     const avgScore = Math.round(data.areas.reduce((sum, area) => sum + area.score, 0) / data.areas.length);
     const axes = data.alignment_map?.axes ?? [];
     const maxTensionAxis = [...axes].sort((a, b) => b.tension - a.tension)[0];
-    const topGapArea = [...data.areas].sort((a, b) => b.gap - a.gap)[0];
-    upsertSnapshot({
-      sessionId,
-      companyName: companyName || "이름 없는 진단",
-      capturedAt: new Date().toISOString(),
-      visibilityScore: Math.round(data.visibility.score),
-      alignmentScore: Math.round(data.alignment_map?.alignment_score ?? data.alignment.score ?? avgScore),
-      topGapArea: topGapArea?.area_name ?? "핵심 영역",
-      topGap: topGapArea?.gap ?? 0,
-    });
     logEvent({
       session_id: sessionId,
       event_type: "result_view",
@@ -67,7 +54,7 @@ export default function ResultPage() {
       },
       timestamp: new Date().toISOString(),
     });
-  }, [companyName, data, sessionId, upsertSnapshot]);
+  }, [data, sessionId]);
 
   const handlePrint = () => {
     if (sessionId) {
@@ -149,18 +136,6 @@ export default function ResultPage() {
   const visibilityCopy = visibility.blind_spot_labels.length === 0
     ? "진단이 안 된 영역 없이 현재 판단에 필요한 데이터가 확보되었습니다."
     : `진단이 안 된 영역 ${visibility.blind_spots.length}개가 남아 있습니다. 진단이 약한 영역: ${blindSpotNames}`;
-  const previousSnapshot = snapshots.find((snapshot) => snapshot.sessionId !== sessionId);
-  const latestSnapshot = snapshots.find((snapshot) => snapshot.sessionId === sessionId);
-  const alignmentDelta = latestSnapshot && previousSnapshot ? latestSnapshot.alignmentScore - previousSnapshot.alignmentScore : null;
-  const visibilityDelta = latestSnapshot && previousSnapshot ? latestSnapshot.visibilityScore - previousSnapshot.visibilityScore : null;
-
-  const formatDelta = (delta: number | null) => {
-    if (delta === null) return "비교 기준 없음";
-    if (delta > 0) return `+${delta}점`;
-    if (delta < 0) return `${delta}점`;
-    return "변화 없음";
-  };
-
   const executiveFocusName = ahaAxis ? displayAhaDomainName(ahaAxis) : topGapArea?.area_name ?? "핵심 영역";
   const executiveFocusMeta = ahaAxis ? `${executiveFocusName} 정합 ${ahaAlignmentPercent(ahaAxis)}%` : topGapText;
   const executiveTitle =
@@ -258,34 +233,6 @@ export default function ResultPage() {
           compactCards
         />
       </section>
-
-      {previousSnapshot ? (
-        <section className="mb-[18px] rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="m-0 text-[14px] font-[690] text-slate-900">최근 진단 대비 변화</p>
-              <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
-                같은 브라우저에 저장된 이전 진단과 비교해 정합성, 가시성, 최우선 논의 영역 변화를 확인합니다.
-              </p>
-            </div>
-            <Badge variant="slate">최근 기록 비교</Badge>
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="m-0 text-[11px] font-[760] text-slate-400">정합성 변화</p>
-              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(alignmentDelta)}</strong>
-            </div>
-            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="m-0 text-[11px] font-[760] text-slate-400">가시성 변화</p>
-              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(visibilityDelta)}</strong>
-            </div>
-            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="m-0 text-[11px] font-[760] text-slate-400">이전 우선 영역</p>
-              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{previousSnapshot.topGapArea}</strong>
-            </div>
-          </div>
-        </section>
-      ) : null}
 
       <section className="mt-4 overflow-hidden rounded-[10px] border border-slate-200 bg-white print:hidden">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">

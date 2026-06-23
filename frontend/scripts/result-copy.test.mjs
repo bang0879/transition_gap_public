@@ -18,3 +18,10 @@ test("executive summary names the current operating choice before the downside",
   assert.match(executiveSummary, /이 선택을 유지한다면/);
   assert.doesNotMatch(executiveSummary, /그대로 두면/);
 });
+
+test("result summary does not render recent diagnosis comparison", () => {
+  assert.doesNotMatch(resultPage, /최근 진단 대비 변화/);
+  assert.doesNotMatch(resultPage, /useDiagnosisHistoryStore/);
+  assert.doesNotMatch(resultPage, /previousSnapshot/);
+  assert.doesNotMatch(resultPage, /formatDelta/);
+});
