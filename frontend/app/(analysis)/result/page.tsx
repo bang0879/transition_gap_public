@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
+import { DiagnosticFinishButton } from "@/components/result/DiagnosticFinishButton";
 import { AlignmentTensionMap } from "@/components/visualization/AlignmentTensionMap";
 import { logEvent } from "@/lib/api/events";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
@@ -55,20 +56,6 @@ export default function ResultPage() {
       timestamp: new Date().toISOString(),
     });
   }, [data, sessionId]);
-
-  const handlePrint = () => {
-    if (sessionId) {
-      logEvent({
-        session_id: sessionId,
-        event_type: "cta_click",
-        page: "/result",
-        metadata: { action: "print_report" },
-        timestamp: new Date().toISOString(),
-      });
-    }
-    window.print();
-  };
-
   const handleNavigate = (action: string, path: string) => {
     if (sessionId) {
       logEvent({
@@ -181,7 +168,7 @@ export default function ResultPage() {
         lead="현재 위치와 다음 의사결정 포인트를 먼저 봅니다."
         actions={
           <>
-            <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
+            <DiagnosticFinishButton page="/result" />
             <Button variant="primary" onClick={() => handleNavigate("open_detail", "/result/detail")}>상세 분석 보기</Button>
           </>
         }
