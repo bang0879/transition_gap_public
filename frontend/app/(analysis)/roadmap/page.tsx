@@ -41,7 +41,7 @@ function RoadmapContent() {
         actions={
           <>
             <Button onClick={() => router.push("/scenarios")}>시나리오 비교</Button>
-            <Button variant="primary" onClick={() => window.print()}>인쇄/PDF 저장</Button>
+            <Button variant="primary" onClick={() => router.push("/report")}>진단 마무리</Button>
           </>
         }
       />
@@ -49,12 +49,12 @@ function RoadmapContent() {
       <RoadmapTimeline scenario={scenario} />
       <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
-          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 현재 화면을 내부 공유용으로 저장합니다.</p>
-          <p className="m-0 mt-1 text-[12px] text-slate-500">정식 PDF 디자인은 별도 작업으로 두고, 지금은 브라우저 인쇄/PDF 저장을 사용합니다.</p>
+          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 진단 보고서와 진단 데이터를 함께 저장합니다.</p>
+          <p className="m-0 mt-1 text-[12px] text-slate-500">최종 보고서 화면에서 PDF 보고서와 JSON 진단 데이터를 한 번에 저장합니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => router.push(`/scenarios?scenario=${scenarioId}`)}>시나리오 비교</Button>
-          <Button variant="primary" onClick={() => window.print()}>인쇄/PDF 저장</Button>
+          <Button variant="primary" onClick={() => router.push("/report")}>진단 마무리</Button>
         </div>
       </section>
     </>
