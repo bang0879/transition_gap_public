@@ -88,8 +88,8 @@ def test_implication_fallback():
     assert "긍정 테스트" in positive
 
 
-def test_full_diagnose_still_passes(client, full_responses):
-    response = client.post("/api/diagnose", json={"responses": full_responses})
+def test_full_diagnose_still_passes(client, full_responses, auth_headers):
+    response = client.post("/api/diagnose", json={"responses": full_responses}, headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()

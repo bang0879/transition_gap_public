@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { verifyDiagnosisCode } from "@/lib/api/access";
 import { Button } from "@/components/shared/Button";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
@@ -11,17 +12,32 @@ import { DiagnosisFlowModal } from "./DiagnosisFlowModal";
 export function LandingHero() {
   const router = useRouter();
   const [companyName, setCompanyName] = useState("");
+  const [diagnosisCode, setDiagnosisCode] = useState("");
+  const [codeError, setCodeError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [flowOpen, setFlowOpen] = useState(false);
   const initSession = useSessionStore((state) => state.initSession);
-  const handleStart = () => {
+
+  const handleStart = async () => {
     const trimmedCompanyName = companyName.trim();
+    const trimmedCode = diagnosisCode.trim();
 
-    if (!trimmedCompanyName) return;
+    if (!trimmedCompanyName || !trimmedCode || isSubmitting) return;
 
-    useResponsesStore.getState().clear();
-    useSessionStore.getState().clearSession();
-    initSession(trimmedCompanyName);
-    router.push("/diagnose/philosophy");
+    setIsSubmitting(true);
+    setCodeError("");
+
+    try {
+      await verifyDiagnosisCode(trimmedCode);
+      useResponsesStore.getState().clear();
+      useSessionStore.getState().clearSession();
+      initSession(trimmedCompanyName);
+      router.push("/diagnose/philosophy");
+    } catch {
+      setCodeError("진단 코드가 맞지 않습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -50,7 +66,7 @@ export function LandingHero() {
           className="mt-7 flex flex-col items-stretch gap-3 sm:mt-[34px] sm:flex-row sm:flex-wrap sm:items-center"
           onSubmit={(event) => {
             event.preventDefault();
-            handleStart();
+            void handleStart();
           }}
         >
           <input
@@ -60,12 +76,23 @@ export function LandingHero() {
             onChange={(event) => setCompanyName(event.target.value)}
             className="h-[38px] w-full rounded-[8px] border border-slate-200 bg-white px-4 text-[13px] text-slate-900 placeholder:text-slate-400 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/20 sm:w-[220px]"
           />
-          <Button type="submit" variant="primary" disabled={!companyName.trim()}>
-            진단 시작
+          <input
+            type="password"
+            placeholder="진단 코드"
+            value={diagnosisCode}
+            onChange={(event) => {
+              setDiagnosisCode(event.target.value);
+              if (codeError) setCodeError("");
+            }}
+            className="h-[38px] w-full rounded-[8px] border border-slate-200 bg-white px-4 text-[13px] text-slate-900 placeholder:text-slate-400 focus:border-teal focus:outline-none focus:ring-1 focus:ring-teal/20 sm:w-[180px]"
+          />
+          <Button type="submit" variant="primary" disabled={!companyName.trim() || !diagnosisCode.trim() || isSubmitting}>
+            {isSubmitting ? "확인 중" : "진단 시작"}
           </Button>
           <Button onClick={() => setFlowOpen(true)}>
             진단 흐름 보기
           </Button>
+          {codeError ? <p className="m-0 w-full text-[12px] font-[650] text-red-600">{codeError}</p> : null}
         </form>
       </div>
       <PreviewAside />

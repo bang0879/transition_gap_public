@@ -1,9 +1,9 @@
-﻿"""Static content endpoint tests."""
+"""Static content endpoint tests."""
 from __future__ import annotations
 
 
-def test_get_schema(client):
-    response = client.get("/api/schema")
+def test_get_schema(client, auth_headers):
+    response = client.get("/api/schema", headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()
@@ -32,8 +32,8 @@ def test_get_schema(client):
     assert len(data["visibility"]["base_items"]) == 10
 
 
-def test_get_scenarios(client):
-    response = client.get("/api/scenarios")
+def test_get_scenarios(client, auth_headers):
+    response = client.get("/api/scenarios", headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()
@@ -67,8 +67,8 @@ def test_get_scenarios(client):
             assert "rationale" in financial_impact
 
 
-def test_get_options(client):
-    response = client.get("/api/options")
+def test_get_options(client, auth_headers):
+    response = client.get("/api/options", headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()

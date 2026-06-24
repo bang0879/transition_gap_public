@@ -4,10 +4,12 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 
-router = APIRouter()
+from app.api.deps import require_diagnosis_access
+
+router = APIRouter(dependencies=[Depends(require_diagnosis_access)])
 
 CONTENT_DIR = Path(__file__).resolve().parent.parent / "content"
 

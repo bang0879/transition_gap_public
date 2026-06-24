@@ -1,26 +1,46 @@
+import { buildDiagnosisAccessHeaders } from "@/lib/utils/accessGate";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8010";
+
+type ApiFetchOptions = RequestInit & {
+  auth?: boolean;
+};
 
 export async function apiFetch<T>(
   path: string,
-  options?: RequestInit,
+  options?: ApiFetchOptions,
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
   let res: Response;
+  const { auth = true, headers, ...fetchOptions } = options ?? {};
+  const requestHeaders = new Headers(headers);
+
+  if (!requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json");
+  }
+
+  if (auth) {
+    Object.entries(buildDiagnosisAccessHeaders()).forEach(([key, value]) => {
+      if (!requestHeaders.has(key)) {
+        requestHeaders.set(key, value);
+      }
+    });
+  }
 
   try {
     res = await fetch(url, {
-      headers: { "Content-Type": "application/json" },
-      ...options,
+      ...fetchOptions,
+      headers: requestHeaders,
     });
   } catch (networkError) {
     console.error(`[API] Network error: ${url}`, networkError);
-    throw new Error("백엔드 서버에 연결할 수 없습니다. FastAPI 서버가 실행 중인지 확인하세요.");
+    throw new Error("Could not connect to the backend API server.");
   }
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     console.error(`[API] ${res.status} ${res.statusText}: ${url}`, body);
-    throw new Error(`API 오류 (${res.status}): ${body || res.statusText}`);
+    throw new Error(`API error (${res.status}): ${body || res.statusText}`);
   }
 
   return res.json() as Promise<T>;

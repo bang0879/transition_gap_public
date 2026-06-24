@@ -57,3 +57,14 @@ Invoke-WebRequest -UseBasicParsing https://<frontend-domain>/
 - Backend: Render, Railway, Fly.io 중 하나
 
 MVP 단계에서는 프론트와 백엔드를 분리 배포하고, API URL과 CORS origin만 환경 변수로 연결하는 구성이 가장 단순합니다.
+
+## Diagnosis access code
+
+Set these backend environment variables before exposing the deployed app:
+
+```text
+DIAGNOSIS_ACCESS_CODE=<private-diagnosis-code>
+DIAGNOSIS_ACCESS_SECRET=<long-random-token-signing-secret>
+```
+
+Do not put the diagnosis code in `NEXT_PUBLIC_*` variables. The frontend only receives a short-lived bearer token from `/api/access/verify`, so the code itself is not bundled into the browser JavaScript.

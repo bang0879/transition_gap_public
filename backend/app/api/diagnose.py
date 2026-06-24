@@ -5,7 +5,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.api.deps import require_diagnosis_access
 
 from app.core.alignment_engine import analyze_alignment
 from app.core.alignment_map import analyze_alignment_map
@@ -33,7 +35,7 @@ from app.schemas.analysis import (
 )
 from app.schemas.responses import DiagnoseRequest
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_diagnosis_access)])
 
 CONTENT_DIR = Path(__file__).resolve().parent.parent / "content"
 _tips_cache: dict[str, Any] | None = None

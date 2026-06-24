@@ -3,8 +3,12 @@ from __future__ import annotations
 
 from typing import Any
 
+import os
 import pytest
 from fastapi.testclient import TestClient
+
+os.environ.setdefault("DIAGNOSIS_ACCESS_CODE", "P@ssword12")
+os.environ.setdefault("DIAGNOSIS_ACCESS_SECRET", "test-diagnosis-access-secret")
 
 from app.core.variables import ALL_VARIABLES, InputType
 from app.main import app
@@ -13,6 +17,13 @@ from app.main import app
 @pytest.fixture
 def client() -> TestClient:
     return TestClient(app)
+
+
+@pytest.fixture
+def auth_headers(client: TestClient) -> dict[str, str]:
+    response = client.post("/api/access/verify", json={"code": "P@ssword12"})
+    token = response.json()["token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-def test_diagnose_area_includes_stage_guidance(client, full_responses):
+def test_diagnose_area_includes_stage_guidance(client, full_responses, auth_headers):
     full_responses.update(
         {
             "L1-2": "20~50인",
@@ -12,7 +12,7 @@ def test_diagnose_area_includes_stage_guidance(client, full_responses):
         }
     )
 
-    response = client.post("/api/diagnose", json={"responses": full_responses})
+    response = client.post("/api/diagnose", json={"responses": full_responses}, headers=auth_headers)
 
     assert response.status_code == 200
     evaluation = next(area for area in response.json()["areas"] if area["area_id"] == "evaluation")

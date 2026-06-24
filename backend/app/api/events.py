@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.api.deps import require_diagnosis_access
 
 from app.db.events import insert_event
 from app.schemas.event import EventIn, EventOut
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_diagnosis_access)])
 logger = logging.getLogger(__name__)
 
 

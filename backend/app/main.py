@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
+from app.api.access import router as access_router
 from app.api.content import router as content_router
 from app.api.diagnose import router as diagnose_router
 from app.api.events import router as events_router
@@ -47,6 +48,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(access_router, prefix="/api")
 app.include_router(diagnose_router, prefix="/api")
 app.include_router(content_router, prefix="/api")
 app.include_router(events_router, prefix="/api")
