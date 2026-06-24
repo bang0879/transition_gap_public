@@ -11,12 +11,6 @@ import { usePageTracking } from "@/lib/hooks/usePageTracking";
 import { useResponsesStore } from "@/lib/store/responses";
 import { buildPhilosophyProfile, type PhilosophySummaryItem } from "@/lib/utils/philosophyProfile";
 
-function conflictForSummary(
-  itemId: PhilosophySummaryItem["id"],
-  conflicts: ReturnType<typeof buildPhilosophyProfile>["conflicts"],
-) {
-  return conflicts.find((conflict) => conflict.domains.includes(itemId));
-}
 
 function conflictPairText(conflict: ReturnType<typeof buildPhilosophyProfile>["conflicts"][number]) {
   return `${conflict.domain_labels[0]} ↔ ${conflict.domain_labels[1]} 방향이 서로 부딪힙니다.`;
@@ -90,7 +84,7 @@ export default function PhilosophyProfilePage() {
                 if (!leftItem || !rightItem) return null;
 
                 const renderSummaryCard = (item: PhilosophySummaryItem) => {
-                  const conflict = conflictForSummary(item.id, profile.conflicts);
+                  const conflict = pairConflict?.domains.includes(item.id) ? pairConflict : undefined;
                   const cardTone = conflict
                     ? "border-coral/35 bg-[#fff7f5] shadow-[inset_0_0_0_1px_rgba(201,111,90,0.10)]"
                     : "border-slate-200 bg-slate-50/60";
