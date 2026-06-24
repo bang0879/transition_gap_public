@@ -1,0 +1,18 @@
+<svg width="760" height="228" viewBox="0 0 760 228" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="760" height="228" rx="28" fill="#FBFAF7"/>
+  <rect x="24" y="24" width="712" height="180" rx="22" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <g transform="translate(58 43)">
+    <rect width="142" height="142" rx="28" fill="#FFFDF8" stroke="#E2E8F0"/>
+    <path d="M26 94L70 26L116 84L83 119L44 113L26 94Z" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2.2" stroke-linejoin="round"/>
+    <path d="M26 94L70 26L63 108L44 113L26 94Z" fill="#FFFFFF" fill-opacity="0.74"/>
+    <path d="M70 26L116 84L83 119L63 108L70 26Z" fill="#E7F6F3" fill-opacity="0.74"/>
+    <path d="M44 113L63 108L83 119L44 113Z" fill="#CBD5E1" fill-opacity="0.65"/>
+    <path d="M53 102L69 55L92 91L67 110L53 102Z" fill="#2F8F86" fill-opacity="0.3"/>
+    <path d="M63 108L69 55L82 93L63 108Z" fill="#334155" fill-opacity="0.48"/>
+    <path d="M70 26L63 108M26 94L63 108L83 119M63 108L116 84" stroke="#94A3B8" stroke-opacity="0.48" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M26 94L70 26L116 84L83 119L44 113L26 94Z" stroke="#64748B" stroke-opacity="0.58" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+  <text x="226" y="80" fill="#0F172A" font-family="Pretendard, Inter, Noto Sans KR, Arial, sans-serif" font-size="42" font-weight="720" letter-spacing="0">HR Prism</text>
+  <text x="226" y="113" fill="#334155" font-family="Pretendard, Inter, Noto Sans KR, Arial, sans-serif" font-size="15.4" font-weight="650" letter-spacing="0">감으로 판단하던 인사 운영을, 진단이라는 프리즘으로 비춰봅니다</text>
+  <text x="226" y="142" fill="#64748B" font-family="Pretendard, Inter, Noto Sans KR, Arial, sans-serif" font-size="12.2" font-weight="430" letter-spacing="0">회사의 인사 철학과 실제 제도, 제도 사이의 충돌까지 투명하게 확인하는 진단도구</text>
+</svg>

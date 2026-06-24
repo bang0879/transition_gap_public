@@ -28,7 +28,7 @@ export function LandingHero() {
     <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[minmax(0,1fr)_300px]">
       <div>
         <div className="mb-[18px] inline-flex min-h-7 max-w-full items-center rounded-full border border-slate-200 bg-white px-[10px] py-1 text-[11px] font-[680] leading-[1.35] text-slate-500">
-          인사제도 정합성 진단 · Transition Gap
+          인사제도 정합성 진단 · HR Prism
         </div>
         <h2 className="m-0 max-w-[760px] text-[30px] font-[700] leading-[1.18] text-slate-900 sm:text-[42px]">
           좋다는 인사제도는 많은데,

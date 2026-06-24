@@ -35,6 +35,42 @@ class Issue:
     severity: str
 
 
+_ISSUE_DISPLAY_TITLES = {
+    "보상-성과 연동 부재": "보상과 성과 연결 기준 미정리",
+    "보상 기준 부재": "보상 결정 기준 미정리",
+    "성과급 구조 부재": "성과 보상 upside 미정리",
+    "복리후생 과잉 투자": "복리후생이 기본 보상보다 앞서 있음",
+    "평가-보상 디커플링": "평가 결과와 보상 결정 연결 약함",
+    "평가 체계 부재": "평가 운영 기준 미정리",
+    "평가 데이터 사각지대": "평가 결과 분포 미확보",
+    "채용 브랜딩 부재": "후보자 설득 자료 미정리",
+    "온보딩 추적 부재": "온보딩 적응 상태 미확인",
+    "이직률 사각지대": "이직 원인과 규모 미확인",
+    "보상-리텐션 디커플링": "보상과 리텐션 대응 연결 약함",
+    "핵심 인재 기준 부재": "핵심 인재 판단 기준 미정리",
+    "1on1 부재/형식화": "1on1 정기 운영 미정착",
+    "1on1 부재": "1on1 정기 운영 미정착",
+    "핵심가치 미작동": "핵심가치의 채용·평가 연결 미정착",
+}
+
+
+def issue_display_title(title: str) -> str:
+    """Return the CEO-facing display title while keeping internal issue keys stable."""
+    return _ISSUE_DISPLAY_TITLES.get(title, title)
+
+
+@dataclass(frozen=True)
+class StageGuidance:
+    """조직 단계별 의사결정 가이드."""
+
+    current_choice: str
+    valid_until: str
+    defer_now: list[str]
+    do_now: list[str]
+    self_serve_actions: list[str]
+    needs_help_later: list[str]
+
+
 @dataclass
 class AreaAnalysis:
     """한 영역의 분석 결과."""
@@ -51,6 +87,7 @@ class AreaAnalysis:
     recommendation: str
     tags: list[str] = field(default_factory=list)
     score_breakdown: list[dict[str, Any]] = field(default_factory=list)
+    stage_guidance: StageGuidance | None = None
 
 
 def analyze_all_areas(responses: dict[str, Any]) -> list[AreaAnalysis]:
@@ -65,8 +102,82 @@ def analyze_all_areas(responses: dict[str, Any]) -> list[AreaAnalysis]:
     areas.sort(key=lambda area: area.gap, reverse=True)
     for index, area in enumerate(areas):
         area.priority = index + 1 if area.gap >= 10 else 0
+        area.stage_guidance = _stage_guidance_for(area, responses)
     return areas
 
+
+def _stage_guidance_for(area: AreaAnalysis, responses: dict[str, Any]) -> StageGuidance:
+    """현재 운영 방식을 결핍이 아닌 단계별 선택으로 설명한다."""
+    headcount = _text(responses.get("L1-2"))
+    is_small = _is_small_org(responses.get("L1-2"))
+
+    if area.area_id == "evaluation":
+        if not _is_evaluation_active(responses.get("2-4-1a")):
+            return StageGuidance(
+                current_choice="공식 평가 없이 운영하는 것은 30~50인 전후까지는 합리적 선택일 수 있습니다.",
+                valid_until="보상 차등, 승진 결정, 조직 50인 이상 확장이 본격화되기 전까지 유효합니다.",
+                defer_now=["360도 다면평가", "강제 등급 분포", "정교한 평가 등급 체계"],
+                do_now=["분기 1회 목표 정렬 대화", "보상 차등 시 사용할 최소 판단 기준", "평가 없이 결정한 예외 보상 사유 기록"],
+                self_serve_actions=["대표님 혼자 다음 분기 팀별 목표 3개를 문서로 정리", "엑셀로 보상 예외 사유와 결정자를 기록"],
+                needs_help_later=["평가-보상 연동 구조 설계", "리더별 평가 캘리브레이션 운영"],
+            )
+        return StageGuidance(
+            current_choice="이미 평가를 운영하고 있으므로 새 제도 추가보다 수용성과 설명 기준을 다듬는 단계입니다.",
+            valid_until="평가 결과가 보상, 승진, 역할 조정에 반복적으로 쓰이기 전까지 보완 여지가 있습니다.",
+            defer_now=["복잡한 다면평가 확대", "강제 분포 도입"],
+            do_now=["평가 결과 설명 문장 통일", "이의제기 기준 정리"],
+            self_serve_actions=["최근 평가 결과 3건의 설명 근거를 한 문장으로 정리", "리더별 피드백 완료 여부를 엑셀로 기록"],
+            needs_help_later=["평가 등급 캘리브레이션", "보상 차등 폭 설계"],
+        )
+
+    if area.area_id == "leadership":
+        ceo_bottleneck = _has_ceo_bottleneck(responses.get("2-5-4", ""), responses.get("2-5-5", ""))
+        if is_small and ceo_bottleneck:
+            return StageGuidance(
+                current_choice="초기 조직에서 CEO가 채용과 핵심 결정을 직접 보는 것은 컬처핏과 속도를 지키는 선택일 수 있습니다.",
+                valid_until="50인 전후부터 같은 결정이 반복되거나 리더가 3명 이상으로 늘어나면 위임 기준이 필요해집니다.",
+                defer_now=["전사 권한 규정집", "복잡한 직급별 R&R 체계"],
+                do_now=["전결권을 넘길 결정 3개 선정", "CEO가 반드시 볼 채용 기준과 리더 전결 기준 분리"],
+                self_serve_actions=["최근 10개 의사결정을 CEO 승인 필요/불필요로 나누기", "팀장에게 넘길 반복 승인 항목을 엑셀로 표시"],
+                needs_help_later=["리더 역할 정의", "위임 체계와 평가 책임 연결"],
+            )
+        return StageGuidance(
+            current_choice="리더 운영은 제도보다 리더별 반복 행동을 맞추는 단계입니다.",
+            valid_until="팀별 운영 편차가 구성원 경험 차이로 드러나기 전까지는 가벼운 기준으로 시작할 수 있습니다.",
+            defer_now=["전면적인 리더십 역량 모델", "복잡한 관리자 평가 제도"],
+            do_now=["리더가 반드시 해야 할 1on1/피드백 상황 정의", "반복 의사결정의 책임자 지정"],
+            self_serve_actions=["팀장별 1on1 운영 여부를 월 1회 체크", "대표 개입이 필요한 이슈 유형을 목록화"],
+            needs_help_later=["리더 코칭 체계", "역할·권한 재설계"],
+        )
+
+    if area.area_id == "compensation":
+        return StageGuidance(
+            current_choice="보상 체계를 한 번에 정교화하기보다 핵심 역할부터 기준을 세우는 선택이 현실적입니다.",
+            valid_until=f"{headcount} 규모에서 채용 오퍼와 예외 보상이 반복되기 시작하면 최소 밴드가 필요합니다.",
+            defer_now=["전 직무 연봉 테이블", "복잡한 장기보상 제도"],
+            do_now=["핵심 직무 3개의 시장 보상 기준 확인", "예외 보상 승인 원칙 기록"],
+            self_serve_actions=["최근 오퍼와 연봉 조정 사유를 엑셀로 정리", "역할별 보상 상·하한 임시 범위 작성"],
+            needs_help_later=["직무가치 평가", "보상 밴드와 인센티브 설계"],
+        )
+
+    if area.area_id == "recruitment":
+        return StageGuidance(
+            current_choice="채용 채널을 넓히기보다 핵심 포지션의 병목을 먼저 찾는 선택이 비용을 줄입니다.",
+            valid_until="동시에 열리는 핵심 포지션이 3개 이상이거나 오퍼 거절이 반복되기 전까지 유효합니다.",
+            defer_now=["대규모 채용 브랜딩 캠페인", "ATS 전면 도입"],
+            do_now=["포지션별 채용 소요 단계 기록", "오퍼 거절 사유 분류"],
+            self_serve_actions=["후보자별 유입 채널과 탈락 단계를 엑셀로 기록", "면접관별 회사 소개 문장 통일"],
+            needs_help_later=["채용 브랜딩 체계", "핵심 포지션 소싱 전략"],
+        )
+
+    return StageGuidance(
+        current_choice="리텐션 제도를 늘리기보다 누가 왜 남고 나가는지 먼저 보이게 만드는 단계입니다.",
+        valid_until="핵심 인재 이탈이 반복되거나 자발적 이직률이 20%에 가까워지기 전까지 데이터 정리가 우선입니다.",
+        defer_now=["전사 리텐션 패키지", "복잡한 승계 관리 시스템"],
+        do_now=["자발적 이직률과 조기퇴사율 계산", "핵심 인재 판단 기준 초안 작성"],
+        self_serve_actions=["입사일·퇴사일·퇴사 사유를 엑셀로 정리", "최근 퇴사자 3명의 공통 사유 기록"],
+        needs_help_later=["핵심 인재 리텐션 패키지", "핵심 포스트 승계 계획"],
+    )
 
 def get_cross_domain_insights(
     areas: list[AreaAnalysis],
@@ -84,12 +195,12 @@ def get_cross_domain_insights(
     if visibility.score < 50:
         insights.append(
             {
-                "headline": "측정하지 않는 것은 관리할 수 없습니다.",
+                "headline": "제도 도입 전에 데이터가 먼저 보여야 효과 측정이 됩니다.",
                 "detail": (
-                    "현재 HR 데이터 가시성이 50% 미만입니다. 새 제도를 도입하기 전에, "
+                    "현재 HR 데이터 가시성이 50% 미만입니다. 새 제도를 도입하기 전에 "
                     "이직률·채용 소요 기간·오퍼 수락률 등 핵심 지표를 엑셀로라도 "
-                    "추적하는 것부터 시작하십시오. 데이터 없이 만든 제도는 감에 의존한 "
-                    "도박이며, 가장 비싼 비용인 채용 실패와 핵심인재 이탈을 치르게 됩니다."
+                    "먼저 추적하십시오. 데이터가 보이면 어떤 제도가 효과를 냈는지 "
+                    "설명할 수 있고, 채용 실패와 핵심인재 이탈의 원인을 더 빨리 좁힐 수 있습니다."
                 ),
                 "source": "HR 가시성",
             }
@@ -98,11 +209,11 @@ def get_cross_domain_insights(
     if compensation and evaluation and compensation.issues and evaluation.issues:
         insights.append(
             {
-                "headline": "평가와 보상을 동시에 바꾸면 조직이 흔들립니다.",
+                "headline": "평가와 보상은 같은 날 바꾸기보다 순서를 나누는 편이 안전합니다.",
                 "detail": (
-                    "평가 체계가 안착되지 않은 상태에서 보상까지 건드리면, 구성원들은 "
-                    "'왜 내 등급이 이것인데 보상이 이것이냐'는 불만이 폭발합니다. "
-                    "평가를 먼저 1~2사이클 돌리고, 최소 3개월 후에 보상을 연동하십시오."
+                    "평가 체계가 안착되지 않은 상태에서 보상까지 함께 바꾸면 결과 설명 부담이 "
+                    "커질 수 있습니다. 평가를 먼저 1~2사이클 운영하고, 최소 3개월 후에 "
+                    "보상 연동 기준을 붙이는 편이 수용성을 확인하기 쉽습니다."
                 ),
                 "source": "보상 + 평가",
             }
@@ -113,11 +224,11 @@ def get_cross_domain_insights(
         if recruitment_issue_titles & {"오퍼 경쟁력 부족", "채용-보상 미스매치"}:
             insights.append(
                 {
-                    "headline": "보상이 낮은데 채용에만 돈을 쏟으면 밑 빠진 독입니다.",
+                    "headline": "오퍼 경쟁력보다 채용 채널을 먼저 늘리면 비용이 후행 손실로 돌아옵니다.",
                     "detail": (
-                        "시장 대비 보상이 낮은 상태에서 채용 채널이나 헤드헌터에 투자해도, "
-                        "오퍼 단계에서 계속 거절당합니다. 보상 경쟁력을 먼저 올려야 "
-                        "채용 효율이 자연스럽게 따라옵니다."
+                        "오퍼 경쟁력이 아직 낮은 상태에서 채용 채널이나 헤드헌터부터 늘리면 "
+                        "오퍼 단계의 손실 비용이 커질 수 있습니다. 먼저 보상 경쟁력과 제안 "
+                        "메시지를 맞춘 뒤 채널 투자를 붙이면 채용 효율을 더 안정적으로 볼 수 있습니다."
                     ),
                     "source": "채용 + 보상",
                 }
@@ -131,12 +242,11 @@ def get_cross_domain_insights(
         ):
             insights.append(
                 {
-                    "headline": "리더가 준비 안 된 상태에서 평가 제도를 만들지 마세요.",
+                    "headline": "평가 제도 도입은 리더의 피드백 운영 리듬이 잡힌 뒤에 효과가 납니다.",
                     "detail": (
-                        "평가 양식이 아무리 정교해도, 결과를 전달하는 리더가 피드백을 "
-                        "회피하거나 어려워하면 평가 자체가 조직 갈등의 불씨가 됩니다. "
-                        "수습하는 데 수개월의 시간과 리소스가 낭비됩니다. 제도보다 "
-                        "리더 교육이 먼저입니다."
+                        "평가 양식보다 결과를 설명하는 리더의 1on1·피드백 리듬이 먼저입니다. "
+                        "리더별 피드백 방식이 정리되면 평가 결과 설명과 이의제기 대응도 "
+                        "더 일관되게 운영할 수 있습니다."
                     ),
                     "source": "리더십 + 평가",
                 }
@@ -150,11 +260,11 @@ def get_cross_domain_insights(
         ):
             insights.append(
                 {
-                    "headline": "CEO가 모든 결정을 쥐고 있으면, 100명이 10명처럼 움직입니다.",
+                    "headline": "100인 전후부터는 반복 의사결정 위임 기준이 필요합니다.",
                     "detail": (
-                        "현재 채용과 배포를 CEO가 직접 승인하는 구조입니다. 조직이 100인을 "
-                        "넘기면 이 구조가 성장의 가장 큰 병목이 됩니다. 전결권 위임 "
-                        "체계를 설계하십시오."
+                        "현재 채용과 배포를 CEO가 직접 승인하는 구조입니다. 조직이 100인 "
+                        "전후로 커지면 같은 결정을 반복 검토하는 시간이 늘어납니다. CEO가 "
+                        "반드시 봐야 할 기준과 리더에게 위임할 기준을 먼저 나누십시오."
                     ),
                     "source": "리더십 + 조직규모",
                 }
@@ -186,7 +296,14 @@ def benchmark_for(area_id: str, responses: dict[str, Any]) -> int:
             "retention": -5,
             "leadership": -3,
         }.get(area_id, 0)
-    elif headcount in ("100~500인", "500인 초과", "100인 초과"):
+    elif headcount == "50~100인":
+        base += {
+            "retention": -3,
+            "evaluation": -3,
+            "leadership": -3,
+            "recruitment": -2,
+        }.get(area_id, 0)
+    elif headcount == "500인 초과":
         base += {
             "evaluation": 5,
             "leadership": 5,
@@ -306,7 +423,7 @@ def _analyze_compensation(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"귀사의 보상 구조에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"귀사의 보상 구조에서 가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "보상 기준 부재":
@@ -422,8 +539,9 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         )
     else:
         status = (
-            "귀사는 현재 정기적인 공식 평가 체계가 부재합니다. 이 상태에서 보상 차등이나 "
-            "성과 관리를 시도하면 기준 없는 주관적 판단으로 인해 조직 내 불신이 커질 수 있습니다."
+            "귀사는 현재 공식 평가 없이 운영하고 계십니다. 30~50인 전후까지는 합리적 선택일 수 있습니다. "
+            "다만 다음 12개월 안에 보상 차등, 승진, 역할 조정을 늘릴 계획이라면 "
+            "먼저 평가 기준을 만들어두는 것이 분쟁 비용을 줄입니다."
         )
 
     tags: list[str] = []
@@ -504,14 +622,14 @@ def _analyze_evaluation(responses: dict[str, Any]) -> AreaAnalysis:
         top_issue = issues[0] if issues else Issue("평가 체계 부재", "", "high")
         reason = _get_trigger_reason(top_issue, responses)
         recommendation = (
-            "가장 시급한 과제는 '평가 체계 구축'입니다. "
-            f"현재 {reason} 상황을 고려할 때, "
-            "MBO 기본 도입부터 시작해 목표 정렬을 만드십시오."
+            "지금 바로 정교한 평가 제도를 만들기보다, 다음 보상 차등이나 승진 판단에 사용할 최소 기준을 정해야 합니다. "
+            f"현재 {reason} 상황이라면, "
+            "분기 1회 목표 정렬 대화와 보상 예외 사유 기록부터 시작하십시오."
         )
     elif issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if _is_small_org(responses.get("L1-2")):
@@ -681,7 +799,7 @@ def _analyze_recruitment(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title in ("오퍼 경쟁력 부족", "채용-보상 미스매치"):
@@ -876,7 +994,7 @@ def _analyze_retention(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"귀사의 인력 안정성에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"귀사의 인력 안정성에서 가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "핵심 인재 유출 위기":
@@ -1057,11 +1175,17 @@ def _analyze_leadership(responses: dict[str, Any]) -> AreaAnalysis:
     if issues:
         reason = _get_trigger_reason(issues[0], responses)
         recommendation = (
-            f"귀사의 리더십에서 가장 시급한 과제는 '{issues[0].title}'입니다. "
+            f"귀사의 리더십에서 가장 시급한 과제는 '{issue_display_title(issues[0].title)}'입니다. "
             f"현재 {reason} 상황을 고려할 때, "
         )
         if issues[0].title == "의사결정 병목":
-            recommendation += "전결권 위임 체계를 설계하고 팀장급 역할을 재정의하십시오."
+            if _is_small_org(responses.get("L1-2")):
+                recommendation = (
+                    "CEO가 채용과 핵심 의사결정을 직접 보는 것은 초기 조직의 강점일 수 있습니다. "
+                    "다만 반복 결정 3개를 골라 리더에게 넘길 후보로 정하고, CEO가 반드시 볼 기준만 분리하십시오."
+                )
+            else:
+                recommendation += "전결권 위임 체계를 설계하고 팀장급 역할을 재정의하십시오."
         elif issues[0].title == "리더 피드백 역량 부족":
             recommendation += "평가 제도 도입보다 리더 교육이 선행되어야 합니다."
         elif issues[0].title == "1on1 부재/형식화":
@@ -1095,11 +1219,11 @@ def _calc_leadership_score(responses: dict[str, Any]) -> tuple[int, list[dict[st
         score += 15
         breakdown.append(_score_item("리더 피드백 역량", feedback, 15, "피드백 전달 역량 양호"))
     elif feedback == "갈등을 피하거나 온정주의가 있음":
-        score -= 8
-        breakdown.append(_score_item("리더 피드백 역량", feedback, -8, "온정주의/회피 경향"))
+        score -= 3
+        breakdown.append(_score_item("리더 피드백 역량", feedback, -3, "온정주의/회피 경향"))
     elif feedback == "대표인 내가 직접 나서야 해결됨":
-        score -= 15
-        breakdown.append(_score_item("리더 피드백 역량", feedback, -15, "대표 의존도 높음"))
+        score -= 8
+        breakdown.append(_score_item("리더 피드백 역량", feedback, -8, "대표 의존도 높음"))
 
     one_on_one = responses.get("2-5-2", "")
     if one_on_one == "운영함":
@@ -1250,15 +1374,15 @@ def _get_trigger_reason(issue: Issue, responses: dict[str, Any]) -> str:
         "채용-보상 미스매치": "적극적으로 뽑으려 하지만 보상이 뒷받침되지 않는",
         "채용 브랜딩 부재": "후보자가 회사를 선택해야 할 이유가 충분히 전달되지 않는",
         "핵심 인재 유출 위기": "대체 불가능한 핵심 인재가 이미 이탈하기 시작한",
-        "높은 자발적 이직률": "사람이 계속 나가서 남은 사람의 부담이 커지는 악순환에 빠진",
+        "높은 자발적 이직률": "이탈 원인과 남은 구성원의 부담을 함께 확인해야 하는",
         "온보딩 실패": "뽑아놓은 사람이 1년도 안 되어 나가는",
         "이직률 사각지대": "사람이 왜 나가는지, 얼마나 나가는지조차 파악이 안 되는",
         "보상-리텐션 디커플링": "사람이 나가는데 보상으로 붙잡을 카드가 없는",
-        "리더 피드백 역량 부족": "팀장들이 솔직한 피드백을 주지 못해 문제가 수면 아래 쌓이는",
+        "리더 피드백 역량 부족": "팀장별 피드백 운영 리듬을 먼저 맞춰야 하는",
         "1on1 부재/형식화": "리더와 구성원 사이에 정기적 소통 채널이 없는",
         "1on1 부재": "리더와 구성원 사이에 정기적 소통 채널이 없는",
-        "의사결정 병목": "모든 결정이 경영진에게 집중되어 조직 속도가 특정 의사결정자 일정에 종속된",
-        "의사결정 병목 (CEO 집중)": "모든 결정이 경영진에게 집중되어 조직 속도가 특정 의사결정자 일정에 종속된",
+        "의사결정 병목": "반복 의사결정의 위임 기준을 정리해야 하는",
+        "의사결정 병목 (CEO 집중)": "반복 의사결정의 위임 기준을 정리해야 하는",
         "핵심가치 미작동": "핵심가치를 외치지만 실제 채용과 평가에서 기준으로 쓰이지 않는",
         "거버넌스 미성숙": "조직 규모는 커졌는데 권한 위임은 아직 경영진에게 묶여 있는",
     }

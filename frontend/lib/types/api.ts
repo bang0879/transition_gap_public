@@ -12,6 +12,15 @@ export interface ScoreBreakdownItem {
   implication: string;
 }
 
+export interface StageGuidanceOut {
+  current_choice: string;
+  valid_until: string;
+  defer_now: string[];
+  do_now: string[];
+  self_serve_actions: string[];
+  needs_help_later: string[];
+}
+
 export interface AreaAnalysisOut {
   area_id: string;
   area_name: string;
@@ -25,6 +34,7 @@ export interface AreaAnalysisOut {
   recommendation: string;
   tags: string[];
   score_breakdown: ScoreBreakdownItem[];
+  stage_guidance?: StageGuidanceOut | null;
 }
 
 export interface BlindSpotTip {

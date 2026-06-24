@@ -10,6 +10,7 @@ import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Button } from "@/components/shared/Button";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ScoreHero } from "@/components/detail/ScoreHero";
+import { StageGuidancePanel } from "@/components/detail/StageGuidancePanel";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
 
@@ -69,6 +70,7 @@ export default function DetailPage() {
         <AreaSidebar areas={sorted} activeId={active.area_id} onSelect={setSelectedAreaId} />
         <section>
           <ScoreHero area={active} rank={activeRank} />
+          <StageGuidancePanel guidance={active.stage_guidance} />
           <AsIsToBePanel breakdown={active.score_breakdown} />
           <BreakdownTable breakdown={active.score_breakdown} />
           <BenchmarkRow areaId={active.area_id} />

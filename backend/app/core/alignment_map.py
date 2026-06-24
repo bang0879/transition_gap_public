@@ -344,7 +344,7 @@ def _retention_axis(responses: dict[str, Any]) -> AlignmentAxis:
         philosophy_position=philosophy,
         actual_position=actual,
         evidence=[
-            _philosophy_evidence("인력운영 철학", responses.get("L0-4")),
+            _philosophy_evidence("핵심 인력 철학", responses.get("L0-4")),
             f"자발적 이직률: {turnover}",
             f"핵심 인재 이탈: {core_loss}",
             f"핵심 인재 기준: {talent_criteria}",
@@ -534,8 +534,8 @@ def _compensation_philosophy_note(responses: dict[str, Any]) -> str:
         responses.get("L0-1"),
         option_a=-0.75,
         option_b=0.75,
-        a_keywords=("?뚭꺽", "?곸쐞 怨좎꽦怨쇱옄"),
-        b_keywords=("?묒뾽", "?됯퇏 蹂댁긽", "? 湲곗뿬"),
+        a_keywords=("파격", "상위 고성과자"),
+        b_keywords=("협업", "평균 보상", "팀 기여"),
     )
     if position < -0.15:
         return "회사는 핵심 고성과자에게 더 큰 보상을 주는 차등 배분을 중시합니다."
@@ -549,8 +549,8 @@ def _recruitment_philosophy_note(responses: dict[str, Any]) -> str:
         responses.get("L0-3"),
         option_a=-0.75,
         option_b=0.75,
-        a_keywords=("?몃?", "S湲?", "利됱떆 ?꾨젰"),
-        b_keywords=("?대?", "二쇰땲??", "?≪꽦"),
+        a_keywords=("외부", "S급", "즉시 전력"),
+        b_keywords=("내부", "주니어", "육성"),
     )
     if position < -0.15:
         return "회사는 검증된 외부 인재를 빠르게 영입해 성장 속도를 높이는 방향을 중시합니다."
@@ -579,8 +579,8 @@ def _leadership_philosophy_note(responses: dict[str, Any]) -> str:
         responses.get("L0-2"),
         option_a=-0.75,
         option_b=0.75,
-        a_keywords=("?깃낵 異붿쟻", "?붿쭅???쇰뱶諛?", "??깃낵"),
-        b_keywords=("1:1", "怨좎땐", "?щ━???덉쟾"),
+        a_keywords=("성과 추적", "솔직한 피드백", "저성과"),
+        b_keywords=("1:1", "고충", "심리적 안전"),
     )
     if position < -0.15:
         return "회사는 성과 부진을 빠르게 직면하고 기준에 따라 피드백하는 리더십을 중시합니다."

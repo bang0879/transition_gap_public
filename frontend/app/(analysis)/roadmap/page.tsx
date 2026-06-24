@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { fetchScenarios } from "@/lib/api/content";
 import { Button } from "@/components/shared/Button";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { DiagnosticFinishButton } from "@/components/result/DiagnosticFinishButton";
 import { RoadmapTimeline } from "@/components/roadmap/RoadmapTimeline";
 import { usePageTracking } from "@/lib/hooks/usePageTracking";
 
@@ -41,7 +42,7 @@ function RoadmapContent() {
         actions={
           <>
             <Button onClick={() => router.push("/scenarios")}>시나리오 비교</Button>
-            <Button variant="primary" onClick={() => window.print()}>인쇄/PDF 저장</Button>
+            <DiagnosticFinishButton page="/roadmap" />
           </>
         }
       />
@@ -49,12 +50,12 @@ function RoadmapContent() {
       <RoadmapTimeline scenario={scenario} />
       <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
-          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 현재 화면을 내부 공유용으로 저장합니다.</p>
-          <p className="m-0 mt-1 text-[12px] text-slate-500">정식 PDF 디자인은 별도 작업으로 두고, 지금은 브라우저 인쇄/PDF 저장을 사용합니다.</p>
+          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 대표용 진단 보고서를 저장해 다음 논의에 활용합니다.</p>
+          <p className="m-0 mt-1 text-[12px] text-slate-500">결과 요약, 주요 판단 기준, 다음 논의 포인트를 PDF로 정리합니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => router.push(`/scenarios?scenario=${scenarioId}`)}>시나리오 비교</Button>
-          <Button variant="primary" onClick={() => window.print()}>인쇄/PDF 저장</Button>
+          <DiagnosticFinishButton page="/roadmap" />
         </div>
       </section>
     </>
@@ -96,3 +97,4 @@ function RoadmapCautionCards() {
     </section>
   );
 }
+

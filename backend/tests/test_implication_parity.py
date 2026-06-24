@@ -64,6 +64,18 @@ def test_implication_decision_structure():
     assert "대표님" in result or "결정" in result
 
 
+def test_implication_copy_avoids_judgmental_phrasing():
+    from app.core.analysis_engine import _score_implication
+
+    feedback = _score_implication("리더 피드백 역량", "회피", -3, "피드백 회피")
+    decision = _score_implication("의사결정 구조", "CEO 집중", -12, "병목")
+
+    assert "수면 아래" not in feedback
+    assert "한꺼번에 터집니다" not in feedback
+    assert "일정에 종속됩니다" not in decision
+    assert "피드백 운영 리듬" in feedback
+    assert "반복 의사결정" in decision
+
 def test_implication_fallback():
     from app.core.analysis_engine import _score_implication
 

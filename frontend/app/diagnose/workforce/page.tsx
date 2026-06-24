@@ -184,10 +184,10 @@ export default function WorkforcePage() {
           <QuestionBlock title="최종 면접 통과 후 합격 통보를 받은 지원자가 입사를 거절한 경험이 있습니까?" help={QUESTION_HELP["2-2-3"]}>
             <OptionGrid options={options["2-2-3"]} value={responses["2-2-3"] as string | undefined} onChange={(value) => setResponse("2-2-3", value)} columns={3} />
           </QuestionBlock>
-          <QuestionBlock title="후보자에게 회사를 설명하는 채용 브랜딩 자산이 있습니까?" help={QUESTION_HELP["2-2-4"]}>
+          <QuestionBlock title="후보자에게 회사를 설명하는 채용 브랜딩 자산이 있습니까?" help={QUESTION_HELP["2-2-4"]} badge={{ label: "선택 항목", variant: "slate" }}>
             <OptionGrid options={options["2-2-4"]} value={responses["2-2-4"] as string | undefined} onChange={(value) => setResponse("2-2-4", value)} columns={3} />
           </QuestionBlock>
-          <QuestionBlock title="수습/온보딩 전환율 또는 입사 후 3개월 적응 상태를 추적합니까?" help={QUESTION_HELP["2-2-5"]} badge={{ label: "가시성 항목", variant: "teal" }}>
+          <QuestionBlock title="수습/온보딩 전환율 또는 입사 후 3개월 적응 상태를 추적합니까?" help={QUESTION_HELP["2-2-5"]} badge={{ label: "선택·가시성", variant: "teal" }}>
             <OptionGrid options={options["2-2-5"]} value={responses["2-2-5"] as string | undefined} onChange={(value) => setResponse("2-2-5", value)} columns={3} />
           </QuestionBlock>
         </div>

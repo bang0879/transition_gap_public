@@ -9,7 +9,7 @@ from fastapi import APIRouter
 
 from app.core.alignment_engine import analyze_alignment
 from app.core.alignment_map import analyze_alignment_map
-from app.core.analysis_engine import analyze_all_areas, get_cross_domain_insights
+from app.core.analysis_engine import analyze_all_areas, get_cross_domain_insights, issue_display_title
 from app.core.diagnosis_mode import analyze_diagnosis_mode
 from app.core.trade_off import calc_to_be_coordinates, calculate_coordinates
 from app.core.visibility_index import calculate_visibility_index
@@ -28,6 +28,7 @@ from app.schemas.analysis import (
     IssueOut,
     MatrixOut,
     ScoreBreakdownItem,
+    StageGuidanceOut,
     VisibilityOut,
 )
 from app.schemas.responses import DiagnoseRequest
@@ -64,7 +65,7 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
             status_text=area.status_text,
             issues=[
                 IssueOut(
-                    title=issue.title,
+                    title=issue_display_title(issue.title),
                     description=issue.description,
                     severity=issue.severity,
                 )
@@ -82,6 +83,14 @@ async def diagnose(request: DiagnoseRequest) -> DiagnoseResponse:
                 )
                 for item in area.score_breakdown
             ],
+            stage_guidance=StageGuidanceOut(
+                current_choice=area.stage_guidance.current_choice,
+                valid_until=area.stage_guidance.valid_until,
+                defer_now=area.stage_guidance.defer_now,
+                do_now=area.stage_guidance.do_now,
+                self_serve_actions=area.stage_guidance.self_serve_actions,
+                needs_help_later=area.stage_guidance.needs_help_later,
+            ) if area.stage_guidance else None,
         )
         for area in areas
     ]

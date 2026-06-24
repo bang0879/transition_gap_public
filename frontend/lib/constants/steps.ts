@@ -56,4 +56,5 @@ export const RESULT_STEPS = [
   { id: "matrix", label: "트레이드오프 분석", path: "/matrix" },
   { id: "scenarios", label: "시나리오 비교", path: "/scenarios" },
   { id: "roadmap", label: "실행 로드맵", path: "/roadmap" },
+  { id: "finish", label: "진단 마무리", path: "/finish" },
 ];

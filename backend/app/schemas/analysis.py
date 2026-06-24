@@ -18,6 +18,15 @@ class ScoreBreakdownItem(BaseModel):
     implication: str
 
 
+class StageGuidanceOut(BaseModel):
+    current_choice: str
+    valid_until: str
+    defer_now: list[str]
+    do_now: list[str]
+    self_serve_actions: list[str]
+    needs_help_later: list[str]
+
+
 class AreaAnalysisOut(BaseModel):
     area_id: str
     area_name: str
@@ -31,6 +40,7 @@ class AreaAnalysisOut(BaseModel):
     recommendation: str
     tags: list[str]
     score_breakdown: list[ScoreBreakdownItem]
+    stage_guidance: StageGuidanceOut | None = None
 
 
 class BlindSpotTip(BaseModel):

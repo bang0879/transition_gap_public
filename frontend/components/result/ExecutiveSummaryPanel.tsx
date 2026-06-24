@@ -27,7 +27,7 @@ interface ExecutiveSummaryPanelProps {
 const MODE_LABEL: Record<DiagnosisMode, string> = {
   alignment: "정합성 판단",
   foundation: "운영 기준 우선",
-  hybrid: "기준 부재 + 정합성 충돌",
+  hybrid: "선택 조건 + 정합성 신호",
 };
 
 function hasFinalConsonant(value: string): boolean {
@@ -53,16 +53,16 @@ function modeSubtext(
 ): string {
   if (mode === "foundation") {
     const headcountText = headcount ? `${headcount} 규모에서` : "현재 규모에서";
-    return `${headcountText} ${signalDomains(foundationSignals)} 기준을 먼저 세워야 합니다.`;
+    return `${headcountText} ${signalDomains(foundationSignals)}의 현재 선택이 언제까지 유효한지 확인합니다.`;
   }
 
   if (mode === "hybrid") {
     const foundationText = foundationSignals.length > 0 ? `${foundationSignals.length}개 기준 부재` : "기준 부재";
     const alignmentText = alignmentSignals.length > 0 ? `${alignmentSignals.length}개 정합성 신호` : "정합성 신호";
-    return `${foundationText}와 ${alignmentText}를 분리해 의사결정 순서를 잡아야 합니다.`;
+    return `${foundationText}와 ${alignmentText}를 분리해 유지할 선택과 정할 기준을 나눕니다.`;
   }
 
-  return "제도를 더 추가하기보다, 먼저 어느 기준이 서로 다른 메시지를 내는지 확인해야 합니다.";
+  return "제도를 더 추가하기보다, 현재 선택이 구성원에게 어떤 메시지로 읽히는지 확인합니다.";
 }
 
 export function ExecutiveSummaryPanel({
@@ -95,7 +95,7 @@ export function ExecutiveSummaryPanel({
     {
       label: "논의 범위",
       value: topicCount > 0 ? `${topicCount}개 영역` : "추가 확인",
-      body: "필요 기준과 현재 운영의 차이가 큰 순서입니다.",
+      body: "현재 선택과 다음 기준 사이의 차이가 큰 순서입니다.",
     },
     {
       label: "데이터 가시성",
@@ -124,7 +124,7 @@ export function ExecutiveSummaryPanel({
           </p>
           {risk ? (
             <div className="mt-5 border-l border-slate-300 pl-4">
-              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">그대로 두면</p>
+              <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-slate-400">이 선택을 유지한다면</p>
               <p className="m-0 mt-1 text-[13px] leading-[1.7] text-slate-600">{risk}</p>
             </div>
           ) : null}

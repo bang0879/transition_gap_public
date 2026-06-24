@@ -187,6 +187,25 @@ def test_retention_axis_keeps_performance_exception_on_left_side():
     assert retention.actual_position < 0
     assert retention.tension < 0.75
 
+
+def test_alignment_map_philosophy_notes_use_readable_keywords():
+    responses = {
+        **contradictory_responses(),
+        "L0-1": "상위 고성과자 10%에게 업계 최고 수준의 파격적 보상을 집중한다",
+        "L0-2": "성과 추적과 솔직한 피드백을 통해 저성과 이슈를 빠르게 직면한다",
+        "L0-3": "외부에서 검증된 최고의 S급 인재를 높은 비용을 치르더라도 영입하여 즉시 전력으로 활용한다",
+        "L0-4": "내부 불만이 다소 생기더라도 당장의 비즈니스 공백과 리스크를 막는 것이 우선이므로, 예외를 인정하고 파격적으로 잡는다.",
+    }
+
+    result = analyze_alignment_map(responses, analyze_all_areas(responses))
+    notes = {axis.domain_id: axis.philosophy_note for axis in result.axes}
+
+    assert notes["compensation"] == "회사는 핵심 고성과자에게 더 큰 보상을 주는 차등 배분을 중시합니다."
+    assert notes["recruitment"] == "회사는 검증된 외부 인재를 빠르게 영입해 성장 속도를 높이는 방향을 중시합니다."
+    assert notes["retention"] == "회사는 중요한 역할 공백을 막기 위해 핵심 인재 예외 조치도 감수합니다."
+    assert notes["leadership"] == "회사는 성과 부진을 빠르게 직면하고 기준에 따라 피드백하는 리더십을 중시합니다."
+
+
 def test_alignment_map_detects_higher_dispersion_for_contradictory_case():
     contradictory = analyze_alignment_map(
         contradictory_responses(),

@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AnalysisNotice } from "@/components/shared/AnalysisNotice";
 import { Badge } from "@/components/shared/Badge";
 import { Button } from "@/components/shared/Button";
+import { DiagnosticFinishButton } from "@/components/result/DiagnosticFinishButton";
 import { AlignmentTensionMap } from "@/components/visualization/AlignmentTensionMap";
 import { logEvent } from "@/lib/api/events";
 import { useDiagnosis } from "@/lib/hooks/useDiagnosis";
@@ -24,15 +25,12 @@ import {
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
-import { useDiagnosisHistoryStore } from "@/lib/store/diagnosisHistory";
 
 export default function ResultPage() {
   const router = useRouter();
   const sessionId = useSessionStore((state) => state.sessionId);
   const companyName = useSessionStore((state) => state.companyName);
   const responses = useResponsesStore((state) => state.responses);
-  const snapshots = useDiagnosisHistoryStore((state) => state.snapshots);
-  const upsertSnapshot = useDiagnosisHistoryStore((state) => state.upsertSnapshot);
   const { data, isLoading, error, isWaitingForResponses } = useDiagnosis();
   usePageTracking("/result");
 
@@ -41,16 +39,6 @@ export default function ResultPage() {
     const avgScore = Math.round(data.areas.reduce((sum, area) => sum + area.score, 0) / data.areas.length);
     const axes = data.alignment_map?.axes ?? [];
     const maxTensionAxis = [...axes].sort((a, b) => b.tension - a.tension)[0];
-    const topGapArea = [...data.areas].sort((a, b) => b.gap - a.gap)[0];
-    upsertSnapshot({
-      sessionId,
-      companyName: companyName || "이름 없는 진단",
-      capturedAt: new Date().toISOString(),
-      visibilityScore: Math.round(data.visibility.score),
-      alignmentScore: Math.round(data.alignment_map?.alignment_score ?? data.alignment.score ?? avgScore),
-      topGapArea: topGapArea?.area_name ?? "핵심 영역",
-      topGap: topGapArea?.gap ?? 0,
-    });
     logEvent({
       session_id: sessionId,
       event_type: "result_view",
@@ -67,21 +55,7 @@ export default function ResultPage() {
       },
       timestamp: new Date().toISOString(),
     });
-  }, [companyName, data, sessionId, upsertSnapshot]);
-
-  const handlePrint = () => {
-    if (sessionId) {
-      logEvent({
-        session_id: sessionId,
-        event_type: "cta_click",
-        page: "/result",
-        metadata: { action: "print_report" },
-        timestamp: new Date().toISOString(),
-      });
-    }
-    window.print();
-  };
-
+  }, [data, sessionId]);
   const handleNavigate = (action: string, path: string) => {
     if (sessionId) {
       logEvent({
@@ -149,32 +123,20 @@ export default function ResultPage() {
   const visibilityCopy = visibility.blind_spot_labels.length === 0
     ? "진단이 안 된 영역 없이 현재 판단에 필요한 데이터가 확보되었습니다."
     : `진단이 안 된 영역 ${visibility.blind_spots.length}개가 남아 있습니다. 진단이 약한 영역: ${blindSpotNames}`;
-  const previousSnapshot = snapshots.find((snapshot) => snapshot.sessionId !== sessionId);
-  const latestSnapshot = snapshots.find((snapshot) => snapshot.sessionId === sessionId);
-  const alignmentDelta = latestSnapshot && previousSnapshot ? latestSnapshot.alignmentScore - previousSnapshot.alignmentScore : null;
-  const visibilityDelta = latestSnapshot && previousSnapshot ? latestSnapshot.visibilityScore - previousSnapshot.visibilityScore : null;
-
-  const formatDelta = (delta: number | null) => {
-    if (delta === null) return "비교 기준 없음";
-    if (delta > 0) return `+${delta}점`;
-    if (delta < 0) return `${delta}점`;
-    return "변화 없음";
-  };
-
   const executiveFocusName = ahaAxis ? displayAhaDomainName(ahaAxis) : topGapArea?.area_name ?? "핵심 영역";
   const executiveFocusMeta = ahaAxis ? `${executiveFocusName} 정합 ${ahaAlignmentPercent(ahaAxis)}%` : topGapText;
   const executiveTitle =
     diagnosisMode === "foundation"
-      ? "제도 정합성보다 운영 기준부터 세워야 합니다."
+      ? "현재 방식이 유효한 조건부터 확인해야 합니다."
       : diagnosisMode === "hybrid"
-        ? "없는 기준과 어긋난 기준을 분리해서 정리해야 합니다."
-        : `${executiveFocusName} 기준부터 정렬해야 합니다.`;
+        ? "유지할 선택과 새로 정할 기준을 나눠야 합니다."
+        : `${executiveFocusName}에서 다음 판단 기준을 정해야 합니다.`;
   const executiveInsight =
     diagnosisMode === "foundation"
-      ? "지금은 좋은 제도를 더 고르는 단계가 아니라, 보상 기준·평가 루프·리더 운영 중 비어 있는 운영 기준을 먼저 확인해야 하는 단계입니다."
+      ? "지금 운영 방식이 틀렸다는 뜻이 아니라, 다음 성장 구간에서 어떤 기준을 먼저 명문화할지 고르는 단계입니다."
       : diagnosisMode === "hybrid"
-        ? "일부 영역은 기준 자체가 비어 있고, 일부 영역은 이미 있는 제도가 서로 다른 메시지를 냅니다. 먼저 순서를 나눠야 실행 부담이 커지지 않습니다."
-        : ahaMirror ?? "정합성 차이가 큰 영역과 필요 기준 차이를 함께 보면, 다음 회의에서 먼저 맞춰야 할 제도 기준이 좁혀집니다.";
+        ? "일부 방식은 지금 단계에서 합리적인 선택일 수 있고, 일부 제도는 이미 서로 다른 메시지를 냅니다. 유지할 것과 정할 것을 나누면 실행 부담이 줄어듭니다."
+        : ahaMirror ?? "정합성 차이가 큰 영역과 필요 기준 차이를 함께 보면, 다음 회의에서 먼저 확인할 판단 기준이 좁혀집니다.";
   const executiveRisk =
     diagnosisMode === "foundation"
       ? "다음 성장 구간으로 넘어갈 때 보상 설명, 평가 수용성, 리더별 운영 편차가 동시에 커질 수 있습니다."
@@ -183,16 +145,16 @@ export default function ResultPage() {
         : ahaScenario;
   const nextDecisionTitle =
     diagnosisMode === "foundation"
-      ? "이번 미팅에서는 먼저 비어 있는 운영 기준을 정해야 합니다."
+      ? "이번 미팅에서는 현재 방식을 유지할 조건과 먼저 정할 기준을 나눕니다."
       : diagnosisMode === "hybrid"
-        ? "이번 미팅에서는 새로 만들 기준과 정렬할 기준을 나눠야 합니다."
-        : `이번 미팅에서는 ${executiveFocusName} 기준부터 정렬할지 결정해야 합니다.`;
+        ? "이번 미팅에서는 유지할 선택과 새로 정할 기준을 나눕니다."
+        : `이번 미팅에서는 ${executiveFocusName}의 다음 판단 기준을 확인합니다.`;
   const nextDecisionBody =
     diagnosisMode === "foundation"
-      ? `${topicNames} 영역에서 기준 부재가 운영 비용으로 번지기 전에, 30일 안에 정할 최소 기준을 좁힙니다.`
+      ? `${topicNames} 영역에서 지금 방식이 언제까지 유효한지 확인하고, 다음 30일 안에 정할 최소 기준만 좁힙니다.`
       : diagnosisMode === "hybrid"
-        ? `${topicNames} 영역을 한 번에 고치기보다, 기준을 새로 세울 영역과 이미 있는 제도를 맞출 영역을 분리합니다.`
-        : `${topicNames} 영역의 엇박자를 방치하면 제도 개선 논의가 일반론으로 흐르기 쉽습니다. 상세 분석에서 근거를 확인한 뒤 트레이드오프를 비교합니다.`;
+        ? `${topicNames} 영역을 한 번에 고치기보다, 현재 단계에서 유지할 방식과 명문화할 기준을 분리합니다.`
+        : `${topicNames} 영역의 엇박자를 일반론으로 다루기보다, 상세 분석에서 근거를 확인한 뒤 트레이드오프를 비교합니다.`;
 
   return (
     <>
@@ -203,10 +165,10 @@ export default function ResultPage() {
             {companyName ? <span className="text-teal-deep">{companyName}</span> : "우리 회사"} 인사제도 정합성 진단결과 요약
           </>
         }
-        lead="핵심 결론, 그대로 둘 때의 운영 리스크, 다음 결정을 먼저 봅니다."
+        lead="현재 위치와 다음 의사결정 포인트를 먼저 봅니다."
         actions={
           <>
-            <Button onClick={handlePrint}>인쇄/PDF 저장</Button>
+            <DiagnosticFinishButton page="/result" />
             <Button variant="primary" onClick={() => handleNavigate("open_detail", "/result/detail")}>상세 분석 보기</Button>
           </>
         }
@@ -259,34 +221,6 @@ export default function ResultPage() {
         />
       </section>
 
-      {previousSnapshot ? (
-        <section className="mb-[18px] rounded-[10px] border border-slate-200 bg-white p-4 print:break-inside-avoid">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="m-0 text-[14px] font-[690] text-slate-900">최근 진단 대비 변화</p>
-              <p className="m-0 mt-1 text-[12px] leading-[1.6] text-slate-500">
-                같은 브라우저에 저장된 이전 진단과 비교해 정합성, 가시성, 최우선 논의 영역 변화를 확인합니다.
-              </p>
-            </div>
-            <Badge variant="slate">최근 기록 비교</Badge>
-          </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="m-0 text-[11px] font-[760] text-slate-400">정합성 변화</p>
-              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(alignmentDelta)}</strong>
-            </div>
-            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="m-0 text-[11px] font-[760] text-slate-400">가시성 변화</p>
-              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{formatDelta(visibilityDelta)}</strong>
-            </div>
-            <div className="rounded-[8px] border border-slate-200 bg-slate-50 px-3 py-2">
-              <p className="m-0 text-[11px] font-[760] text-slate-400">이전 우선 영역</p>
-              <strong className="mt-1 block text-[16px] font-[720] text-slate-900">{previousSnapshot.topGapArea}</strong>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <section className="mt-4 overflow-hidden rounded-[10px] border border-slate-200 bg-white print:hidden">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="p-5 sm:p-6">
@@ -314,7 +248,7 @@ export default function ResultPage() {
         </div>
         <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="m-0 text-[12px] leading-[1.6] text-slate-500">
-            요약에서 충분히 찔렸다면, 이제 근거와 선택지를 분리해서 봅니다.
+            요약에서 현재 위치를 확인했다면, 이제 근거와 선택지를 분리해서 봅니다.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => handleNavigate("open_detail", "/result/detail")}>상세 분석 보기</Button>
