@@ -103,17 +103,24 @@ function buildConsistentInterpretation(answers: Record<PhilosophySummaryItem["id
         ? "협업과 심리적 안전을 우선하면서, 보상도 수용성 있게 운영하려는 공동체형"
         : null;
 
-  const hiringRetentionDirection =
-    answers["L0-3"] === "A" && answers["L0-4"] === "A"
-      ? "외부 검증 인재를 빠르게 받아들이고, 특정 개인 의존도는 낮추려는 유연한 교체형"
-      : answers["L0-3"] === "B" && answers["L0-4"] === "B"
-        ? "내부에서 핵심 인재를 키우고, 중요한 사람은 오래 붙잡으려는 내부 축적형"
+  const sourcingStrategy =
+    answers["L0-3"] === "A"
+      ? "외부 검증 인재를 빠르게 받아들이는 채용 전략"
+      : answers["L0-3"] === "B"
+        ? "내부에서 시간을 들여 핵심 인재를 키우는 채용 전략"
         : null;
 
-  if (rewardLeadershipDirection && hiringRetentionDirection) {
+  const exceptionPolicy =
+    answers["L0-4"] === "A"
+      ? "형평성과 원칙을 더 우선하는 인력운영"
+      : answers["L0-4"] === "B"
+        ? "비즈니스 공백 방지를 위해 예외 조치도 열어두는 인력운영"
+        : null;
+
+  if (rewardLeadershipDirection && sourcingStrategy && exceptionPolicy) {
     return {
       title: "회사의 인사 철학은 큰 방향에서 일관되어 있습니다.",
-      body: `${rewardLeadershipDirection}에 가깝고, 채용·인력운영은 ${hiringRetentionDirection}에 가깝습니다. 이제 다음 단계에서는 현행 제도가 이 방향을 실제로 받쳐주고 있는지 확인합니다.`,
+      body: `회사의 보상·리더십 철학은 ${rewardLeadershipDirection}에 가깝습니다. 채용은 ${sourcingStrategy}, 인력운영은 ${exceptionPolicy}을 선택하셨습니다. 이제 다음 단계에서는 현행 제도가 이 방향을 실제로 받쳐주고 있는지 확인합니다.`,
     };
   }
 
@@ -161,25 +168,15 @@ export function buildPhilosophyProfile(responses: Record<string, unknown>): Phil
     });
   }
 
-  if (answers["L0-3"] === "A" && answers["L0-4"] === "B") {
+  if (answers["L0-1"] === "B" && answers["L0-4"] === "B") {
     conflicts.push({
-      id: "external_hiring_core_retention",
-      title: "외부 수혈 ↔ 핵심 인재 보존",
-      detail: "채용 철학은 외부 검증 인재를 빠르게 데려오는 쪽인데, 인력운영 철학은 기존 핵심 인재를 예외적으로라도 붙잡는 쪽입니다.",
-      implication: "외부 영입과 예외 보존을 동시에 강하게 밀면 기존 멤버와 신규 핵심 인재 사이의 형평성 논란이 커질 수 있습니다.",
-      domains: ["L0-3", "L0-4"],
-      domain_labels: ["채용", "인력운영"],
-    });
-  }
-
-  if (answers["L0-3"] === "B" && answers["L0-4"] === "A") {
-    conflicts.push({
-      id: "internal_development_natural_turnover",
-      title: "내부 육성 ↔ 자연 교체 허용",
-      detail: "채용 철학은 내부 인재를 오래 키우는 쪽인데, 인력운영 철학은 핵심 인재 이탈도 원칙대로 받아들이는 쪽입니다.",
-      implication: "오래 키운 인재를 쉽게 보내는 구조라면 육성 투자 회수와 후임 계획을 훨씬 더 촘촘히 설계해야 합니다.",
-      domains: ["L0-3", "L0-4"],
-      domain_labels: ["채용", "인력운영"],
+      id: "stable_reward_with_exception_retention",
+      title: "안정 보상 ↔ 핵심 인재 예외 보존",
+      detail: "보상 철학은 협업과 평균 만족도를 중시하지만, 핵심 인재 이탈 상황에서는 형평성 예외를 인정하겠다고 답하셨습니다.",
+      implication:
+        "안정/협업 메시지를 강조하면서 특정 개인에게만 예외 보상을 적용하면, 다른 구성원이 '결국 떠나겠다고 하면 보상이 오르는 회사'로 학습할 수 있습니다.",
+      domains: ["L0-1", "L0-4"],
+      domain_labels: ["보상", "인력운영"],
     });
   }
 

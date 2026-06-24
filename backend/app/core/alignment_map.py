@@ -303,8 +303,8 @@ def _recruitment_axis(responses: dict[str, Any]) -> AlignmentAxis:
 def _retention_axis(responses: dict[str, Any]) -> AlignmentAxis:
     philosophy = _choice_position(
         responses.get("L0-4"),
-        option_a=-0.75,
-        option_b=0.75,
+        option_a=0.75,
+        option_b=-0.75,
         a_keywords=("형평성", "보상 원칙", "원칙대로 내보낸다"),
         b_keywords=("비즈니스 공백", "예외를 인정", "파격적으로 잡는다"),
     )
@@ -314,30 +314,30 @@ def _retention_axis(responses: dict[str, Any]) -> AlignmentAxis:
     talent_criteria = _text(responses.get("2-1-4"))
     succession = _text(responses.get("2-1-5"))
 
-    actual = 0.35
+    actual = -0.35
     if core_loss in ("2~3명", "4명 이상"):
-        actual -= 0.45
+        actual += 0.45
     if turnover in ("20% 초과", "20% 이상"):
-        actual -= 0.25
+        actual += 0.25
     if early_quit in ("20% 이상", "30% 이상"):
-        actual -= 0.15
+        actual += 0.15
     if turnover == "모름 / 측정 안 함" or early_quit == "모름 / 측정 안 함":
-        actual -= 0.15
+        actual += 0.15
     if talent_criteria == "별도 기준 없음":
-        actual -= 0.12
+        actual += 0.12
     elif talent_criteria == "명확한 기준과 명단이 있음":
-        actual += 0.08
+        actual -= 0.08
     if succession == "거의 없음":
-        actual -= 0.12
+        actual += 0.12
     elif succession == "후임/백업 후보가 정해져 있음":
-        actual += 0.08
+        actual -= 0.08
 
     return _axis(
         domain_id="retention",
         domain_name="인력운영",
-        left_label="자연 교체 허용",
-        right_label="안정 최우선",
-        philosophy_label=_side_label(philosophy, "자연 교체 허용", "핵심 인재 보존"),
+        left_label="핵심 인재 보존",
+        right_label="원칙/형평성 유지",
+        philosophy_label=_side_label(philosophy, "핵심 인재 보존", "원칙/형평성 유지"),
         philosophy_note=_retention_philosophy_note(responses),
         actual_label=_retention_actual_label(turnover, core_loss, actual),
         policy_direction=_policy_direction(actual),
@@ -562,15 +562,15 @@ def _recruitment_philosophy_note(responses: dict[str, Any]) -> str:
 def _retention_philosophy_note(responses: dict[str, Any]) -> str:
     position = _choice_position(
         responses.get("L0-4"),
-        option_a=-0.75,
-        option_b=0.75,
-        a_keywords=("?뺥룊??", "蹂댁긽 ?먯튃", "?먯튃?濡??대낫?몃떎"),
-        b_keywords=("鍮꾩쫰?덉뒪 怨듬갚", "?덉쇅瑜??몄젙", "?뚭꺽?곸쑝濡??〓뒗??"),
+        option_a=0.75,
+        option_b=-0.75,
+        a_keywords=("형평성", "보상 원칙", "원칙대로 내보낸다"),
+        b_keywords=("비즈니스 공백", "예외를 인정", "파격적으로 잡는다"),
     )
     if position < -0.15:
-        return "회사는 핵심 인재 예외 보상보다 전체 보상 원칙과 형평성을 우선합니다."
-    if position > 0.15:
         return "회사는 중요한 역할 공백을 막기 위해 핵심 인재 예외 조치도 감수합니다."
+    if position > 0.15:
+        return "회사는 핵심 인재 예외 보상보다 전체 보상 원칙과 형평성을 우선합니다."
     return "회사는 형평성과 핵심 인재 보존 사이의 균형을 중시합니다."
 
 
@@ -620,7 +620,7 @@ def _retention_actual_label(turnover: str, core_loss: str, actual_position: floa
         return "핵심 인재 이탈 압력"
     if turnover in ("20% 초과", "20% 이상"):
         return "높은 교체 흐름"
-    return _side_label(actual_position, "자연 교체 허용", "핵심 인재 보존")
+    return _side_label(actual_position, "핵심 인재 보존", "원칙/형평성 유지")
 
 
 def _leadership_actual_label(feedback: str, one_on_one: str, core_values: str, actual_position: float) -> str:
@@ -640,7 +640,7 @@ def _business_risk_for_axis(axis: AlignmentAxis) -> str | None:
         "compensation": "협업과 안정적 보상 질서를 중시한다고 말하면서 실제 보상은 성과급 중심으로 작동하면, 구성원은 회사의 보상 원칙을 헷갈려 하고 조용한 불만이나 이탈 신호를 늦게 드러낼 수 있습니다.",
         "evaluation": "엄격한 성과 철학과 관대한 평가 운영이 벌어지면, 고성과자는 불공정을 느끼고 저성과자는 개선 압력을 받지 않습니다.",
         "recruitment": "외부 수혈 철학과 내부 적합성 중심 운영이 벌어지면, 성장 속도에 필요한 역량 확보가 늦어집니다.",
-        "retention": "안정성 철학과 교체 허용 운영이 벌어지면, 핵심 역할의 공백 비용이 반복적으로 커집니다.",
+        "retention": "핵심 인재 보존 철학과 원칙 중심 운영이 벌어지거나, 원칙 철학과 예외 운영이 벌어지면 구성원은 어떤 기준이 우선인지 혼란을 느낄 수 있습니다.",
         "leadership": "단호한 성과 추적 철학과 관계 중심 운영이 벌어지면, 의사결정 지연과 책임 회피가 리더십 신호로 굳어집니다.",
     }
     return risks.get(axis.domain_id)

@@ -42,6 +42,29 @@ def test_alignment_engine_penalizes_cross_domain_conflicts():
     assert alignment.score < alignment.base_score
 
 
+def test_alignment_engine_does_not_flag_performance_reward_with_exception_retention():
+    responses = {
+        **contradictory_responses(),
+        "L0-1": "A",
+        "L0-4": "B",
+    }
+    alignment = analyze_alignment(analyze_all_areas(responses), responses)
+
+    conflict_ids = {conflict.id for conflict in alignment.conflicts}
+    assert "stable_reward_with_exception_retention" not in conflict_ids
+
+
+def test_alignment_engine_flags_stable_reward_with_exception_retention():
+    responses = {
+        **contradictory_responses(),
+        "L0-1": "B",
+        "L0-4": "B",
+    }
+    alignment = analyze_alignment(analyze_all_areas(responses), responses)
+
+    conflict_ids = {conflict.id for conflict in alignment.conflicts}
+    assert "stable_reward_with_exception_retention" in conflict_ids
+
 def test_diagnose_response_includes_alignment_analysis():
     request = DiagnoseRequest(responses=contradictory_responses())
 

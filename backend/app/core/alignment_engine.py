@@ -75,6 +75,20 @@ def analyze_alignment(areas: list[Any], responses: dict[str, Any]) -> AlignmentA
             )
         )
 
+    if responses.get("L0-1") == "B" and responses.get("L0-4") == "B":
+        conflicts.append(
+            AlignmentConflict(
+                id="stable_reward_with_exception_retention",
+                title="안정 보상 철학과 핵심 인재 예외 보존이 어긋납니다.",
+                detail=(
+                    "협업과 평균 만족도를 중시한다고 말하면서 특정 핵심 인재에게만 예외 보상을 적용하면, "
+                    "구성원은 보상 원칙보다 이탈 리스크가 더 크게 작동한다고 받아들일 수 있습니다."
+                ),
+                severity="medium",
+                penalty=8,
+                domains=("compensation", "retention"),
+            )
+        )
     if _is_aggressive_hiring(responses.get("L1-4")) and responses.get("2-3-5") in ("하위", "중위"):
         conflicts.append(
             AlignmentConflict(

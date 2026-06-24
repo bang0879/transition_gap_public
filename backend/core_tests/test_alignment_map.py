@@ -160,9 +160,32 @@ def test_alignment_map_uses_l0_4_for_retention_philosophy_axis():
     release_retention = next(axis for axis in release_result.axes if axis.domain_id == "retention")
     protect_retention = next(axis for axis in protect_result.axes if axis.domain_id == "retention")
 
-    assert release_retention.philosophy_position < 0
-    assert protect_retention.philosophy_position > 0
+    assert release_retention.philosophy_position > 0
+    assert protect_retention.philosophy_position < 0
+    assert "핵심 인재" in protect_retention.left_label
+    assert "원칙" in release_retention.right_label
 
+
+def test_retention_axis_keeps_performance_exception_on_left_side():
+    responses = {
+        **contradictory_responses(),
+        "L0-1": "상위 고성과자 10%에게 업계 최고 수준의 파격적 보상을 집중한다",
+        "L0-2": "성과 추적과 솔직한 피드백을 통해 저성과 이슈를 피하지 않는다",
+        "L0-3": "외부에서 검증된 S급 인재를 즉시 전력으로 빠르게 데려온다",
+        "L0-4": "내부 불만이 다소 생기더라도 당장의 비즈니스 공백과 리스크를 막는 것이 우선이므로, 예외를 인정하고 파격적으로 잡는다.",
+        "2-1-1": "10~20%",
+        "2-1-2": "없음",
+        "2-1-3": "10% 미만",
+        "2-1-4": "명확한 기준과 명단이 있음",
+        "2-1-5": "후임/백업 후보가 정해져 있음",
+    }
+
+    result = analyze_alignment_map(responses, analyze_all_areas(responses))
+    retention = next(axis for axis in result.axes if axis.domain_id == "retention")
+
+    assert retention.philosophy_position < 0
+    assert retention.actual_position < 0
+    assert retention.tension < 0.75
 
 def test_alignment_map_detects_higher_dispersion_for_contradictory_case():
     contradictory = analyze_alignment_map(

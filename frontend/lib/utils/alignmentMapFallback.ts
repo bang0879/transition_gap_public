@@ -73,7 +73,7 @@ function riskForAxis(domainId: string, tension: number): string | null {
     compensation: "협업과 안정적 보상 질서를 중시한다고 말하면서 실제 보상은 성과급 중심으로 작동하면, 구성원은 회사의 보상 원칙을 헷갈려 하고 조용한 불만이나 이탈 신호를 늦게 드러낼 수 있습니다.",
     evaluation: "엄격한 성과 철학과 느슨한 평가 운영이 벌어지면 고성과자는 불공정성을 느끼고 저성과자는 개선 압력을 받기 어렵습니다.",
     recruitment: "외부 영입 철학과 내부 양성 중심 운영이 벌어지면 성장 속도에 필요한 역량 확보가 늦어질 수 있습니다.",
-    retention: "핵심 인재 예외 인정 철학과 획일적 안정 운영이 벌어지면 중요한 역할 공백 비용이 반복될 수 있습니다.",
+    retention: "핵심 인재 보존 철학과 원칙 중심 운영이 벌어지거나, 원칙 철학과 예외 운영이 벌어지면 구성원은 어떤 기준이 우선인지 혼란을 느낄 수 있습니다.",
     leadership: "성과 추적 철학과 관계 중심 리더십 운영이 벌어지면 의사결정 지연과 책임 회피가 리더십 신호로 굳어질 수 있습니다.",
   };
   return risks[domainId] ?? null;
@@ -271,19 +271,19 @@ export function buildFallbackAlignmentAxes(responses: Record<string, ResponseVal
 
   const retentionPhilosophy = choicePosition(
     responses["L0-4"],
-    -0.75,
     0.75,
+    -0.75,
     ["형평성", "보상 원칙", "원칙대로 내보낸다"],
     ["비즈니스 공백", "예외를 인정", "파격적으로 잡는다"],
   );
-  let retentionActual = 0.35;
-  if (coreLoss === "2~3명" || coreLoss === "4명 이상") retentionActual -= 0.45;
-  if (turnover === "20% 초과" || turnover === "20% 이상") retentionActual -= 0.25;
-  if (turnover === "모름 / 측정 안 함") retentionActual -= 0.15;
+  let retentionActual = -0.35;
+  if (coreLoss === "2~3명" || coreLoss === "4명 이상") retentionActual += 0.45;
+  if (turnover === "20% 초과" || turnover === "20% 이상") retentionActual += 0.25;
+  if (turnover === "모름 / 측정 안 함") retentionActual += 0.15;
   if (talentCriteria === "명확한 기준과 명단이 있음") retentionActual -= 0.08;
   if (talentCriteria === "별도 기준 없음") retentionActual += 0.12;
-  if (succession === "후임/백업 후보가 정해져 있음") retentionActual += 0.12;
-  if (succession === "거의 없음") retentionActual -= 0.12;
+  if (succession === "후임/백업 후보가 정해져 있음") retentionActual -= 0.12;
+  if (succession === "거의 없음") retentionActual += 0.12;
 
   const leadershipPhilosophy = choicePosition(
     responses["L0-2"],
@@ -314,7 +314,7 @@ export function buildFallbackAlignmentAxes(responses: Record<string, ResponseVal
       `채용 기조: ${hiringPlan}`,
       `채용 브랜딩: ${hiringBranding}`,
     ]),
-    axis("retention", "인력운영", "조직 안정·원칙", "핵심 인재 예외·사업 공백", retentionPhilosophy, retentionActual, [
+    axis("retention", "인력운영", "핵심 인재 보존", "원칙/형평성 유지", retentionPhilosophy, retentionActual, [
       `인력운영 철학: ${asText(responses["L0-4"])}`,
       `핵심 인재 기준: ${talentCriteria}`,
       `핵심 포스트 대체 계획: ${succession}`,
