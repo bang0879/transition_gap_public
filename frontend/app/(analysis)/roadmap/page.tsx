@@ -42,6 +42,7 @@ function RoadmapContent() {
         actions={
           <>
             <Button onClick={() => router.push("/scenarios")}>시나리오 비교</Button>
+            <Button onClick={() => router.push("/report")}>진단 보고서 보기</Button>
             <DiagnosticFinishButton page="/roadmap" />
           </>
         }
@@ -50,11 +51,12 @@ function RoadmapContent() {
       <RoadmapTimeline scenario={scenario} />
       <section className="mt-6 flex flex-col gap-3 rounded-[10px] border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
-          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 대표용 진단 보고서를 저장해 다음 논의에 활용합니다.</p>
-          <p className="m-0 mt-1 text-[12px] text-slate-500">결과 요약, 주요 판단 기준, 다음 논의 포인트를 PDF로 정리합니다.</p>
+          <p className="m-0 text-[13px] font-[690] text-slate-900">로드맵 검토가 끝나면 진단 마무리 화면과 보고서 화면을 다음 논의에 활용합니다.</p>
+          <p className="m-0 mt-1 text-[12px] text-slate-500">진단 보고서, PDF, JSON 진단 데이터를 저장하고 후속 논의 자료로 정리합니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => router.push(`/scenarios?scenario=${scenarioId}`)}>시나리오 비교</Button>
+          <Button onClick={() => router.push("/report")}>진단 보고서 보기</Button>
           <DiagnosticFinishButton page="/roadmap" />
         </div>
       </section>

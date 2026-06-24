@@ -14,6 +14,9 @@ import {
   Text,
   View,
 } from "@react-pdf/renderer";
+import { InsightCardCompact } from "@/components/report/components/InsightCardCompact";
+import { interpolateCard } from "@/lib/insights/interpolate";
+import { placeInsightCards, selectInsightCards } from "@/lib/insights/selectCards";
 import type { AlignmentAxisOut, AreaAnalysisOut, DiagnosisMode } from "@/lib/types/api";
 import type { ResponseValue } from "@/lib/store/responses";
 import type { ReportExportData } from "@/lib/utils/reportExport";
@@ -553,6 +556,28 @@ function responseToText(value: ResponseValue | undefined, fallback = "미입력"
   return String(value);
 }
 
+function representativeHeadcount(headcount: string): number | string {
+  if (headcount.includes("20인 이하")) return 20;
+  if (headcount.includes("20~50")) return 35;
+  if (headcount.includes("50~100")) return 70;
+  if (headcount.includes("100~500")) return 120;
+  if (headcount.includes("500")) return 500;
+  return headcount;
+}
+
+function recentExitCountLabel(value: ResponseValue | undefined): string {
+  const text = responseToText(value, "최근");
+  if (text.includes("4명")) return "4";
+  if (text.includes("2~3")) return "2";
+  if (text.includes("1명")) return "1";
+  if (text.includes("없음")) return "0";
+  return text;
+}
+
+function companyNameForInsight(companyName: string): string {
+  return companyName === "—" ? "이 회사" : companyName;
+}
+
 function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -982,6 +1007,22 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
   const decisions = decisionItems(mode, primaryAreaName);
   const snapshot = snapshotDomains(axes, areas, mode);
   const dataPoints = snapshotDataPoints(responses);
+  const selectedInsights = selectInsightCards({
+    responses,
+    mode,
+    axes,
+    foundationSignals: diagnosis.foundation_signals ?? [],
+    alignmentSignals: diagnosis.alignment_signals ?? [],
+  }).map((card) =>
+    interpolateCard(card, {
+      companyName: companyNameForInsight(companyName),
+      currentHeadcount: representativeHeadcount(headcount),
+      targetHeadcount: "다음 성장 구간",
+      recentExitCount: recentExitCountLabel(responses["2-1-2"]),
+      exitRole: "핵심 역할",
+    }),
+  );
+  const insights = placeInsightCards(selectedInsights);
   const metadata = [
     { label: "회사명", value: companyName },
     { label: "진단 모드", value: modeLabel(mode) },
@@ -1048,6 +1089,7 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
         <Text style={styles.eyebrow}>PATTERN</Text>
         <Text style={styles.pageTitle}>대표님의 의도와 조직의 실제 해석</Text>
         <Text style={styles.subtitle}>대표가 의도한 배려와 조직이 체감한 기준은 다를 수 있습니다. 이 차이가 반복되면 제도 문제가 아니라 신뢰와 설명의 문제로 번역됩니다.</Text>
+        {insights.page3Hero ? <InsightCardCompact card={insights.page3Hero} variant="hero" /> : null}
         <View style={styles.row}>
           <View style={styles.contentCard}>
             <Text style={styles.cardLabel}>대표님의 의도</Text>
@@ -1082,6 +1124,13 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
           <Text style={styles.heroText}>{tensionSentence(primaryArea, axis)}</Text>
         </View>
         <TensionMatrix axes={axes} areas={areas} mode={mode} />
+        {insights.page4Embedded.length > 0 ? (
+          <View style={styles.decisionStack}>
+            {insights.page4Embedded.map((card) => (
+              <InsightCardCompact key={card.id} card={card} />
+            ))}
+          </View>
+        ) : (
         <View style={styles.row}>
           {priorityAreas.slice(1, 3).map((area) => (
             <View key={area.area_id} style={styles.contentCard}>
@@ -1090,6 +1139,7 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
             </View>
           ))}
         </View>
+        )}
         <Footer page="4 / 6" decision="이 페이지에서 다룰 결정: 먼저 흔들리는 영역을 어디로 볼 것인가" />
       </Page>
 
@@ -1098,6 +1148,7 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
         <Text style={styles.pageTitle}>검토 방향 비교입니다</Text>
         <Text style={styles.subtitle}>아래 세 가지는 순위가 아닙니다. 지금 회사의 리더십 수용성, 설명 부담, 공개 가능한 기준 수준을 놓고 선택할 수 있는 검토 방향입니다.</Text>
         <OptionComparisonTable directions={directions} />
+        {insights.page5SelectionTrap ? <InsightCardCompact card={insights.page5SelectionTrap} /> : null}
         <View style={styles.decisionStack}>
           <View style={styles.decisionCard}>
             <Text style={styles.cardLabel}>대표에게 요구되는 변화</Text>
@@ -1125,10 +1176,14 @@ export function DiagnosticPdfDocument({ exportData }: DiagnosticPdfDocumentProps
         </View>
         <DecisionTimeline />
         <View style={styles.decisionStack}>
+          {insights.page6Closing ? (
+            <InsightCardCompact card={insights.page6Closing} variant="closing" />
+          ) : (
           <View style={styles.decisionCard}>
             <Text style={styles.cardLabel}>이번 회의에서 하나만 남길 질문</Text>
             <Text style={styles.heroText}>기준을 말할 수 있는 영역과 아직 말할 수 없는 영역을 어디서 나눌 것인가?</Text>
           </View>
+          )}
         </View>
         <Footer page="6 / 6" decision="이 페이지에서 다룰 결정: 이번 회의의 합의문을 무엇으로 남길 것인가" />
       </Page>

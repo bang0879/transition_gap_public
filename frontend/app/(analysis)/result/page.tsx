@@ -25,12 +25,14 @@ import {
 import { buildFallbackAlignmentMap } from "@/lib/utils/alignmentMapFallback";
 import { useResponsesStore } from "@/lib/store/responses";
 import { useSessionStore } from "@/lib/store/session";
+import { useDiagnosisHistoryStore } from "@/lib/store/diagnosisHistory";
 
 export default function ResultPage() {
   const router = useRouter();
   const sessionId = useSessionStore((state) => state.sessionId);
   const companyName = useSessionStore((state) => state.companyName);
   const responses = useResponsesStore((state) => state.responses);
+  const upsertSnapshot = useDiagnosisHistoryStore((state) => state.upsertSnapshot);
   const { data, isLoading, error, isWaitingForResponses } = useDiagnosis();
   usePageTracking("/result");
 
@@ -39,6 +41,16 @@ export default function ResultPage() {
     const avgScore = Math.round(data.areas.reduce((sum, area) => sum + area.score, 0) / data.areas.length);
     const axes = data.alignment_map?.axes ?? [];
     const maxTensionAxis = [...axes].sort((a, b) => b.tension - a.tension)[0];
+    const topGapArea = [...data.areas].sort((a, b) => b.gap - a.gap)[0];
+    upsertSnapshot({
+      sessionId,
+      companyName: companyName || "이름 없는 진단",
+      capturedAt: new Date().toISOString(),
+      visibilityScore: Math.round(data.visibility.score),
+      alignmentScore: Math.round(data.alignment_map?.alignment_score ?? data.alignment.score ?? avgScore),
+      topGapArea: topGapArea?.area_name ?? "핵심 영역",
+      topGap: topGapArea?.gap ?? 0,
+    });
     logEvent({
       session_id: sessionId,
       event_type: "result_view",
@@ -55,7 +67,7 @@ export default function ResultPage() {
       },
       timestamp: new Date().toISOString(),
     });
-  }, [data, sessionId]);
+  }, [companyName, data, sessionId, upsertSnapshot]);
   const handleNavigate = (action: string, path: string) => {
     if (sessionId) {
       logEvent({
@@ -169,6 +181,8 @@ export default function ResultPage() {
         actions={
           <>
             <DiagnosticFinishButton page="/result" />
+            <Button onClick={() => handleNavigate("open_report", "/report")}>진단 보고서 보기</Button>
+
             <Button variant="primary" onClick={() => handleNavigate("open_detail", "/result/detail")}>상세 분석 보기</Button>
           </>
         }
