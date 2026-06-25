@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ApiError } from "@/lib/api/client";
 import { verifyDiagnosisCode } from "@/lib/api/access";
 import { Button } from "@/components/shared/Button";
 import { useResponsesStore } from "@/lib/store/responses";
@@ -33,8 +34,12 @@ export function LandingHero() {
       useSessionStore.getState().clearSession();
       initSession(trimmedCompanyName);
       router.push("/diagnose/philosophy");
-    } catch {
-      setCodeError("진단 코드가 맞지 않습니다.");
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        setCodeError("진단 코드가 맞지 않습니다.");
+      } else {
+        setCodeError("백엔드 연결을 확인해 주세요.");
+      }
     } finally {
       setIsSubmitting(false);
     }

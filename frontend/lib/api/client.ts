@@ -1,5 +1,15 @@
 import { buildDiagnosisAccessHeaders } from "@/lib/utils/accessGate";
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status?: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8010";
 
 type ApiFetchOptions = RequestInit & {
@@ -34,13 +44,13 @@ export async function apiFetch<T>(
     });
   } catch (networkError) {
     console.error(`[API] Network error: ${url}`, networkError);
-    throw new Error("Could not connect to the backend API server.");
+    throw new ApiError("Could not connect to the backend API server.");
   }
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     console.error(`[API] ${res.status} ${res.statusText}: ${url}`, body);
-    throw new Error(`API error (${res.status}): ${body || res.statusText}`);
+    throw new ApiError(`API error (${res.status}): ${body || res.statusText}`, res.status);
   }
 
   return res.json() as Promise<T>;
