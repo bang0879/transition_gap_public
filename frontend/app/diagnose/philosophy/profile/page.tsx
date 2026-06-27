@@ -163,6 +163,20 @@ export default function PhilosophyProfilePage() {
                     <p className="m-0 mt-2 rounded-[8px] bg-slate-50 px-3 py-2 text-[12px] font-[650] leading-[1.65] text-slate-700">
                       {conflict.implication}
                     </p>
+                    {conflict.guidance ? (
+                      <div className="mt-3 rounded-[8px] border border-teal-line bg-teal-soft/60 px-3 py-3">
+                        <p className="m-0 text-[11px] font-[760] tracking-[0.08em] text-teal-deep">설계 가이드</p>
+                        <p className="m-0 mt-2 text-[12px] font-[680] leading-[1.7] text-slate-800">{conflict.guidance.lead}</p>
+                        <ul className="m-0 mt-2 grid gap-1.5 pl-4 text-[12px] leading-[1.7] text-slate-600">
+                          {conflict.guidance.principles.map((principle) => (
+                            <li key={principle}>{principle}</li>
+                          ))}
+                        </ul>
+                        <p className="m-0 mt-2 border-t border-teal-line/70 pt-2 text-[12px] font-[680] leading-[1.7] text-slate-800">
+                          {conflict.guidance.closing}
+                        </p>
+                      </div>
+                    ) : null}
                   </article>
                 ))}
               </div>
